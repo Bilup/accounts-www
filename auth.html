@@ -17,6 +17,12 @@
 </head>
 
 <body>
+  <div
+    id="g_id_onload"
+    data-client_id="228445846106-ttt7glup5n94jfhlj7idmsj4r0vo6bs4.apps.googleusercontent.com"
+    data-callback="handleCredential"
+    data-auto_prompt="false">
+  </div>
   <div id="navbar-placeholder"></div>
   <div class="modal">
     <div class="modal-content">
@@ -133,6 +139,15 @@
             <i class="fas fa-sign-in-alt"></i>
             Sign In
           </button>
+          <div
+            class="g_id_signin"
+            data-type="standard"
+            data-size="large"
+            data-text="continue_with"
+            data-theme="outline"
+            data-shape="rectangular"
+            data-logo_alignment="left">
+          </div>
           <button class="btn-welcome btn-welcome-secondary" id="welcome-signup-btn">
             <i class="fas fa-user-plus"></i>
             Create Account
@@ -806,6 +821,26 @@
       }
     });
 
+    function handleCredential(response) {
+      fetch("https://api.rotur.dev/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_token: response.credential,
+          system: systemName || 'rotur'
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            console.error(data.error);
+            return;
+          }
+          account = data;
+          updateModalForLoggedInUser();
+        });
+    }
+
     async function requestAccount(username, password) {
       const response = await fetch(`https://api.rotur.dev/get_user?username=${username}&password=${password}`);
       const json = await response.json();
@@ -894,6 +929,7 @@
     });
   </script>
   <script src="https://kit.fontawesome.com/16f6b70bf6.js" crossorigin="anonymous"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 
 </html>
