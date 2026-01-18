@@ -1,409 +1,633 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Key Manager</title>
-    <link href="https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <title>Key Manager - Rotur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Public+Sans:ital,wght@0,100..900;1,100..900&family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- OpenGraph Meta Tags -->
+  <meta property="og:title" content="Rotur Key Manager" />
+  <meta property="og:description" content="Manage your Rotur API keys and subscriptions" />
+  <meta property="og:url" content="https://rotur.dev/key-manager.html" />
+  <meta property="og:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  <meta property="og:image:alt" content="Rotur Logo" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Rotur" />
+  
+  <!-- Twitter Card Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rotur Key Manager" />
+  <meta name="twitter:description" content="Manage your Rotur API keys and subscriptions" />
+  <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  
+  <!-- General Meta Tags -->
+  <meta name="description" content="Manage your Rotur API keys and subscriptions" />
+  <meta name="theme-color" content="#121212" />
     <style>
-        html {
-            font-family: 'Poppins', sans-serif;
-            font-size: 18px;
-            user-select: none;
-            color: aliceblue;
-            background: rgb(63, 47, 60);
-            background: linear-gradient(45deg, rgba(63, 47, 60, 1) 0%, rgba(17, 17, 17, 1) 10%, rgba(17, 17, 17, 1) 90%, rgba(53, 59, 100, 1) 100%);
-            min-height: 100vh;
-            background-repeat: no-repeat;
-            background-size: cover;
-        }
-        body {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .container {
-            background-color: #222;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 10px 10px 5px rgba(0, 0, 0, 0.5);
-            transition: 0.2s;
-        }
-        .container:hover {
-            box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.6);
-        }
-        h1, h2, h3, h4 {
-            color: white;
-        }
-        button {
-            padding: 8px 12px;
-            margin: 5px 0;
-            border-radius: 10px;
-            border: none;
-            background-color: #333;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 5px 5px 3px rgba(0, 0, 0, 0.3);
-        }
-        button:hover {
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.6);
-            background-color: #111;
-            scale: 1.03;
-        }
-        input {
-            padding: 8px 12px;
-            margin: 5px 0;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background-color: #333;
-            color: white;
-        }
-        .error {
-            color: #ff6b6b;
-            font-size: 14px;
-        }
-        .success {
-            color: #6bff9f;
-            font-size: 14px;
-        }
-        .key-item {
-            border: 1px solid #444;
-            padding: 20px;
-            margin: 15px 0;
-            border-radius: 8px;
-            background-color: #2a2a2a;
-            box-shadow: 5px 5px 3px rgba(0, 0, 0, 0.3);
-            transition: 0.2s;
-        }
-        .key-item:hover {
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.6);
-            scale: 1.01;
-        }
-        /* Collapsible key styles */
-        .key-summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            position: relative;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #444;
-        }
-        .key-summary:hover {
-            background-color: #333;
-            border-radius: 6px 6px 0 0;
-        }
-        .key-summary-left {
-            flex: 1;
-        }
-        .key-summary-right {
-            text-align: right;
-            flex-shrink: 0;
-            margin-left: 10px;
-        }
-        .key-details {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            margin-top: 10px;
-        }
-        .key-details.expanded {
-            max-height: 2000px;
-            transition: max-height 0.5s ease-in;
-        }
-        /* Improved key details organization */
-        .info-section {
-            background-color: #333;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        .info-section h4 {
-            margin-top: 0;
-            border-bottom: 1px solid #444;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-        }
-        .key-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        @media (max-width: 600px) {
-            .key-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        .info-row {
-            display: flex;
-            margin-bottom: 8px;
-        }
-        .info-label {
-            font-weight: 500;
-            color: #aaa;
-            width: 140px;
-            flex-shrink: 0;
-        }
-        .info-value {
-            color: white;
-            flex: 1;
-        }
-        .admin-section {
-            border-top: 1px solid #444;
-            margin-top: 20px;
-            padding-top: 15px;
-        }
-        .admin-panel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-        }
-        .admin-group {
-            background-color: #333;
-            border-radius: 8px;
-            padding: 15px;
-        }
-        .admin-group h4 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        /* User management section */
-        .user-management {
-            margin-top: 15px;
-        }
-        .user-list-container {
-            max-height: 150px;
-            overflow-y: auto;
-            background-color: #252525;
-            border-radius: 6px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .expand-icon {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            text-align: center;
-            line-height: 18px;
-            font-weight: bold;
-            transition: transform 0.3s;
-        }
-        .expanded .expand-icon {
-            transform: rotate(180deg);
-        }
-        .key-tag {
-            display: inline-block;
-            background-color: #444;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 12px;
-            margin-left: 5px;
-        }
-        .tag-subscription {
-            background-color: #6b40b9;
-        }
-        .user-count {
-            color: #aaa;
-            font-size: 14px;
-        }
-        /* User list and other existing styles */
-        .user-list {
-            margin-top: 10px;
-        }
-        .user-item {
-            display: inline-block;
-            background-color: #454545;
-            padding: 4px 8px;
-            margin: 3px;
-            border-radius: 6px;
-            transition: 0.2s;
-        }
-        .user-item:hover {
-            background-color: #555;
-        }
-        .remove-user {
-            cursor: pointer;
-            color: #ff6b6b;
-            margin-left: 5px;
-            display: inline-block;
-        }
-        .hidden {
-            display: none;
-        }
-        .actions {
-            margin-top: 15px;
-            display: block;
-        }
-        #loading {
-            text-align: center;
-            margin: 20px;
-            color: #ccc;
-        }
-        .login-box {
-            text-align: center;
-            margin: 40px 0;
-        }
-        .login-btn {
-            padding: 12px 24px;
-            font-size: 18px;
-            background-color: #333;
-            transition: 0.2s;
-        }
-        .login-btn:hover {
-            scale: 1.05;
-            background-color: #111;
-        }
-        #create-key-btn {
-            margin-left: 10px;
-            padding: 8px 16px;
-            font-size: 16px;
-        }
-        #new-key-price {
-            width: 100px;
-        }
-        .key-value {
-            word-break: break-all;
-            color: #6bff9f;
-        }
-        .copy-button {
-            display: inline-block;
-            cursor: pointer;
-            background-color: #444;
-            color: white;
-            border-radius: 5px;
-            padding: 3px 8px;
-            font-size: 14px;
-            margin-left: 8px;
-            transition: 0.2s;
-        }
-        .copy-button:hover {
-            background-color: #555;
-        }
-        .copied-feedback {
-            color: #6bff9f;
-            font-size: 14px;
-            margin-left: 8px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .copied-feedback.show {
-            opacity: 1;
-        }
-        /* Subscription styles */
-        .subscription-badge {
-            display: inline-block;
-            background-color: #6b40b9;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 14px;
-            margin-left: 8px;
-        }
-        .subscription-info {
-            background-color: #333;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
-        }
-        .billing-details {
-            font-size: 14px;
-            color: #aaa;
-        }
-        select {
-            padding: 8px 12px;
-            margin: 5px 0;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background-color: #333;
-            color: white;
-        }
-        .sub-option {
-            margin-top: 15px;
-        }
-        .subscription-fields {
-            background-color: #2a2a2a;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-            border: 1px solid #444;
-        }
-        .convert-subscription-btn {
-            background-color: #6b40b9;
-        }
-        .convert-subscription-btn:hover {
-            background-color: #5a329e;
-        }
-        .key-type {
-            font-size: 14px;
-            color: #aaa;
-        }
-    </style>
+    /* Key Manager specific styles */
+    .login-box {
+      text-align: center;
+      margin: 40px 0;
+      padding: 30px;
+      background-color: var(--tertiary);
+      border-radius: 12px;
+      border: 1px solid var(--secondary);
+    }
+    
+    .create-key-section {
+      background-color: var(--tertiary);
+      border: 1px solid var(--secondary);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 20px;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+    
+    .subtitle {
+      font-family: "Poppins", sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--secondary);
+    }
+    
+    .error {
+      color: #ff6b6b;
+      font-size: 14px;
+    }
+    
+    .success {
+      color: #6bff9f;
+      font-size: 14px;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--secondary);
+      border-radius: 8px;
+      background-color: var(--primary);
+      color: var(--text);
+      font-family: "Poppins", sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+      box-sizing: border-box;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background-color: var(--tertiary);
+      box-shadow: 0 0 0 3px rgba(194, 153, 207, 0.1);
+    }
+    
+    .form-input::placeholder {
+      color: var(--text);
+      opacity: 0.5;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      color: var(--text);
+      margin-bottom: 8px;
+      font-family: "Poppins", sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    .subscription-fields {
+      background-color: var(--primary);
+      border: 1px solid var(--secondary);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .subscription-fields label {
+      display: block;
+      color: var(--text);
+      margin-bottom: 8px;
+      font-family: "Poppins", sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    /* Key item styles */
+    .key-item {
+      border: 1px solid var(--secondary);
+      padding: 24px;
+      margin: 20px 0;
+      border-radius: 12px;
+      background-color: var(--tertiary);
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .key-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border-color: var(--accent);
+    }
+    
+    .key-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--secondary);
+    }
+    
+    .key-summary:hover {
+      background-color: var(--primary);
+      border-radius: 8px 8px 0 0;
+      padding: 10px;
+      margin: -10px -10px 0 -10px;
+    }
+    
+    .key-summary-left {
+      flex: 1;
+    }
+    
+    .key-summary-right {
+      text-align: right;
+      flex-shrink: 0;
+      margin-left: 10px;
+    }
+    
+    .key-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      margin-top: 10px;
+    }
+    
+    .key-details.expanded {
+      max-height: 2000px;
+      transition: max-height 0.5s ease-in;
+    }
+    
+    .info-section {
+      background-color: var(--primary);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--secondary);
+    }
+    
+    .info-section h4 {
+      margin-top: 0;
+      border-bottom: 1px solid var(--secondary);
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+      color: var(--text);
+      font-family: "Poppins", sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .key-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    @media (max-width: 600px) {
+      .key-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .info-row {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    
+    .info-label {
+      font-weight: 500;
+      color: var(--text);
+      opacity: 0.7;
+      width: 140px;
+      flex-shrink: 0;
+    }
+    
+    .info-value {
+      color: var(--text);
+      flex: 1;
+    }
+    
+    .admin-section {
+      border-top: 1px solid var(--secondary);
+      margin-top: 20px;
+      padding-top: 15px;
+    }
+    
+    .admin-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    
+    .admin-group {
+      background-color: var(--primary);
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid var(--secondary);
+    }
+    
+    .admin-group h4 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: var(--text);
+      font-family: "Poppins", sans-serif;
+      font-weight: 600;
+    }
+    
+    .admin-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .admin-buttons .button-link {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+    
+    .user-management {
+      margin-top: 15px;
+    }
+    
+    .user-list-container {
+      max-height: 150px;
+      overflow-y: auto;
+      background-color: var(--primary);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .expand-icon {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      text-align: center;
+      line-height: 18px;
+      font-weight: bold;
+      transition: transform 0.3s;
+      color: var(--text);
+    }
+    
+    .expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+    
+    .key-tag {
+      display: inline-block;
+      background-color: var(--secondary);
+      color: var(--text);
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    
+    .tag-subscription {
+      background-color: var(--accent);
+    }
+    
+    .user-count {
+      color: var(--text);
+      opacity: 0.7;
+      font-size: 14px;
+    }
+    
+    .user-list {
+      margin-top: 10px;
+    }
+    
+    .user-item {
+      display: flex;
+      align-items: center;
+      background-color: var(--secondary);
+      padding: 8px 12px;
+      margin: 6px 0;
+      border-radius: 8px;
+      transition: all 0.2s;
+      color: var(--text);
+      gap: 10px;
+      border: 1px solid transparent;
+    }
+    
+    .user-item:hover {
+      background-color: var(--accent);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .user-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--tertiary);
+    }
+    
+    .user-name {
+      flex: 1;
+      font-family: "Poppins", sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .remove-user {
+      cursor: pointer;
+      color: #ff6b6b;
+      margin-left: 5px;
+      display: inline-block;
+    }
+    
+    .actions {
+      margin-top: 15px;
+      display: block;
+    }
+    
+    .key-value {
+      word-break: break-all;
+      color: var(--accent);
+    }
+    
+    .copy-button {
+      display: inline-block;
+      cursor: pointer;
+      background-color: var(--secondary);
+      color: var(--text);
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: 14px;
+      margin-left: 8px;
+      transition: 0.2s;
+    }
+    
+    .copy-button:hover {
+      background-color: var(--accent);
+    }
+    
+    .copied-feedback {
+      color: var(--accent);
+      font-size: 14px;
+      margin-left: 8px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .copied-feedback.show {
+      opacity: 1;
+    }
+    
+    .button-link {
+      height: min-content;
+      background-color: var(--text);
+      color: var(--tertiary);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-family: "Poppins", sans-serif;
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      transition: background-color 0.3s, color 0.3s;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.2;
+      display: inline-block;
+      cursor: pointer;
+      border: none;
+    }
+
+    .button-link:hover {
+      background-color: var(--accent);
+      color: var(--tertiary);
+    }
+    
+    .subscription-badge {
+      display: inline-block;
+      background-color: var(--accent);
+      color: var(--tertiary);
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-left: 8px;
+    }
+    
+    .subscription-info {
+      background-color: var(--primary);
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    
+    .billing-details {
+      font-size: 14px;
+      color: var(--text);
+      opacity: 0.7;
+    }
+    
+    .sub-option {
+      margin-top: 15px;
+    }
+    
+    .convert-subscription-btn {
+      background-color: var(--accent);
+      color: var(--tertiary);
+    }
+    
+    .convert-subscription-btn:hover {
+      background-color: var(--text);
+      color: var(--accent);
+    }
+    
+    .key-type {
+      font-size: 14px;
+      color: var(--text);
+      opacity: 0.7;
+    }
+    
+    .key-name-title {
+      color: var(--text);
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .key-summary-info {
+      color: var(--text);
+      opacity: 0.8;
+      font-size: 13px;
+      font-family: "Poppins", sans-serif;
+      font-weight: 400;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Key Manager</h1>
+  <div id="header-wrapper">
+    <div id="header" class="row">
+      <img src="assets/branding/rotur-logo.svg" id="logo">
+      <div class="vrule"></div>
+      <a href="https://github.com/roturTW" class="tab">
+        <p>Github</p>
+      </a>
+      <a href="https://rotur.dev/systems" class="tab">
+        <p>Systems</p>
+      </a>
+      <a href="https://rotur.dev/status" class="tab">
+        <p>Status</p>
+      </a>
+      <a href="https://docs.rotur.dev/" class="tab">
+        <p>Docs</p>
+      </a>
+    </div>
+  </div>
+
+  <div id="backdrop"></div>
+
+  <div id="content" class="column">
+    <div id="wrapper-key-manager" class="column">
+      <div class="key-manager-container">
+        <p class="title">
+          Key Manager
+        </p>
+        <div class="rule"></div>
         
         <!-- Login Section -->
         <div id="login-section" class="login-box">
-            <h2>Authentication Required</h2>
-            <button class="login-btn">Login</button>
-            <div id="login-error" class="error"></div>
+          <h2 class="title">Authentication Required</h2>
+          <p class="body">Please log in to manage your API keys.</p>
+          <div class="form-group">
+            <button class="login-btn button-link">Login</button>
+          </div>
+          <div id="login-error" class="error"></div>
         </div>
         
         <!-- User Info Section -->
         <div id="user-info" class="hidden">
-            <h2>Welcome, <span id="user-name"></span>!</h2>
-            <button id="logout-btn">Logout</button>
+          <h2 class="title">Welcome, <span id="user-name"></span>!</h2>
+          <p class="body">Manage your API keys and subscriptions from this dashboard.</p>
+          <div class="form-group">
+            <button id="logout-btn" class="button-link">Logout</button>
+          </div>
         </div>
         
         <!-- Key Management Section -->
         <div id="key-management" class="hidden">
-            <h2>Your Keys</h2>
-            <div id="loading">Loading your keys...</div>
-            <div id="keys-list"></div>
-            
-            <h3>Create New Key</h3>
-            <div>
-                <div>
-                    <!-- Add name input field -->
-                    <input type="text" id="new-key-name" placeholder="Key Name (required)" required>
-                    <select id="new-key-type">
-                        <option value="regular">Regular Key</option>
-                        <option value="subscription">Subscription Key</option>
-                    </select>
-                    <input type="number" id="new-key-price" placeholder="Price (optional)" min="0">
-                </div>
-                
-                <div id="subscription-fields" class="subscription-fields" style="display: none;">
-                    <div>
-                        <label for="billing-frequency">Bill every:</label>
-                        <input type="number" id="billing-frequency" value="1" min="1" style="width: 60px;">
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <label for="billing-period">Period:</label>
-                        <select id="billing-period">
-                            <option value="day">Day(s)</option>
-                            <option value="week">Week(s)</option>
-                            <option value="month" selected>Month(s)</option>
-                            <option value="year">Year(s)</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div style="margin-top: 15px;">
-                    <button id="create-key-btn">Create Key</button>
-                    <div id="create-key-result" class="success"></div>
-                </div>
+          <h2 class="title">Your Keys</h2>
+          <div id="loading" class="body">Loading your keys...</div>
+          <div id="keys-list"></div>
+          
+          <h3 class="title">Create New Key</h3>
+          <div class="create-key-section">
+            <div class="form-group">
+              <label for="new-key-name">Key Name:</label>
+              <input type="text" id="new-key-name" class="form-input" placeholder="Enter a descriptive name for your key" required>
             </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="new-key-type">Key Type:</label>
+                <select id="new-key-type" class="form-input">
+                  <option value="regular">Regular Key</option>
+                  <option value="subscription">Subscription Key</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="new-key-price">Price (credits):</label>
+                <input type="number" id="new-key-price" class="form-input" placeholder="0" min="0">
+              </div>
+            </div>
+                
+            <div id="subscription-fields" class="subscription-fields" style="display: none;">
+              <h4 class="subtitle">Subscription Settings</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="billing-frequency">Bill every:</label>
+                  <input type="number" id="billing-frequency" value="1" min="1" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label for="billing-period">Period:</label>
+                  <select id="billing-period" class="form-input">
+                    <option value="day">Day(s)</option>
+                    <option value="week">Week(s)</option>
+                    <option value="month" selected>Month(s)</option>
+                    <option value="year">Year(s)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+                
+            <div class="form-group">
+              <button id="create-key-btn" class="button-link">Create Key</button>
+              <div id="create-key-result" class="success"></div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Key Item Template -->
-    <template id="key-template">
+  <div id="footer" class="column">
+    <div class="legal row">
+      <a href="https://rotur.dev/terms-of-service.html">
+        Terms of Service
+      </a>
+      <div class="vrule2"></div>
+      <a href="https://rotur.dev/privacy-policy.html">
+        Privacy Policy
+      </a>
+    </div>
+    <p class="body">
+      © 2025 Rotur. All rights reserved.
+    </p>
+  </div>
+
+  <!-- Key Item Template -->
+  <template id="key-template">
         <div class="key-item">
             <div class="key-summary">
                 <div class="key-summary-left">
@@ -486,8 +710,10 @@
                     </div>
                     
                     <div class="user-management">
-                        <input type="text" class="add-user-input" placeholder="Username to add">
-                        <button class="add-user-btn">Add User</button>
+                        <div class="form-group">
+                            <input type="text" class="add-user-input form-input" placeholder="Enter username to add">
+                        </div>
+                        <button class="add-user-btn button-link">Add User</button>
                     </div>
                 </div>
                 
@@ -496,26 +722,34 @@
                     <div class="admin-panel">
                         <div class="admin-group name-actions">
                             <h4>Set Key Name</h4>
-                            <input type="text" class="update-name-input" placeholder="Set key name">
-                            <button class="update-name-btn">Update Name</button>
+                            <div class="form-group">
+                                <input type="text" class="update-name-input form-input" placeholder="Set key name">
+                            </div>
+                            <button class="update-name-btn button-link">Update Name</button>
                         </div>
                         
                         <div class="admin-group price-actions">
                             <h4>Update Price</h4>
-                            <input type="number" class="update-price-input" placeholder="New Price" min="0">
-                            <button class="update-price-btn">Update Price</button>
+                            <div class="form-group">
+                                <input type="number" class="update-price-input form-input" placeholder="New Price" min="0">
+                            </div>
+                            <button class="update-price-btn button-link">Update Price</button>
                         </div>
                         
                         <div class="admin-group webhook-actions">
-                            <h4>Webhook URL <a href="https://docs.rotur.dev/my-account/earn-credits#webhooks" target="_blank" style="color: #6bff9f; font-size: 12px; text-decoration: none;">(?)</a></h4>
-                            <input type="url" class="update-webhook-input" placeholder="https://example.com/webhook">
-                            <button class="update-webhook-btn">Update Webhook</button>
+                            <h4>Webhook URL <a href="https://docs.rotur.dev/my-account/earn-credits#webhooks" target="_blank" style="color: var(--accent); font-size: 12px; text-decoration: none;">(?)</a></h4>
+                            <div class="form-group">
+                                <input type="url" class="update-webhook-input form-input" placeholder="https://example.com/webhook">
+                            </div>
+                            <button class="update-webhook-btn button-link">Update Webhook</button>
                         </div>
                         
                         <div class="admin-group key-actions">
                             <h4>Key Management</h4>
-                            <button class="revoke-key-btn">Revoke Key</button>
-                            <button class="delete-key-btn">Delete Key</button>
+                            <div class="admin-buttons">
+                                <button class="revoke-key-btn button-link">Revoke Key</button>
+                                <button class="delete-key-btn button-link">Delete Key</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -645,10 +879,18 @@
                         return;
                     }
                     
-                    // Display each key
+                    // Display each key, but only show keys created by current user
                     data.forEach(key => {
-                        renderKeyItem(key);
+                        // Only render keys where the creator is the current user
+                        if (key.creator && key.creator.toLowerCase() === currentUser.toLowerCase()) {
+                            renderKeyItem(key);
+                        }
                     });
+                    
+                    // If no keys were rendered (all keys belong to other users)
+                    if (keysList.children.length === 0) {
+                        keysList.innerHTML = '<p>You haven\'t created any keys yet. Create one below!</p>';
+                    }
                 } else {
                     loadingIndicator.textContent = data.error || 'Failed to load keys';
                 }
@@ -855,14 +1097,23 @@
                         // Convert each username to lowercase for display
                         const normalizedUser = user.toLowerCase();
                         if (normalizedUser === currentUser.toLowerCase()) {
-                            userList.innerHTML += `<span class="user-item">${normalizedUser} (You)</span>`;
+                            userList.innerHTML += `
+                                <div class="user-item">
+                                    <img src="https://avatars.rotur.dev/${normalizedUser}" alt="${normalizedUser}" class="user-avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iMTIiIGZpbGw9IiM0NDQiLz4KPHR5cGUNCg0KCQkJCQkJCQkJaWQ9dCINCg0KCQkJCQkJCQkJZm9udC1mYW1pbHk9IlBvcHBpbnMiDQoJCQkJCQkJCWZvbnQtc2l6ZT0iMTIiDQoJCQkJCQkJCWZpbGw9IiNEOUQ5RDkiDQoJCQkJCQkJCXRleHQtYW5jaG9yPSJtaWRkbGUiDQoJCQkJCQkJCWRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiDQoJCQkJCQkJCXg9IjEyIg0KCQkJCQkJCQl5PSIxNSI+DQoJCQkJCQkJCTx0c3Bhbj4ke25vcm1hbGl6ZWRVc2VyLmNoYXJBdCgwKS50b1VwcGVyQ2FzZSgpfTwvdHNwYW4+DQoJCQkJCQkJPC90eHQ+Cjwvc3ZnPgo='">
+                                    <span class="user-name">${normalizedUser} (You)</span>
+                                </div>
+                            `;
                             return; // continue to next user in forEach
                         }
-                        const userItem = document.createElement('span');
+                        const userItem = document.createElement('div');
                         userItem.classList.add('user-item');
                         
                         // Show remove button for all users when current user is creator
-                        userItem.innerHTML = `${normalizedUser} <span class="remove-user" data-user="${normalizedUser}" data-key="${key.key}">×</span>`;
+                        userItem.innerHTML = `
+                            <img src="https://avatars.rotur.dev/${normalizedUser}" alt="${normalizedUser}" class="user-avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iMTIiIGZpbGw9IiM0NDQiLz4KPHR5cGUNCg0KCQkJCQkJCQkJaWQ9dCINCg0KCQkJCQkJCQkJZm9udC1mYW1pbHk9IlBvcHBpbnMiDQoJCQkJCQkJCWZvbnQtc2l6ZT0iMTIiDQoJCQkJCQkJCWZpbGw9IiNEOUQ5RDkiDQoJCQkJCQkJCXRleHQtYW5jaG9yPSJtaWRkbGUiDQoJCQkJCQkJCWRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiDQoJCQkJCQkJCXg9IjEyIg0KCQkJCQkJCQl5PSIxNSI+DQoJCQkJCQkJCTx0c3Bhbj4ke25vcm1hbGl6ZWRVc2VyLmNoYXJBdCgwKS50b1VwcGVyQ2FzZSgpfTwvdHNwYW4+DQoJCQkJCQkJPC90eHQ+Cjwvc3ZnPgo='">
+                            <span class="user-name">${normalizedUser}</span>
+                            <span class="remove-user" data-user="${normalizedUser}" data-key="${key.key}">×</span>
+                        `;
                         
                         userList.appendChild(userItem);
                     });
@@ -1108,7 +1359,12 @@
                     // Clear user list and add only the creator (you)
                     // We know the backend will keep only the creator
                     const userList = keyElement.querySelector('.user-list');
-                    userList.innerHTML = `<span class="user-item">${currentUser.toLowerCase()} (You)</span>`;
+                    userList.innerHTML = `
+    <div class="user-item">
+        <img src="https://avatars.rotur.dev/${currentUser.toLowerCase()}" alt="${currentUser.toLowerCase()}" class="user-avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iMTIiIGZpbGw9IiM0NDQiLz4KPHR5cGUNCg0KCQkJCQkJCQkJaWQ9dCINCg0KCQkJCQkJCQkJZm9udC1mYW1pbHk9IlBvcHBpbnMiDQoJCQkJCQkJCWZvbnQtc2l6ZT0iMTIiDQoJCQkJCQkJCWZpbGw9IiNEOUQ5RDkiDQoJCQkJCQkJCXRleHQtYW5jaG9yPSJtaWRkbGUiDQoJCQkJCQkJCWRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiDQoJCQkJCQkJCXg9IjEyIg0KCQkJCQkJCQl5PSIxNSI+DQoJCQkJCQkJCTx0c3Bhbj4ke2N1cnJlbnRVc2VyLmNoYXJBdCgwKS50b1VwcGVyQ2FzZSgpfTwvdHNwYW4+DQoJCQkJCQkJPC90eHQ+Cjwvc3ZnPgo='">
+        <span class="user-name">${currentUser.toLowerCase()} (You)</span>
+    </div>
+`;
                     
                     messageDiv.textContent = 'Key has been revoked. All other users have been removed.';
                     
@@ -1299,14 +1555,21 @@
                         .map(item => item.textContent.toLowerCase().replace(' (you)', '').replace(' ×', '').trim());
                     
                     if (!existingUsers.includes(username)) {
-                        const userItem = document.createElement('span');
+                        const userItem = document.createElement('div');
                         userItem.classList.add('user-item');
                         
                         // Add remove button if current user is creator
                         if (username === currentUser.toLowerCase()) {
-                            userItem.textContent = `${username} (You)`;
+                            userItem.innerHTML = `
+                                <img src="https://avatars.rotur.dev/${username}" alt="${username}" class="user-avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iMTIiIGZpbGw9IiM0NDQiLz4KPHR5cGUNCg0KCQkJCQkJCQkJaWQ9dCINCg0KCQkJCQkJCQkJZm9udC1mYW1pbHk9IlBvcHBpbnMiDQoJCQkJCQkJCWZvbnQtc2l6ZT0iMTIiDQoJCQkJCQkJCWZpbGw9IiNEOUQ5RDkiDQoJCQkJCQkJCXRleHQtYW5jaG9yPSJtaWRkbGUiDQoJCQkJCQkJCWRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiDQoJCQkJCQkJCXg9IjEyIg0KCQkJCQkJCQl5PSIxNSI+DQoJCQkJCQkJCTx0c3Bhbj4ke3VzZXJuYW1lLmNoYXJBdCgwKS50b1VwcGVyQ2FzZSgpfTwvdHNwYW4+DQoJCQkJCQkJPC90eHQ+Cjwvc3ZnPgo='">
+                                <span class="user-name">${username} (You)</span>
+                            `;
                         } else {
-                            userItem.innerHTML = `${username} <span class="remove-user" data-user="${username}" data-key="${keyId}">×</span>`;
+                            userItem.innerHTML = `
+                                <img src="https://avatars.rotur.dev/${username}" alt="${username}" class="user-avatar" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iMTIiIGZpbGw9IiM0NDQiLz4KPHR5cGUNCg0KCQkJCQkJCQkJaWQ9dCINCg0KCQkJCQkJCQkJZm9udC1mYW1pbHk9IlBvcHBpbnMiDQoJCQkJCQkJCWZvbnQtc2l6ZT0iMTIiDQoJCQkJCQkJCWZpbGw9IiNEOUQ5RDkiDQoJCQkJCQkJCXRleHQtYW5jaG9yPSJtaWRkbGUiDQoJCQkJCQkJCWRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiDQoJCQkJCQkJCXg9IjEyIg0KCQkJCQkJCQl5PSIxNSI+DQoJCQkJCQkJCTx0c3Bhbj4ke3VzZXJuYW1lLmNoYXJBdCgwKS50b1VwcGVyQ2FzZSgpfTwvdHNwYW4+DQoJCQkJCQkJPC90eHQ+Cjwvc3ZnPgo='">
+                                <span class="user-name">${username}</span>
+                                <span class="remove-user" data-user="${username}" data-key="${keyId}">×</span>
+                            `;
                             
                             // Attach event listener to the new remove button
                             setTimeout(() => {

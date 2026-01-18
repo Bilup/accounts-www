@@ -1,207 +1,141 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8">
   <title>Rotur Status</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root {
-      --green: #27c93f;
-      --green-alt: #16c784;
-      --red: #ff5f56;
-      --yellow: #f7b731;
-      --bg: #0d1117;
-      --bg-alt: #10151d;
-      --panel: #141b24;
-      --panel-alt: #182230;
-      --border: #202b38;
-      --text: #e6edf3;
-      --text-dim: #8695a5;
-      --radius: 12px;
-      --shadow: 0 2px 4px rgba(0,0,0,.3), 0 4px 24px -4px rgba(0,0,0,.4);
-      --transition: 140ms cubic-bezier(.4,0,.2,1);
-    }
-    body.light {
-      --bg: #f5f7fa;
-      --bg-alt: #eef2f6;
-      --panel: #ffffff;
-      --panel-alt: #ffffff;
-      --border: #d8e1e8;
-      --text: #1f252a;
-      --text-dim: #62707f;
-      --shadow: 0 2px 4px rgba(0,0,0,.08), 0 6px 28px -6px rgba(0,0,0,.15);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-      line-height: 1.4;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    a { color: var(--green-alt); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    header {
-      height: 64px;
-      display: flex;
-      align-items: center;
-      padding: 0 28px;
-      gap: 24px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-alt);
-      position: sticky; top: 0; z-index: 40;
-    }
-    .brand { display:flex; align-items:center; gap:10px; font-weight:600; }
-    .brand img { width:40px; height:40px; border-radius:10px; box-shadow:0 4px 16px -4px rgba(0,0,0,.5); }
-    nav { display:flex; gap:12px; font-size:.9rem; }
-    nav a { padding:6px 14px; border-radius:24px; background:transparent; color:var(--text-dim); transition:var(--transition); font-weight:500; }
-    nav a.active, nav a:hover { background:var(--panel); color:var(--text); }
-    .actions { margin-left:auto; display:flex; align-items:center; gap:12px; }
-    .toggle-btn { background:var(--panel); border:1px solid var(--border); color:var(--text-dim); padding:6px 14px; border-radius:24px; cursor:pointer; font-size:.85rem; display:inline-flex; align-items:center; gap:6px; transition:var(--transition); }
-    .toggle-btn:hover { color:var(--text); background:var(--panel-alt); }
-    main { width:100%; max-width:1080px; margin: 40px auto 80px; padding:0 28px 0; flex:1; }
-    .hero { text-align:center; margin-bottom:46px; animation: fadeIn .6s var(--transition); }
-    .hero-icon { width:56px; height:56px; display:flex; align-items:center; justify-content:center; margin:0 auto 18px; border-radius:50%; font-size:26px; font-weight:600; box-shadow:0 0 0 4px rgba(255,255,255,0.05), 0 4px 20px -4px rgba(0,0,0,.5); background:var(--panel); }
-    .hero-icon.ok { background: linear-gradient(135deg,var(--green) 0%, var(--green-alt) 80%); }
-    .hero-icon.part { background: linear-gradient(135deg,var(--yellow) 0%, #ffcc66 90%); color:#222; }
-    .hero-icon.down { background: linear-gradient(135deg,#ff6b5f 0%, var(--red) 80%); }
-    h1.hero-title { margin:0 0 8px; font-size: clamp(1.9rem,3.2vw,2.4rem); letter-spacing:-1px; }
-    .updated { font-size:.8rem; color:var(--text-dim); }
-    .panel { background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); padding:26px 26px 22px; box-shadow: var(--shadow); position:relative; overflow:hidden; }
-    .panel + .panel { margin-top:26px; }
-    .panel h2 { margin:0 0 22px; font-size:1rem; font-weight:600; letter-spacing:.3px; text-transform:uppercase; color:var(--text-dim); }
-    .component-row { display:flex; flex-direction:column; gap:10px; padding:18px 0 16px; border-top:1px solid var(--border); }
-    .component-row:first-of-type { border-top:none; padding-top:0; }
-    .component-header { display:flex; align-items:center; gap:10px; font-weight:500; font-size:.95rem; }
-    .status-dot { width:11px; height:11px; border-radius:50%; box-shadow:0 0 0 4px rgba(0,0,0,.15); }
-    .dot-ok { background:var(--green-alt); }
-    .dot-down { background:var(--red); }
-    .dot-part { background:var(--yellow); }
-    .uptime-percent { margin-left:auto; font-size:.75rem; font-weight:600; letter-spacing:.5px; color:var(--text-dim); }
-    .bar-wrapper { display:flex; flex-wrap:nowrap; gap:3px; align-items:center; overflow-x:auto; }
-    .square-bar { display:grid; grid-auto-flow:column; grid-auto-columns:7px; gap:3px; width:100%; overflow:visible; }
-    .sq { width:8px; height:22px; border-radius:2px; background:var(--panel-alt); position:relative; cursor:help; transition:var(--transition); z-index:1; }
-    .sq.ok { background:var(--green-alt); }
-    .sq.down { background:var(--red); }
-    .sq.part { background:var(--yellow); }
-    .sq:hover { transform:translateY(-3px); box-shadow:0 4px 12px -4px rgba(0,0,0,.5); }
-    .legend { display:flex; gap:14px; font-size:.65rem; color:var(--text-dim); margin-top:14px; flex-wrap:wrap; }
-    .legend span { display:inline-flex; align-items:center; gap:6px; }
-  .legend i { width:11px; height:11px; display:inline-block; border-radius:2px; }
-  .metrics-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:22px; }
-  .metric-card { background:var(--panel-alt); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px 14px; position:relative; overflow:hidden; display:flex; flex-direction:column; gap:6px; min-height:140px; }
-  .metric-label { font-size:.7rem; letter-spacing:.8px; text-transform:uppercase; font-weight:600; color:var(--text-dim); }
-  .metric-value { font-size:1.9rem; font-weight:600; letter-spacing:-1px; line-height:1.1; }
-  .metric-change { font-size:.7rem; font-weight:600; letter-spacing:.5px; }
-  .metric-change.positive { color:var(--green-alt); }
-  .metric-change.negative { color:var(--red); }
-  .metric-chart { margin-top:auto; height:44px; }
-  .metric-chart svg { width:100%; height:100%; overflow:visible; }
-  .spark-path { fill:none; stroke:var(--green-alt); stroke-width:2; vector-effect:non-scaling-stroke; }
-  .spark-fill { fill:linear-gradient(var(--green-alt), transparent); }
-  .spark-bg-line { stroke:var(--border); stroke-width:1; }
-  .spark-dot { fill:var(--green-alt); stroke:var(--panel-alt); stroke-width:2; }
-  body.light .metric-card { background:var(--panel); }
-    footer { text-align:center; padding:30px 20px 60px; font-size:.7rem; color:var(--text-dim); }
-    footer a { color:var(--text-dim); }
-    @media (max-width:720px){
-      header { padding:0 16px; gap:14px; }
-      main { padding:0 18px; margin-top:28px; }
-      .panel { padding:20px 18px 18px; }
-      .square-bar { grid-auto-columns:8px; }
-      .sq { width:8px; height:18px; }
-      .hero-icon { width:52px; height:52px; font-size:22px; }
-    }
-    @keyframes fadeIn {from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;}}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="poppins.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- OpenGraph Meta Tags -->
+  <meta property="og:title" content="Rotur Status" />
+  <meta property="og:description" content="Real-time status and metrics for Rotur services and infrastructure." />
+  <meta property="og:url" content="https://rotur.dev/status" />
+  <meta property="og:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  <meta property="og:image:alt" content="Rotur Logo" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Rotur" />
+  
+  <!-- Twitter Card Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rotur Status" />
+  <meta name="twitter:description" content="Real-time status and metrics for Rotur services and infrastructure." />
+  <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  
+  <!-- General Meta Tags -->
+  <meta name="description" content="Real-time status and metrics for Rotur services and infrastructure." />
+  <meta name="theme-color" content="#121212" />
 </head>
-<body class="dark">
-  <header>
-    <div class="brand"><a href="https://rotur.dev" style="display:flex;align-items:center;gap:10px;">
-      <img src="https://avatars.rotur.dev/rotur" alt="Rotur" />
-      <span>Rotur</span>
-    </a></div>
-    <nav>
-      <a href="#" class="active">Status</a>
-      <a href="/" target="_blank">Home</a>
-    </nav>
-    <div class="actions">
-      <button id="theme-toggle" class="toggle-btn" title="Toggle theme">🌙 Theme</button>
+<body>
+  <div id="header-wrapper">
+    <div id="header" class="row">
+      <a href="https://rotur.dev" class="tab">
+        <img src="assets/branding/rotur-logo.svg" id="logo">
+      </a>
+      <div class="vrule"></div>
+      <a href="https://github.com/roturTW" class="tab">
+        <p>Github</p>
+      </a>
+      <a href="https://rotur.dev/systems" class="tab">
+        <p>Systems</p>
+      </a>
+      <a href="https://rotur.dev/status" class="tab">
+        <p>Status</p>
+      </a>
+      <a href="https://docs.rotur.dev/" class="tab">
+        <p>Docs</p>
+      </a>
     </div>
-  </header>
-  <main>
-    <section class="hero" id="hero">
-      <div class="hero-icon" id="hero-icon">…</div>
-      <h1 class="hero-title" id="hero-title">Loading status…</h1>
-      <div class="updated" id="last-updated"></div>
-    </section>
-    <section class="panel" id="components-panel">
-      <h2>Core Services</h2>
-      <div class="component-row" id="component-core">
-        <div class="component-header">
-          <span class="status-dot dot-ok" id="core-dot"></span>
-          <span>Primary Service</span>
-          <span class="uptime-percent" id="core-uptime"></span>
-        </div>
-        <div class="bar-wrapper">
-          <div class="square-bar" id="core-bar"></div>
-        </div>
+  </div>
+
+  <div id="backdrop"></div>
+
+  <div id="content" class="column">
+    <div id="wrapper-status" class="column">
+      <p class="title">
+        System Status
+      </p>
+      <div class="rule"></div>
+      <p class="body">
+        Real-time status and metrics for Rotur services
+      </p>
+      
+      <div class="status-container">
+        <section class="hero" id="hero">
+          <div class="hero-icon" id="hero-icon">…</div>
+          <h1 class="hero-title" id="hero-title">Loading status…</h1>
+          <div class="updated body" id="last-updated"></div>
+        </section>
+        
+        <section class="panel" id="components-panel">
+          <h2 class="title">Core Services</h2>
+          <div class="component-row" id="component-core">
+            <div class="component-header">
+              <span class="status-dot dot-ok" id="core-dot"></span>
+              <span class="body">Primary Service</span>
+              <span class="uptime-percent body" id="core-uptime"></span>
+            </div>
+            <div class="bar-wrapper">
+              <div class="square-bar" id="core-bar"></div>
+            </div>
+          </div>
+          <div class="legend">
+            <span class="body"><i style="background:var(--accent);"></i> Operational</span>
+            <span class="body"><i style="background:var(--accent); opacity: 0.6;"></i> Partial</span>
+            <span class="body"><i style="background:var(--accent); opacity: 0.3;"></i> Downtime</span>
+          </div>
+        </section>
+        
+        <section class="panel" id="metrics-panel">
+          <h2 class="title">Platform Metrics</h2>
+          <div class="metrics-grid">
+            <div class="metric-card" id="users-card">
+              <div class="metric-label body">Users</div>
+              <div class="metric-value" id="users-value">—</div>
+              <div class="metric-change" id="users-change"></div>
+              <div class="metric-chart"><svg id="users-spark" role="img" aria-label="Users trend"></svg></div>
+            </div>
+            <div class="metric-card" id="posts-card">
+              <div class="metric-label body">Posts</div>
+              <div class="metric-value" id="posts-value">—</div>
+              <div class="metric-change" id="posts-change"></div>
+              <div class="metric-chart"><svg id="posts-spark" role="img" aria-label="Posts trend"></svg></div>
+            </div>
+          </div>
+        </section>
+        
+        <section class="panel" id="raw-table-panel" style="display:none;">
+          <h2 class="title">Status History</h2>
+          <table id="status-table" style="width:100%; border-collapse:collapse; font-size:.75rem;">
+            <thead><tr><th align="left" class="body">Timestamp</th><th align="left" class="body">Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </section>
       </div>
-      <div class="legend">
-        <span><i style="background:var(--green-alt);"></i> Operational</span>
-        <span><i style="background:var(--yellow);"></i> Partial</span>
-        <span><i style="background:var(--red);"></i> Downtime</span>
+    </div>
+
+    <div id="footer" class="column">
+      <div class="legal row">
+        <a href="https://rotur.dev/terms-of-service.html">
+          Terms of Service
+        </a>
+        <div class="vrule2"></div>
+        <a href="https://rotur.dev/privacy-policy.html">
+          Privacy Policy
+        </a>
       </div>
-    </section>
-    <section class="panel" id="metrics-panel">
-      <h2>Platform Metrics</h2>
-      <div class="metrics-grid">
-        <div class="metric-card" id="users-card">
-          <div class="metric-label">Users</div>
-          <div class="metric-value" id="users-value">—</div>
-          <div class="metric-change" id="users-change"></div>
-          <div class="metric-chart"><svg id="users-spark" role="img" aria-label="Users trend"></svg></div>
-        </div>
-        <div class="metric-card" id="posts-card">
-          <div class="metric-label">Posts</div>
-          <div class="metric-value" id="posts-value">—</div>
-          <div class="metric-change" id="posts-change"></div>
-          <div class="metric-chart"><svg id="posts-spark" role="img" aria-label="Posts trend"></svg></div>
-        </div>
-      </div>
-    </section>
-  <section class="panel" id="raw-table-panel" style="display:none;">
-      <table id="status-table" style="width:100%; border-collapse:collapse; font-size:.75rem;">
-        <thead><tr><th align="left">Timestamp</th><th align="left">Status</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
-  </main>
-  <footer>
-    <span id="version"></span>
-    <br />
-    &copy; <span id="year"></span> Rotur.
-  </footer>
+      <p class="body">
+        © 2025 Rotur. All rights reserved.
+      </p>
+    </div>
+  </div>
   <script>
-    function setTheme(mode){
-      document.body.classList.toggle('light', mode==='light');
-      localStorage.setItem('theme', mode);
-      document.getElementById('theme-toggle').textContent = (mode==='light' ? '🌙 Dark' : '☀️ Light');
-    }
-    (function(){
-      const saved = localStorage.getItem('theme');
-      if(saved) setTheme(saved); else if(window.matchMedia('(prefers-color-scheme: light)').matches) setTheme('light');
-    })();
-    document.getElementById('theme-toggle').addEventListener('click',()=>{
-      setTheme(document.body.classList.contains('light') ? 'dark' : 'light');
-    });
-
-    document.getElementById('year').textContent = new Date().getFullYear();
-
     fetch('https://api.status.rotur.dev/recent_status')
       .then(r=>r.json())
       .then(data=>{
@@ -246,7 +180,6 @@
         icon.textContent = overall==='ok' ? '✓' : (overall==='part' ? '!' : '!');
         document.getElementById('hero-title').textContent = overall==='ok' ? 'All systems operational' : (overall==='part' ? 'Some systems degraded' : 'Service disruption');
         document.getElementById('last-updated').textContent = 'Last updated ' + new Date(latest.timestamp).toLocaleString();
-        if(latest.status && latest.status.version){ document.getElementById('version').textContent='Version '+ latest.status.version; }
         document.getElementById('core-dot').className = 'status-dot ' + (overall==='ok'?'dot-ok': overall==='part'?'dot-part':'dot-down');
         function extractSeries(key){
           return data.filter(e=> e.status && typeof e.status[key] === 'number')
@@ -288,7 +221,7 @@
           const path = document.createElementNS('http://www.w3.org/2000/svg','path');
           path.setAttribute('d', d.trim());
           path.setAttribute('class','spark-path');
-          path.style.stroke = getComputedStyle(document.body).getPropertyValue(colorVar) || 'var(--green-alt)';
+          path.style.stroke = getComputedStyle(document.body).getPropertyValue(colorVar) || 'var(--accent)';
           svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
           svg.appendChild(path);
           const lastX = (values.length-1)*step;
@@ -298,12 +231,12 @@
           dot.setAttribute('cy', lastY.toFixed(2));
           dot.setAttribute('r','4');
           dot.setAttribute('class','spark-dot');
-          dot.style.fill = getComputedStyle(document.body).getPropertyValue(colorVar) || 'var(--green-alt)';
+          dot.style.fill = getComputedStyle(document.body).getPropertyValue(colorVar) || 'var(--accent)';
           svg.appendChild(dot);
         }
 
-        setMetric('users', usersSeries, document.getElementById('users-value'), document.getElementById('users-change'), '--green-alt');
-        setMetric('posts', postsSeries, document.getElementById('posts-value'), document.getElementById('posts-change'), '--green-alt');
+        setMetric('users', usersSeries, document.getElementById('users-value'), document.getElementById('users-change'), '--accent');
+        setMetric('posts', postsSeries, document.getElementById('posts-value'), document.getElementById('posts-change'), '--accent');
       })
       .catch(err=>{
         document.getElementById('hero-icon').classList.add('down');

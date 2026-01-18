@@ -1,204 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service - Rotur</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: min(1200px, 90%);
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8f9fa;
-        }
+  <meta charset="utf-8">
+  <title>Terms of Service - Rotur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 
-        .container {
-            background: white;
-            margin-top: 20px;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .header h1 {
-            color: #2c3e50;
-            margin: 0;
-            font-size: 2.5em;
-        }
-
-        .header p {
-            color: #6c757d;
-            margin: 10px 0 0 0;
-            font-size: 1.1em;
-        }
-
-        .terms-content {
-            max-height: min(700px, 80vh);
-            overflow-y: auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            margin: 20px 0;
-            border: 1px solid #e9ecef;
-        }
-
-        .terms-content h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-
-        .terms-content h2 {
-            color: #34495e;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
-
-        .terms-content p,
-        .terms-content li {
-            margin-bottom: 10px;
-        }
-
-        .terms-content ul {
-            padding-left: 20px;
-        }
-
-        .terms-content hr {
-            margin: 30px 0;
-            border: none;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .acceptance-section {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #e8f4fd;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-
-        .checkbox-container {
-            display: flex;
-            align-items: flex-start;
-            margin: 20px 0;
-        }
-
-        .checkbox-container input[type="checkbox"] {
-            margin-right: 12px;
-            margin-top: 4px;
-            transform: scale(1.2);
-        }
-
-        .checkbox-container label {
-            font-size: 16px;
-            color: #2c3e50;
-            cursor: pointer;
-        }
-
-        button {
-            background-color: #3498db;
-            color: white;
-            padding: 14px 28px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        button:hover:not(:disabled) {
-            background-color: #2980b9;
-            transform: translateY(-1px);
-        }
-
-        button:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .fa-spinner {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        #success-container {
-            text-align: center;
-        }
-
-        #token-display {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 6px;
-            word-break: break-all;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 14px;
-            color: #155724;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            background-color: #fadbd8;
-            padding: 12px;
-            border-radius: 6px;
-            margin: 10px 0;
-            border-left: 4px solid #e74c3c;
-        }
-
-        .contact-info {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #6c757d;
-        }
-    </style>
+  <!-- OpenGraph Meta Tags -->
+  <meta property="og:title" content="Terms of Service - Rotur: A Web Standard for Communication" />
+  <meta property="og:description" content="Terms of Service for Rotur - A powerful WebSocket-based networking protocol and unified account system for Web-Based operating systems." />
+  <meta property="og:url" content="https://rotur.dev/terms-of-service.html" />
+  <meta property="og:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  <meta property="og:image:alt" content="Rotur Logo" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Rotur" />
+  
+  <!-- Twitter Card Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Terms of Service - Rotur: A Web Standard for Communication" />
+  <meta name="twitter:description" content="Terms of Service for Rotur - A powerful WebSocket-based networking protocol and unified account system for Web-Based operating systems." />
+  <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  
+  <!-- General Meta Tags -->
+  <meta name="description" content="Terms of Service for Rotur - A powerful WebSocket-based networking protocol and account system for Web-Based operating systems with social features and cross-platform connectivity." />
+  <meta name="theme-color" content="#121212" />
 </head>
 
 <body>
-    <div class="container" id="main-container">
-        <div class="header">
-            <h1>Terms of Service</h1>
-            <p>Please review and accept our terms of service to continue</p>
-            <div id="back-button-container" style="display: none; margin-top: 15px;">
-                <button id="back-button"
-                    style="background-color: #6c757d; padding: 8px 16px; font-size: 14px; width: auto;">
-                    <i class="fas fa-arrow-left" style="margin-right: 6px;"></i>Back to Authentication
-                </button>
-            </div>
-        </div>
+  <div id="header-wrapper">
+    <div id="header" class="row">
+      <a href="https://rotur.dev" class="tab">
+        <img src="assets/branding/rotur-logo.svg" id="logo">
+      </a>
+      <div class="vrule"></div>
+      <a href="https://github.com/roturTW" class="tab">
+        <p>Github</p>
+      </a>
+      <a href="https://rotur.dev/systems" class="tab">
+        <p>Systems</p>
+      </a>
+      <a href="https://rotur.dev/status" class="tab">
+        <p>Status</p>
+      </a>
+      <a href="https://docs.rotur.dev/" class="tab">
+        <p>Docs</p>
+      </a>
+    </div>
+  </div>
 
-        <div class="terms-content" id="terms-content">
+  <div id="backdrop"></div>
+
+  <div id="content" class="column">
+    <div id="wrapper-terms" class="column">
+      <p class="title">
+        Terms of Service
+      </p>
+      <div class="rule"></div>
+      <p class="body">
+        Please review and accept our terms of service to continue
+      </p>
+      
+      <div class="terms-container">
+        <div class="terms-content body">
             <h1>Terms of Service – Rotur</h1>
             <p><strong>Effective Date:</strong> July 16, 2025<br>
-                <strong>Contact:</strong> d.a.kimber@icloud.com
+                <strong>Contact:</strong> mistium@icloud.com
             </p>
 
             <hr>
@@ -277,13 +149,13 @@
             <hr>
 
             <h2>3. The Rotur Team</h2>
-            <p>Rotur is developed and maintained by Sophie Kimber and the Rotur Team, including Flufi and Layz. The
+            <p>Rotur is developed and maintained by Sophie Kimber and the Rotur Team. The
                 Rotur Team is responsible for platform development, security, moderation, support, and community
                 engagement. Team members may serve in roles such as developers, moderators, support staff, or community
                 managers. While some team members may act on behalf of Rotur, direct access to servers and core
                 infrastructure is restricted to authorized personnel only. Users can expect the Rotur Team to provide
                 support, enforce these Terms, and foster a safe and welcoming environment. All official communications
-                and legal correspondence should be directed to Sophie at <strong>d.a.kimber@icloud.com</strong>.</p>
+                and legal correspondence should be directed to Sophie at <strong>mistium@icloud.com</strong>.</p>
             <p><strong>How to Contact the Team:</strong> For support, feedback, or to report issues, users may contact
                 the Rotur Team via the official email or through designated support channels on the Rotur platform.</p>
             <hr>
@@ -339,14 +211,14 @@
                 with third parties except as required by law, regulation, or legal process, or to protect the rights,
                 property, or safety of Rotur, its users, or the public.</p>
             <p>User data will be retained as necessary to comply with legal obligations, resolve disputes, and enforce
-                these Terms. Users may request deletion of their data by contacting d.a.kimber@icloud.com. However, some data
+                these Terms. Users may request deletion of their data by contacting mistium@icloud.com. However, some data
                 may be retained for a reasonable period as required by law or for legitimate business purposes.</p>
             <p><strong>Third-Party Data Sharing:</strong> Rotur may integrate with third-party services for
                 authentication or additional features. When you use these integrations, your data may be shared with
                 those third parties as necessary to provide the service. We encourage you to review the privacy policies
                 of any third-party service you use in connection with Rotur.</p>
             <p><strong>User Rights:</strong> You have the right to access, correct, or request deletion of your personal
-                data, subject to certain legal exceptions. To exercise these rights, contact us at d.a.kimber@icloud.com.</p>
+                data, subject to certain legal exceptions. To exercise these rights, contact us at mistium@icloud.com.</p>
             <hr>
 
             <h2>7. Content Guidelines and Prohibited Conduct</h2>
@@ -568,7 +440,7 @@
 
             <p>Users can report NSFW content via:</p>
             <ul>
-                <li><strong>Email Reports:</strong> d.a.kimber@icloud.com with specific content URLs</li>
+                <li><strong>Email Reports:</strong> mistium@icloud.com with specific content URLs</li>
                 <li><strong>Emergency Reports:</strong> For illegal content, contact authorities and notify us
                     immediately</li>
             </ul>
@@ -694,7 +566,7 @@
                 their nature should survive termination shall survive, including but not limited to ownership
                 provisions, warranty disclaimers, indemnity, and limitations of liability.</p>
             <p><strong>User Recourse and Appeal:</strong> If you believe your account was suspended or terminated in
-                error, you may contact the Rotur Team at d.a.kimber@icloud.com to request a review. While we strive to be
+                error, you may contact the Rotur Team at mistium@icloud.com to request a review. While we strive to be
                 fair and transparent, all suspension and termination decisions are at the sole discretion of the Rotur
                 Team and may be final.</p>
             <hr>
@@ -753,7 +625,7 @@
             <h2>13. Copyright Infringement and DMCA Policy</h2>
             <p>Rotur respects the intellectual property rights of others. If you believe that your copyrighted work has
                 been used in a way that constitutes copyright infringement, please contact our Copyright Agent at
-                <strong>d.a.kimber@icloud.com</strong> with the following information:</p>
+                <strong>mistium@icloud.com</strong> with the following information:</p>
             <ul>
                 <li>Identification of the copyrighted work</li>
                 <li>URL or reference to the infringing content</li>
@@ -857,35 +729,51 @@
 
             <h2>24. Contact</h2>
             <p>Questions or concerns may be directed to:</p>
-            <p>📧 <strong>d.a.kimber@icloud.com</strong></p>
+            <p>📧 <strong>mistium@icloud.com</strong></p>
         </div>
 
         <div class="acceptance-section">
-            <div class="checkbox-container">
-                <input type="checkbox" id="accept-terms" required>
-                <label for="accept-terms">
-                    I have read and agree to the Terms of Service. I understand that by checking this box and clicking
-                    "Accept Terms", I am entering into a legally binding agreement with Rotur.
-                </label>
-            </div>
-            <button id="accept-button" disabled>Accept Terms & Authenticate</button>
+          <div class="checkbox-container">
+            <input type="checkbox" id="accept-terms" required>
+            <label for="accept-terms" class="body">
+              I have read and agree to the Terms of Service. I understand that by checking this box and clicking
+              "Accept Terms", I am entering into a legally binding agreement with Rotur.
+            </label>
+          </div>
+          <button id="accept-button" class="button-link" disabled>Accept Terms & Authenticate</button>
         </div>
 
         <div class="contact-info">
-            <strong>Need help?</strong> Contact us at d.a.kimber@icloud.com for any questions about these terms.
+          <p class="title">Need help?</p>
+          <p class="body">Contact us at mistium@icloud.com for any questions about these terms.</p>
         </div>
+      </div>
     </div>
 
-    <div class="container" id="success-container" style="display: none;">
-        <div class="header">
-            <h1>Terms Accepted Successfully!</h1>
-            <p>You have successfully accepted the Terms of Service and completed authentication.</p>
-        </div>
-        <div id="token-display"></div>
-        <div class="contact-info">
-            You can now safely close this window or proceed to use Rotur services.
-        </div>
+    <div id="success-container" class="terms-container" style="display: none;">
+      <p class="title">Terms Accepted Successfully!</p>
+      <p class="body">You have successfully accepted the Terms of Service and completed authentication.</p>
+      <div id="token-display" class="body"></div>
+      <div class="contact-info">
+        <p class="body">You can now safely close this window or proceed to use Rotur services.</p>
+      </div>
     </div>
+
+    <div id="footer" class="column">
+      <div class="legal row">
+        <a href="https://rotur.dev/terms-of-service.html">
+          Terms of Service
+        </a>
+        <div class="vrule2"></div>
+        <a href="https://rotur.dev/privacy-policy.html">
+          Privacy Policy
+        </a>
+      </div>
+      <p class="body">
+        © 2025 Rotur. All rights reserved.
+      </p>
+    </div>
+  </div>
 
     <script>
         // Function to call the accept_tos API

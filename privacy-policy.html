@@ -1,148 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Rotur</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8f9fa;
-        }
+  <meta charset="utf-8">
+  <title>Privacy Policy - Rotur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 
-        .container {
-            background: white;
-            margin-top: 20px;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .header h1 {
-            color: #2c3e50;
-            margin: 0;
-            font-size: 2.5em;
-        }
-
-        .header p {
-            color: #6c757d;
-            margin: 10px 0 0 0;
-            font-size: 1.1em;
-        }
-
-        .privacy-content {
-            max-height: 500px;
-            overflow-y: auto;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            margin: 20px 0;
-            border: 1px solid #e9ecef;
-        }
-
-        .privacy-content h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            margin-top: 0;
-        }
-
-        .privacy-content h2 {
-            color: #34495e;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
-
-        .privacy-content h3 {
-            color: #495057;
-            margin-top: 25px;
-            margin-bottom: 12px;
-        }
-
-        .privacy-content h4 {
-            color: #6c757d;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-
-        .privacy-content p,
-        .privacy-content li {
-            margin-bottom: 10px;
-        }
-
-        .privacy-content ul {
-            padding-left: 20px;
-        }
-
-        .privacy-content a {
-            color: #3498db;
-            text-decoration: none;
-        }
-
-        .privacy-content a:hover {
-            text-decoration: underline;
-        }
-
-        .privacy-content strong {
-            color: #2c3e50;
-        }
-
-        .contact-info {
-            background-color: #e8f4fd;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
-            border-left: 4px solid #3498db;
-        }
-
-        .contact-info h3 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-
-        .last-updated {
-            background-color: #fff3cd;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border-left: 4px solid #ffc107;
-            font-weight: 600;
-            color: #856404;
-        }
-    </style>
+  <!-- OpenGraph Meta Tags -->
+  <meta property="og:title" content="Privacy Policy - Rotur: A Web Standard for Communication" />
+  <meta property="og:description" content="Privacy Policy for Rotur - A powerful WebSocket-based networking protocol and unified account system for Web-Based operating systems." />
+  <meta property="og:url" content="https://rotur.dev/privacy-policy.html" />
+  <meta property="og:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  <meta property="og:image:alt" content="Rotur Logo" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Rotur" />
+  
+  <!-- Twitter Card Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Privacy Policy - Rotur: A Web Standard for Communication" />
+  <meta name="twitter:description" content="Privacy Policy for Rotur - A powerful WebSocket-based networking protocol and unified account system for Web-Based operating systems." />
+  <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  
+  <!-- General Meta Tags -->
+  <meta name="description" content="Privacy Policy for Rotur - A powerful WebSocket-based networking protocol and account system for Web-Based operating systems with social features and cross-platform connectivity." />
+  <meta name="theme-color" content="#121212" />
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Privacy Policy</h1>
-            <p>Your privacy rights and how we protect your information</p>
-            <div id="back-button-container" style="display: none; margin-top: 15px;">
-                <button id="back-button" style="background-color: #6c757d; color: white; padding: 8px 16px; font-size: 14px; width: auto; border: none; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;">
-                    <i class="fas fa-arrow-left" style="margin-right: 6px;"></i>Back to Authentication
-                </button>
-            </div>
+  <div id="header-wrapper">
+    <div id="header" class="row">
+      <img src="assets/branding/rotur-logo.svg" id="logo">
+      <div class="vrule"></div>
+      <a href="https://github.com/roturTW" class="tab">
+        <p>Github</p>
+      </a>
+      <a href="https://rotur.dev/systems" class="tab">
+        <p>Systems</p>
+      </a>
+      <a href="https://rotur.dev/status" class="tab">
+        <p>Status</p>
+      </a>
+      <a href="https://docs.rotur.dev/" class="tab">
+        <p>Docs</p>
+      </a>
+    </div>
+  </div>
+
+  <div id="backdrop"></div>
+
+  <div id="content" class="column">
+    <div id="wrapper-privacy" class="column">
+      <p class="title">
+        Privacy Policy
+      </p>
+      <div class="rule"></div>
+      <p class="body">
+        Your privacy rights and how we protect your information
+      </p>
+      
+      <div class="privacy-container">
+        <div class="last-updated body">
+          Last updated: July 16, 2025
         </div>
 
-        <div class="last-updated">
-            Last updated: July 16, 2025
-        </div>
-
-        <div class="privacy-content">
+        <div class="privacy-content body">
             <p>This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your
                 information
                 when You use the Service and tells You about Your privacy rights and how the law protects You.</p>
@@ -521,11 +448,28 @@
         </div>
 
         <div class="contact-info">
-            <h3>Need Help?</h3>
-            <p><strong>Contact us:</strong> mistium@icloud.com</p>
-            <p>We're here to help answer any questions about your privacy and data protection.</p>
+          <p class="title">Need Help?</p>
+          <p class="body"><strong>Contact us:</strong> mistium@icloud.com</p>
+          <p class="body">We're here to help answer any questions about your privacy and data protection.</p>
         </div>
+      </div>
     </div>
+
+    <div id="footer" class="column">
+      <div class="legal row">
+        <a href="https://rotur.dev/terms-of-service.html">
+          Terms of Service
+        </a>
+        <div class="vrule2"></div>
+        <a href="https://rotur.dev/privacy-policy.html">
+          Privacy Policy
+        </a>
+      </div>
+      <p class="body">
+        © 2025 Rotur. All rights reserved.
+      </p>
+    </div>
+  </div>
 
     <script>
         // Check if coming from auth page and show back button
