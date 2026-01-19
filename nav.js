@@ -1,7 +1,18 @@
-// Load the navbar content from navbar.html into the placeholder
 fetch('/nav.html')
-    .then(response => response.text())
-    .then(data => {
-        document.getElementById('navbar-placeholder').innerHTML = data;
+    .then(res => res.text())
+    .then(html => {
+        const placeholder = document.getElementById('navbar-placeholder');
+        placeholder.outerHTML = html;
+
+        // Mobile navigation logic
+        const hamburgerMenu = document.getElementById('hamburger-menu');
+        const navLinks = document.getElementById('nav-links');
+
+        if (hamburgerMenu && navLinks) {
+            hamburgerMenu.addEventListener('click', () => {
+                navLinks.classList.toggle('show');
+                hamburgerMenu.classList.toggle('active');
+            });
+        }
     })
-    .catch(error => console.error('Error loading navbar:', error));
+    .catch(err => console.error('Error loading navbar:', err));

@@ -17,11 +17,8 @@
 </head>
 
 <body>
-  <div
-    id="g_id_onload"
-    data-client_id="228445846106-ttt7glup5n94jfhlj7idmsj4r0vo6bs4.apps.googleusercontent.com"
-    data-callback="handleCredential"
-    data-auto_prompt="false">
+  <div id="g_id_onload" data-client_id="228445846106-ttt7glup5n94jfhlj7idmsj4r0vo6bs4.apps.googleusercontent.com"
+    data-callback="handleCredential" data-auto_prompt="false">
   </div>
   <div id="navbar-placeholder"></div>
   <div class="modal">
@@ -139,14 +136,8 @@
             <i class="fas fa-sign-in-alt"></i>
             Sign In
           </button>
-          <div
-            class="g_id_signin"
-            data-type="standard"
-            data-size="large"
-            data-text="continue_with"
-            data-theme="outline"
-            data-shape="rectangular"
-            data-logo_alignment="left">
+          <div class="g_id_signin" data-type="standard" data-size="large" data-text="continue_with" data-theme="outline"
+            data-shape="rectangular" data-logo_alignment="left">
           </div>
           <button class="btn-welcome btn-welcome-secondary" id="welcome-signup-btn">
             <i class="fas fa-user-plus"></i>
@@ -723,6 +714,7 @@
       if (password !== confirmPassword) {
         submitButton.innerHTML = 'Passwords do not match';
         submitButton.style.background = '#ea4335';
+        hcaptcha.reset();
         setTimeout(() => {
           submitButton.innerHTML = originalText;
           submitButton.style.background = '';
@@ -733,6 +725,7 @@
       if (password.length < 8) {
         submitButton.innerHTML = 'Password must be at least 8 characters';
         submitButton.style.background = '#ea4335';
+        hcaptcha.reset();
         setTimeout(() => {
           submitButton.innerHTML = originalText;
           submitButton.style.background = '';
@@ -763,6 +756,8 @@
         const result = await response.json();
 
         if (result.error) {
+          hcaptcha.reset();
+
           // Show error message below the form
           let errorDiv = document.getElementById('signup-error-message');
           if (!errorDiv) {
@@ -789,7 +784,6 @@
             updateModalForLoggedInUser();
           } else {
             if (account_data.requiresTOSAcceptance) {
-              // Redirect to TOS acceptance page with token and return_to
               const tosUrl = new URL('./terms-of-service.html', window.location.href);
               tosUrl.searchParams.set('token', account_data.key);
               if (return_to) {
@@ -798,7 +792,6 @@
               window.location.href = tosUrl.toString();
               return;
             }
-            // Fallback to signin form if auto-login fails
             submitButton.innerHTML = 'Account created! Please sign in';
             submitButton.style.background = '#34a853';
             setTimeout(() => {
@@ -810,6 +803,7 @@
         }
       } catch (error) {
         console.error('Signup error:', error);
+        hcaptcha.reset();
         submitButton.innerHTML = 'Error occurred';
         submitButton.style.background = '#ea4335';
 

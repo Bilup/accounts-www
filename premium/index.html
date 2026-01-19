@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Premium Features - Rotur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Public+Sans:ital,wght@0,100..900;1,100..900&family=Poppins:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+  
+  <!-- OpenGraph Meta Tags -->
+  <meta property="og:title" content="Rotur Premium Features" />
+  <meta property="og:description" content="Support Rotur and unlock powerful features across all services" />
+  <meta property="og:url" content="https://rotur.dev/premium.html" />
+  <meta property="og:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  <meta property="og:image:alt" content="Rotur Logo" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Rotur" />
+  
+  <!-- Twitter Card Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Rotur Premium Features" />
+  <meta name="twitter:description" content="Support Rotur and unlock powerful features across all services" />
+  <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  
+  <!-- General Meta Tags -->
+  <meta name="description" content="Support Rotur and unlock powerful features across all services" />
+  <meta name="theme-color" content="#121212" />
+  
+  <style>
+    /* Premium page specific styles */
+    .premium-container {
+      flex: 1;
+      margin: 6px;
+      margin-bottom: 0px;
+      padding: 24px;
+      padding-top: 90px;
+      background-color: var(--primary);
+      border: solid var(--secondary) 1px;
+      border-radius: 24px 24px 0px 0px;
+      width: 100%;
+    }
+    
+    .premium-hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: linear-gradient(135deg, var(--tertiary) 0%, var(--primary) 100%);
+      border-radius: 16px;
+      margin-bottom: 40px;
+      border: 1px solid var(--secondary);
+    }
+    
+    .premium-hero h1 {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 16px;
+      font-family: "Poppins", sans-serif;
+    }
+    
+    .premium-hero p {
+      font-size: 18px;
+      color: var(--text);
+      opacity: 0.8;
+      max-width: 600px;
+      margin: 0 auto;
+      font-family: "Poppins", sans-serif;
+    }
+    
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+    
+    .pricing-card {
+      background: linear-gradient(135deg, var(--tertiary) 0%, var(--primary) 100%);
+      border: 1px solid var(--secondary);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .pricing-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+      border-color: var(--accent);
+    }
+    
+    .pricing-card.highlight {
+      border: 2px solid var(--accent);
+      box-shadow: 0 8px 16px rgba(194, 153, 207, 0.3);
+    }
+    
+    .pricing-card.highlight::before {
+      content: "POPULAR";
+      position: absolute;
+      top: 12px;
+      right: -30px;
+      background: var(--accent);
+      color: var(--tertiary);
+      padding: 4px 40px;
+      font-size: 12px;
+      font-weight: 600;
+      transform: rotate(45deg);
+      font-family: "Poppins", sans-serif;
+    }
+    
+    .pricing-card h2 {
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 16px;
+      font-family: "Poppins", sans-serif;
+    }
+    
+    .price {
+      font-size: 48px;
+      font-weight: 700;
+      color: #ffeb3b;
+      margin-bottom: 24px;
+      font-family: "Poppins", sans-serif;
+    }
+    
+    .price span {
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--text);
+      opacity: 0.7;
+    }
+    
+    .pricing-btn {
+      width: 100%;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(45deg, var(--accent), #b388ff);
+      color: var(--tertiary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(194, 153, 207, 0.3);
+      font-family: "Poppins", sans-serif;
+      margin-bottom: 24px;
+    }
+    
+    .pricing-btn:hover {
+      background: linear-gradient(45deg, var(--text), #9c64ff);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(194, 153, 207, 0.4);
+    }
+    
+    .pricing-desc {
+      font-size: 14px;
+      color: var(--text);
+      opacity: 0.7;
+      margin-bottom: 24px;
+      line-height: 1.6;
+      font-family: "Poppins", sans-serif;
+    }
+    
+    .features {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+    }
+    
+    .features li {
+      padding: 8px 0;
+      color: var(--text);
+      font-size: 14px;
+      border-bottom: 1px solid var(--secondary);
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      align-items: center;
+    }
+    
+    .features li:last-child {
+      border-bottom: none;
+    }
+    
+    .features li::before {
+      content: "✓";
+      color: #4caf50;
+      font-weight: bold;
+      margin-right: 12px;
+      font-size: 16px;
+    }
+    
+    .tier-compare {
+      background-color: var(--tertiary);
+      border: 1px solid var(--secondary);
+      border-radius: 16px;
+      padding: 32px;
+      margin-top: 40px;
+    }
+    
+    .tier-compare-grid {
+      overflow-x: auto;
+      margin-top: 24px;
+    }
+    
+    .tc-row {
+      display: grid;
+      grid-template-columns: 200px repeat(4, 1fr);
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--secondary);
+    }
+    
+    .tc-row:last-child {
+      border-bottom: none;
+    }
+    
+    .tc-header {
+      font-weight: 600;
+      background-color: var(--primary);
+      border-radius: 8px;
+      padding: 16px;
+      margin: -16px -16px 0 -16px;
+    }
+    
+    .tc-cell {
+      padding: 8px;
+      text-align: center;
+      color: var(--text);
+      font-family: "Poppins", sans-serif;
+      font-size: 14px;
+    }
+    
+    .tc-feature {
+      text-align: left;
+      font-weight: 500;
+    }
+    
+    .tc-tier {
+      font-weight: 600;
+    }
+    
+    .tc-tier.accent {
+      color: var(--accent);
+    }
+    
+    .tc-cell.unavailable {
+      color: var(--text);
+      opacity: 0.3;
+      text-decoration: line-through;
+    }
+    
+    @media screen and (max-width: 850px) {
+      .pricing-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+      }
+      
+      .tc-row {
+        grid-template-columns: 120px repeat(4, 60px);
+        gap: 4px;
+        font-size: 10px;
+      }
+      
+      .premium-hero {
+        padding: 30px 12px;
+      }
+      
+      .premium-hero h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+      
+      .premium-hero p {
+        font-size: 14px;
+      }
+      
+      .price {
+        font-size: 28px;
+      }
+      
+      .pricing-card {
+        padding: 16px;
+      }
+      
+      .pricing-card h2 {
+        font-size: 20px;
+      }
+      
+      .pricing-desc {
+        font-size: 12px;
+      }
+      
+      .features li {
+        font-size: 12px;
+        padding: 4px 0;
+      }
+    }
+    
+    @media screen and (max-width: 600px) {
+      .pricing-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 0 4px;
+      }
+      
+      .tc-row {
+        grid-template-columns: 80px repeat(4, 50px);
+        gap: 2px;
+        font-size: 9px;
+      }
+      
+      .premium-hero {
+        padding: 20px 8px;
+      }
+      
+      .premium-hero h1 {
+        font-size: 20px;
+      }
+      
+      .premium-hero p {
+        font-size: 13px;
+      }
+      
+      .price {
+        font-size: 24px;
+      }
+      
+      .pricing-card {
+        padding: 12px;
+      }
+      
+      .pricing-card h2 {
+        font-size: 18px;
+      }
+      
+      .pricing-desc {
+        font-size: 11px;
+      }
+      
+      .features li {
+        font-size: 11px;
+        padding: 3px 0;
+      }
+      
+      .pricing-btn {
+        padding: 10px 20px;
+        font-size: 13px;
+      }
+    }
+    
+    @media screen and (max-width: 400px) {
+      .premium-hero h1 {
+        font-size: 18px;
+      }
+      
+      .premium-hero p {
+        font-size: 12px;
+      }
+      
+      .price {
+        font-size: 20px;
+      }
+      
+      .pricing-card {
+        padding: 10px;
+      }
+      
+      .pricing-card h2 {
+        font-size: 16px;
+      }
+      
+      .pricing-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+      
+      .features li {
+        font-size: 10px;
+      }
+    }
+    
+    @media screen and (min-width: 1200px) {
+      .pricing-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="header-wrapper">
+    <div id="header" class="row">
+      <div id="navbar-placeholder"></div>
+    </div>
+  </div>
+
+  <div id="backdrop"></div>
+
+  <div id="content" class="column">
+    <div id="wrapper-premium" class="column">
+      <div class="premium-container">
+        <p class="title">
+          Premium Features
+        </p>
+        <div class="rule"></div>
+        
+        <div class="premium-hero">
+          <h1>Choose Your Plan</h1>
+          <p>Support Rotur and unlock powerful features across all services</p>
+        </div>
+
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h2>Free</h2>
+            <div class="price">£0<span>/forever</span></div>
+
+            <p class="pricing-desc">
+              Perfect for getting started with basic Rotur features.
+            </p>
+
+            <ul class="features">
+              <li>5MB originFiles storage</li>
+              <li>Basic profile customization</li>
+              <li>200 character bio limit</li>
+              <li>Standard rmail (100 messages)</li>
+              <li>10 login history entries</li>
+              <li>20 transaction history</li>
+              <li>1x daily credit multiplier</li>
+            </ul>
+          </div>
+
+          <div class="pricing-card">
+            <h2>Plus</h2>
+            <div class="price">£1<span>/month</span></div>
+
+            <form action="https://ko-fi.com/mistium">
+              <input class="pricing-btn" type="submit" value="Join Plus">
+            </form>
+
+            <p class="pricing-desc">
+              Support Rotur development and unlock enhanced features.
+            </p>
+
+            <ul class="features">
+              <li>15MB originFiles storage</li>
+              <li>Discord Supporter Role</li>
+              <li>Bio templating</li>
+              <li>Profile notes</li>
+              <li>Supporter page recognition</li>
+              <li>Priority support</li>
+            </ul>
+          </div>
+
+          <div class="pricing-card highlight">
+            <h2>Drive</h2>
+            <div class="price">£3<span>/month</span></div>
+
+            <form action="https://ko-fi.com/mistium">
+              <input class="pricing-btn" type="submit" value="Join Drive">
+            </form>
+
+            <p class="pricing-desc">
+              Expanded storage and advanced features for power users.
+            </p>
+
+            <ul class="features">
+              <li>150MB originFiles storage</li>
+              <li>share.rotur.dev access</li>
+              <li>500 character bio limit</li>
+              <li>Animated profile pictures</li>
+              <li>1,000 rmail messages</li>
+              <li>100 login history entries</li>
+              <li>100 transaction history</li>
+              <li>2x daily credit multiplier</li>
+              <li>100MB roturPhotos storage</li>
+              <li>Advanced bio templating</li>
+            </ul>
+          </div>
+
+          <div class="pricing-card">
+            <h2>Pro</h2>
+            <div class="price">£5<span>/month</span></div>
+
+            <form action="https://ko-fi.com/mistium">
+              <input class="pricing-btn" type="submit" value="Join Pro">
+            </form>
+
+            <p class="pricing-desc">
+              Ultimate access with maximum features and storage.
+            </p>
+
+            <ul class="features">
+              <li>1GB originFiles storage</li>
+              <li>Custom roturMail address</li>
+              <li>Pro badge & recognition</li>
+              <li>1,000 character bio limit</li>
+              <li>Animated profile banners</li>
+              <li>100,000 rmail messages</li>
+              <li>500 transaction history</li>
+              <li>3x daily credit multiplier</li>
+              <li>1GB roturPhotos storage</li>
+              <li>Unlimited banner changes</li>
+              <li>URL bio templating</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="tier-compare column">
+    <h1 class="title">Plan comparison</h1>
+    <div class="rule2"></div>
+
+    <div class="tier-compare-grid">
+      <div class="tc-row tc-header">
+        <div class="tc-cell tc-feature"></div>
+        <div class="tc-cell tc-tier">Free</div>
+        <div class="tc-cell tc-tier">Plus</div>
+        <div class="tc-cell tc-tier">Drive</div>
+        <div class="tc-cell tc-tier accent">Pro</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">originFiles storage</div>
+        <div class="tc-cell">5mb</div>
+        <div class="tc-cell">15mb</div>
+        <div class="tc-cell">150mb</div>
+        <div class="tc-cell">1gb</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">roturPhotos storage</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">100mb</div>
+        <div class="tc-cell">1gb</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">roturShare access</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">✓</div>
+        <div class="tc-cell">✓</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">roturMail inbox size</div>
+        <div class="tc-cell">100</div>
+        <div class="tc-cell">Default</div>
+        <div class="tc-cell">1,000</div>
+        <div class="tc-cell">100,000</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Profile notes</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">✓</div>
+        <div class="tc-cell">✓</div>
+        <div class="tc-cell">✓</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Animated profile picture</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">✓</div>
+        <div class="tc-cell">✓</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Animated banner</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">✓</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Bio templating</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">✓</div>
+        <div class="tc-cell">✓ (+ time)</div>
+        <div class="tc-cell">✓ (+ URLs)</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Bio length</div>
+        <div class="tc-cell">200 chars</div>
+        <div class="tc-cell">Default</div>
+        <div class="tc-cell">500 chars</div>
+        <div class="tc-cell">1000 chars</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Login history</div>
+        <div class="tc-cell">10</div>
+        <div class="tc-cell">Default</div>
+        <div class="tc-cell">100</div>
+        <div class="tc-cell">100</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Transaction history</div>
+        <div class="tc-cell">20</div>
+        <div class="tc-cell">Default</div>
+        <div class="tc-cell">100</div>
+        <div class="tc-cell">500</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Daily credit multiplier</div>
+        <div class="tc-cell">1x</div>
+        <div class="tc-cell">Default</div>
+        <div class="tc-cell">2x</div>
+        <div class="tc-cell">3x</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Supporter recognition</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">Supporter page</div>
+        <div class="tc-cell">✓</div>
+        <div class="tc-cell">Pro badge</div>
+      </div>
+
+      <div class="tc-row">
+        <div class="tc-cell tc-feature">Custom roturMail address</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">x</div>
+        <div class="tc-cell">✓</div>
+      </div>
+    </div>
+  </section>
+
+  <div id="footer" class="column">
+    <div class="legal row">
+      <a href="https://rotur.dev/terms-of-service.html">
+        Terms of Service
+      </a>
+      <div class="vrule2"></div>
+      <a href="https://rotur.dev/privacy-policy.html">
+        Privacy Policy
+      </a>
+    </div>
+    <p class="body">
+      © 2026 Rotur. All rights reserved.
+    </p>
+  </div>
+
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+  <script>
+    document.querySelectorAll('.tc-cell').forEach(cell => {
+      if (cell.textContent.trim() === 'x') {
+        cell.classList.add('unavailable');
+      }
+    });
+  </script>
+  <script src="../nav.js"></script>
+</body>
+
+</html>
