@@ -71,7 +71,8 @@
             } else {
                 // If no token, setup auth button
                 document.getElementById('auth-button').addEventListener('click', function() {
-                    window.location.href = "https://rotur.dev/auth";
+                    const returnTo = encodeURIComponent(window.location.href);
+                    window.location.href = `https://rotur.dev/auth?return_to=${returnTo}`;
                 });
             }
         };
