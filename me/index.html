@@ -26,6 +26,7 @@
             <span class="user-handle" id="sidebar-handle">@username</span>
           </div>
         </div>
+        <button class="logout-btn" onclick="logout()"><i data-lucide="log-out"></i>Logout</button>
       </div>
     </aside>
 
@@ -52,6 +53,7 @@
             <span class="user-handle" id="mobile-sidebar-handle">@username</span>
           </div>
         </div>
+        <button class="logout-btn" onclick="logout()"><i data-lucide="log-out"></i>Logout</button>
       </div>
     </div>
 
@@ -306,7 +308,7 @@
       let token = params.get('token');
       if (token) {
         localStorage.setItem('rotur_token', token);
-        history.replaceState({}, title, pathname);
+        history.replaceState({}, document.title, window.location.pathname + window.location.hash);
       } else {
         token = localStorage.getItem('rotur_token');
       }
@@ -324,6 +326,11 @@
     }
 
     function closeModal(id) { el(id).classList.remove('active'); }
+
+    function logout() {
+      localStorage.removeItem('rotur_token');
+      window.location.href = '/';
+    }
 
     function formatDate(d) {
       return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
