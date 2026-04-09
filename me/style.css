@@ -1098,6 +1098,7 @@ body {
 
 .mobile-sidebar-overlay.active {
   opacity: 1;
+  display: block;
 }
 
 /* Mobile Sidebar */
@@ -1117,6 +1118,7 @@ body {
 
 .mobile-sidebar.active {
   right: 0;
+  display: flex;
 }
 
 .mobile-sidebar-header {
@@ -1419,10 +1421,6 @@ body {
   }
 
   .mobile-nav {
-    display: block;
-  }
-
-  .mobile-sidebar-overlay {
     display: block;
   }
 
