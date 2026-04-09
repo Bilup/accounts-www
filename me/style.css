@@ -39,10 +39,6 @@ body {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
 }
 
 .sidebar-header {
@@ -184,9 +180,10 @@ body {
 
 .main-content {
   flex: 1;
-  margin-left: var(--sidebar-width);
+  margin: auto;
   padding: 2rem;
   min-height: 100vh;
+  max-width: 50%;
 }
 
 .profile-header {
@@ -956,12 +953,13 @@ body {
 
   .info-value {
     width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .info-edit-btn {
-    align-self: flex-start;
+    flex-shrink: 0;
   }
 }
 
@@ -1029,6 +1027,17 @@ body {
 
   .profile-name {
     font-size: 1.5rem;
+  }
+
+  .info-value {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .info-edit-btn {
+    flex-shrink: 0;
   }
 
   .section-header, .section-body {
@@ -1430,7 +1439,9 @@ body {
 
   .main-content {
     margin-left: 0;
-    padding-top: 60px;
+    padding-top: 80px;
+    margin: 0;
+    min-width: 100%;
   }
 
   .profile-header {
@@ -1443,5 +1454,13 @@ body {
 
   .transactions-categories {
     grid-template-columns: 1fr;
+  }
+
+  .info-edit-btn {
+    opacity: 1;
+  }
+
+  .bio-edit-btn {
+    opacity: 1;
   }
 }
