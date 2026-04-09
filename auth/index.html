@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Rotur: A Web Standard for Communication.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta content="A websocket based networking and account system" property="og:description" />
+  <meta content="https://rotur.dev" property="og:url" />
+  <meta content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" property="og:image" />
+  <meta content="#3f2f3c" name="theme-color" />
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="stylesheet" href="style.css">
+  <script src="../crypto.js"></script>
+  <script src="https://hcaptcha.com/1/api.js" async defer></script>
+</head>
+
+<body>
+  <div id="g_id_onload" data-client_id="228445846106-ttt7glup5n94jfhlj7idmsj4r0vo6bs4.apps.googleusercontent.com"
+    data-callback="handleCredential" data-auto_prompt="false"></div>
+
+  <div class="modal">
+    <div class="modal-content">
+      <div class="account-sidebar">
+        <div class="sidebar-header">
+          <h2>Choose an account</h2>
+          <p>to continue to Rotur</p>
+        </div>
+        <div class="account-list" id="account-list"></div>
+        <button class="add-account-btn" id="add-account-btn">
+          <i class="fas fa-user-plus"></i> Use another account
+        </button>
+      </div>
+
+      <div class="main-content" id="main-content">
+        <div class="logo-container">
+          <img src="../Rotur Logo.png" alt="Rotur Logo" draggable="false">
+        </div>
+
+        <div id="signin-form">
+          <h1>Sign in to Rotur</h1>
+          <p class="subtitle">Use your Rotur account</p>
+          <form id="signin-form-element">
+            <div class="form-group">
+              <input type="text" name="username" placeholder="Username" required>
+            </div>
+            <div class="form-group">
+              <input type="password" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn-primary">Sign in</button>
+          </form>
+          <div class="security-notice">
+            <i class="fas fa-exclamation-triangle warning-icon"></i>
+            <div>
+              <strong>Security Notice</strong>
+              <p>This will give the requesting website access to your Rotur account.</p>
+            </div>
+          </div>
+          <div class="tos-links">
+            <p>Don't have an account? <button type="button" id="show-signup-btn"
+                style="background:none;border:none;color:var(--text-secondary);cursor:pointer;text-decoration:underline;font-size:0.75rem;">Create
+                one</button></p>
+            <p style="margin-top:0.5rem;"><a href="../terms-of-service.html?from=auth">Terms of Service</a> •
+              <a href="../privacy-policy.html?from=auth">Privacy Policy</a></p>
+          </div>
+          <div style="width:100%;max-width:320px;display:flex;justify-content:center;margin-top:1rem;">
+            <button class="alt-signin-btn" id="alt-signin-btn">
+              <i class="fas fa-key"></i> Alternative sign-in
+            </button>
+          </div>
+          <div class="google-signin-container" id="google-signin-container">
+            <div class="g_id_signin" data-type="standard" data-size="large" data-text="continue_with"
+              data-theme="outline" data-shape="rectangular" data-logo_alignment="left"></div>
+            <p class="google-deprecated"><strong>Deprecated:</strong> Google sign-in is only for existing
+              accounts. Please use username/password for new accounts.</p>
+          </div>
+        </div>
+
+        <div id="signup-form" style="display:none;">
+          <h1>Create account</h1>
+          <p class="subtitle">Join Rotur today</p>
+          <form id="signup-form-element">
+            <div class="form-group">
+              <input type="text" name="username" placeholder="Choose a username" required minlength="3"
+                maxlength="20">
+            </div>
+            <div class="form-group">
+              <input type="email" name="email" placeholder="Email address" required>
+            </div>
+            <div class="form-group">
+              <input type="password" name="password" placeholder="Create password" required minlength="8">
+            </div>
+            <div class="form-group">
+              <input type="password" name="confirm-password" placeholder="Confirm password" required
+                minlength="8">
+            </div>
+            <div class="form-group" style="margin-top:0.75rem;">
+              <div class="h-captcha" data-sitekey="09def114-5bba-4ba6-8302-640aec7c1df2"></div>
+            </div>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </form>
+          <div class="tos-links" style="margin-top:1rem;">
+            <p>Already have an account? <button type="button" id="show-signin-btn"
+                style="background:none;border:none;color:var(--text-secondary);cursor:pointer;text-decoration:underline;font-size:0.75rem;">Sign
+                in</button></p>
+            <p style="margin-top:0.5rem;"><a href="../terms-of-service.html?from=auth">Terms of Service</a> •
+              <a href="../privacy-policy.html?from=auth">Privacy Policy</a></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="welcome-area" id="welcome-area">
+        <div class="welcome-logo">
+          <img src="../Rotur Logo.png" alt="Rotur Logo" draggable="false">
+        </div>
+        <div class="welcome-content">
+          <h1>Welcome to Rotur</h1>
+          <p>Sign in to access your account or create a new one.</p>
+        </div>
+        <div class="welcome-buttons">
+          <button class="btn-welcome btn-welcome-primary" id="welcome-signin-btn">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+          </button>
+          <button class="btn-welcome btn-welcome-secondary" id="welcome-signup-btn">
+            <i class="fas fa-user-plus"></i> Create Account
+          </button>
+        </div>
+        <div class="tos-links">
+          <p><a href="../terms-of-service.html?from=auth">Terms of Service</a> • <a
+              href="../privacy-policy.html?from=auth">Privacy Policy</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="https://kit.fontawesome.com/16f6b70bf6.js" crossorigin="anonymous"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+
+</html>
