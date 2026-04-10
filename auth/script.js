@@ -4,8 +4,8 @@ let account = '';
 let savedAccounts = [];
 let systemName = 'rotur';
 
-const $ = sel => document.querySelector(sel);
-const $$ = sel => document.querySelectorAll(sel);
+const $ = (sel, ctx) => (ctx || document).querySelector(sel);
+const $$ = (sel, ctx) => (ctx || document).querySelectorAll(sel);
 const el = id => document.getElementById(id);
 
 function loadSavedAccounts() {
@@ -84,10 +84,10 @@ function showSignUpForm() {
   el('signup-form').style.display = 'block';
   $('.sidebar-header').innerHTML = '<h2>Create account</h2><p>Join Rotur today</p>';
   el('add-account-btn').innerHTML = '<i class="fas fa-arrow-left"></i> Back';
-  $$('input[name="username"]', el('signup-form'))[0].value = '';
-  $$('input[name="email"]')[0].value = '';
-  $$('input[name="password"]', el('signup-form'))[0].value = '';
-  $$('input[name="confirm-password"]')[0].value = '';
+  $('input[name="username"]', el('signup-form')).value = '';
+  $('input[name="email"]', el('signup-form')).value = '';
+  $('input[name="password"]', el('signup-form')).value = '';
+  $('input[name="confirm-password"]', el('signup-form')).value = '';
 }
 
 function showWelcome() {
@@ -96,24 +96,6 @@ function showWelcome() {
   $('.sidebar-header').innerHTML = '<h2>Choose an account</h2><p>to continue to Rotur</p>';
   el('add-account-btn').innerHTML = '<i class="fas fa-user-plus"></i> Use another account';
 }
-
-el('add-account-btn').addEventListener('click', () => {
-  const main = el('main-content');
-  if (main.classList.contains('show')) {
-    showWelcome();
-  } else {
-    showSignInForm();
-  }
-});
-
-el('welcome-signin-btn').addEventListener('click', showSignInForm);
-el('welcome-signup-btn').addEventListener('click', showSignUpForm);
-el('show-signup-btn').addEventListener('click', showSignUpForm);
-el('show-signin-btn').addEventListener('click', showSignInForm);
-
-el('alt-signin-btn').addEventListener('click', () => {
-  el('google-signin-container').classList.toggle('show');
-});
 
 function setCookie(n, v, days) {
   const d = new Date(Date.now() + days * 864e5);
@@ -258,147 +240,6 @@ function openLinkMode() {
   ensureLinkOverlay();
 }
 
-$('form', el('signin-form')).addEventListener('submit', async e => {
-  e.preventDefault();
-  const btn = $('button[type="submit"]', el('signin-form'));
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
-  btn.disabled = true;
-
-  const username = $('input[name="username"]', el('signin-form')).value;
-  const password = $('input[name="password"]', el('signin-form')).value;
-  const hash = CryptoJS.MD5(password).toString();
-
-  setCookie('username', username, 7);
-
-  try {
-    const data = await requestAccount(username, hash);
-    if (!data.error) {
-      account = data;
-      saveAccount(data);
-      updateModalForLoggedInUser();
-    } else {
-      if (data.requiresTOSAcceptance) {
-        const url = new URL('../terms-of-service.html', location.href);
-        url.searchParams.set('token', data.key);
-        if (return_to) url.searchParams.set('return_to', return_to);
-        location.href = url.toString();
-        return;
-      }
-      btn.textContent = data.error || 'Invalid credentials';
-      btn.style.background = 'var(--danger)';
-      setTimeout(() => {
-        btn.textContent = 'Sign in';
-        btn.style.background = '';
-        btn.disabled = false;
-      }, 2000);
-    }
-  } catch (ex) {
-    btn.textContent = 'Error occurred';
-    btn.style.background = 'var(--danger)';
-    setTimeout(() => {
-      btn.textContent = 'Sign in';
-      btn.style.background = '';
-      btn.disabled = false;
-    }, 2000);
-  }
-});
-
-$('form', el('signup-form')).addEventListener('submit', async e => {
-  e.preventDefault();
-  const btn = $('button[type="submit"]', el('signup-form'));
-  const username = $$('input[name="username"]')[1].value;
-  const email = $$('input[name="email"]')[0].value;
-  const password = $$('input[name="password"]')[1].value;
-  const confirm = $$('input[name="confirm-password"]')[0].value;
-
-  const htoken = hcaptcha.getResponse();
-  if (!htoken) {
-    btn.textContent = 'Complete the captcha';
-    btn.style.background = 'var(--danger)';
-    setTimeout(() => {
-      btn.textContent = 'Create Account';
-      btn.style.background = '';
-    }, 2000);
-    return;
-  }
-  if (password !== confirm) {
-    btn.textContent = 'Passwords do not match';
-    btn.style.background = 'var(--danger)';
-    hcaptcha.reset();
-    setTimeout(() => {
-      btn.textContent = 'Create Account';
-      btn.style.background = '';
-    }, 2000);
-    return;
-  }
-  if (password.length < 8) {
-    btn.textContent = 'Password must be 8+ characters';
-    btn.style.background = 'var(--danger)';
-    hcaptcha.reset();
-    setTimeout(() => {
-      btn.textContent = 'Create Account';
-      btn.style.background = '';
-    }, 2000);
-    return;
-  }
-
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-  btn.disabled = true;
-
-  try {
-    const hash = CryptoJS.MD5(password).toString();
-    const res = await fetch(`${API}/create_user`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, email, password: hash, system: systemName, captcha: htoken })
-    });
-    const result = await res.json();
-
-    if (result.error) {
-      hcaptcha.reset();
-      btn.textContent = result.error;
-      btn.style.background = 'var(--danger)';
-      setTimeout(() => {
-        btn.textContent = 'Create Account';
-        btn.style.background = '';
-        btn.disabled = false;
-      }, 2000);
-    } else {
-      setCookie('username', username, 7);
-      const data = await requestAccount(username, hash);
-      if (!data.error) {
-        account = data;
-        saveAccount(data);
-        updateModalForLoggedInUser();
-      } else {
-        if (data.requiresTOSAcceptance) {
-          const url = new URL('../terms-of-service.html', location.href);
-          url.searchParams.set('token', data.key);
-          if (return_to) url.searchParams.set('return_to', return_to);
-          location.href = url.toString();
-          return;
-        }
-        btn.textContent = 'Account created! Please sign in';
-        btn.style.background = 'var(--success)';
-        setTimeout(() => {
-          showSignInForm();
-          $('input[name="username"]').value = username;
-          $('input[name="password"]').focus();
-        }, 1500);
-      }
-    }
-  } catch (ex) {
-    hcaptcha.reset();
-    btn.textContent = 'Error occurred';
-    btn.style.background = 'var(--danger)';
-    setTimeout(() => {
-      btn.textContent = 'Create Account';
-      btn.style.background = '';
-      btn.disabled = false;
-    }, 2000);
-  }
-});
-
 function handleCredential(response) {
   fetch(`${API}/auth/google`, {
     method: 'POST',
@@ -448,6 +289,169 @@ window.addEventListener('load', () => {
   const systemParam = params.get('system');
   if (systemParam?.trim()) systemName = systemParam.trim();
   sessionStorage.removeItem('rotur_return_to');
+
+  el('add-account-btn').addEventListener('click', () => {
+    const main = el('main-content');
+    if (main.classList.contains('show')) {
+      showWelcome();
+    } else {
+      showSignInForm();
+    }
+  });
+
+  el('welcome-signin-btn').addEventListener('click', showSignInForm);
+  el('welcome-signup-btn').addEventListener('click', showSignUpForm);
+  el('show-signup-btn').addEventListener('click', showSignUpForm);
+  el('show-signin-btn').addEventListener('click', showSignInForm);
+  el('alt-signin-btn').addEventListener('click', () => {
+    el('google-signin-container').classList.toggle('show');
+  });
+
+  el('signin-form-element').addEventListener('submit', async e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const btn = $('button[type="submit"]', el('signin-form-element'));
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+    btn.disabled = true;
+
+    const username = $('input[name="username"]', el('signin-form-element')).value;
+    const password = $('input[name="password"]', el('signin-form-element')).value;
+    const hash = CryptoJS.MD5(password).toString();
+
+    setCookie('username', username, 7);
+
+    try {
+      const data = await requestAccount(username, hash);
+      if (!data.error) {
+        account = data;
+        saveAccount(data);
+        updateModalForLoggedInUser();
+      } else {
+        if (data.requiresTOSAcceptance) {
+          const url = new URL('../terms-of-service.html', location.href);
+          url.searchParams.set('token', data.key);
+          if (return_to) url.searchParams.set('return_to', return_to);
+          location.href = url.toString();
+          return;
+        }
+        btn.textContent = data.error || 'Invalid credentials';
+        btn.style.background = 'var(--danger)';
+        setTimeout(() => {
+          btn.textContent = 'Sign in';
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 2000);
+      }
+    } catch (ex) {
+      btn.textContent = 'Error occurred';
+      btn.style.background = 'var(--danger)';
+      setTimeout(() => {
+        btn.textContent = 'Sign in';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    }
+  });
+
+  el('signup-form-element').addEventListener('submit', async e => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('signup form submitted');
+    const signupForm = el('signup-form-element');
+    const btn = $('button[type="submit"]', signupForm);
+    const username = $('input[name="username"]', signupForm).value;
+    const email = $('input[name="email"]', signupForm).value;
+    const password = $('input[name="password"]', signupForm).value;
+    const confirm = $('input[name="confirm-password"]', signupForm).value;
+    console.log('username:', username, 'email:', email);
+
+    const htoken = hcaptcha.getResponse();
+    if (!htoken) {
+      btn.textContent = 'Complete the captcha';
+      btn.style.background = 'var(--danger)';
+      setTimeout(() => {
+        btn.textContent = 'Create Account';
+        btn.style.background = '';
+      }, 2000);
+      return;
+    }
+    if (password !== confirm) {
+      btn.textContent = 'Passwords do not match';
+      btn.style.background = 'var(--danger)';
+      hcaptcha.reset();
+      setTimeout(() => {
+        btn.textContent = 'Create Account';
+        btn.style.background = '';
+      }, 2000);
+      return;
+    }
+    if (password.length < 8) {
+      btn.textContent = 'Password must be 8+ characters';
+      btn.style.background = 'var(--danger)';
+      hcaptcha.reset();
+      setTimeout(() => {
+        btn.textContent = 'Create Account';
+        btn.style.background = '';
+      }, 2000);
+      return;
+    }
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    btn.disabled = true;
+
+    try {
+      const hash = CryptoJS.MD5(password).toString();
+      const res = await fetch(`${API}/create_user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password: hash, system: systemName, captcha: htoken })
+      });
+      const result = await res.json();
+
+      if (result.error) {
+        hcaptcha.reset();
+        btn.textContent = result.error;
+        btn.style.background = 'var(--danger)';
+        setTimeout(() => {
+          btn.textContent = 'Create Account';
+          btn.style.background = '';
+          btn.disabled = false;
+        }, 2000);
+      } else {
+        setCookie('username', username, 7);
+        const data = await requestAccount(username, hash);
+        if (!data.error) {
+          account = data;
+          saveAccount(data);
+          updateModalForLoggedInUser();
+        } else {
+          if (data.requiresTOSAcceptance) {
+            const url = new URL('../terms-of-service.html', location.href);
+            url.searchParams.set('token', data.key);
+            if (return_to) url.searchParams.set('return_to', return_to);
+            location.href = url.toString();
+            return;
+          }
+          btn.textContent = 'Account created! Please sign in';
+          btn.style.background = 'var(--success)';
+          setTimeout(() => {
+            showSignInForm();
+            $('input[name="username"]').value = username;
+            $('input[name="password"]').focus();
+          }, 1500);
+        }
+      }
+    } catch (ex) {
+      hcaptcha.reset();
+      btn.textContent = 'Error occurred';
+      btn.style.background = 'var(--danger)';
+      setTimeout(() => {
+        btn.textContent = 'Create Account';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    }
+  });
 
   const username = getCookie('username');
   if (username) {
