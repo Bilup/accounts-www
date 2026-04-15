@@ -55,6 +55,16 @@ function renderAccountList() {
   });
 }
 
+function loadStylesheet() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const stylesUrl = urlParams.get('styles') || './auth.css';
+
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = stylesUrl;
+  document.head.appendChild(link);
+}
+
 function selectSavedAccount(username) {
   showSignInForm();
   const accounts = loadSavedAccounts();
@@ -281,6 +291,8 @@ function checkTOSAcceptance(data) {
 }
 
 window.addEventListener('load', () => {
+  loadStylesheet();
+  
   savedAccounts = loadSavedAccounts();
   renderAccountList();
 
