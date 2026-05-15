@@ -280,7 +280,7 @@ async function requestAccount(username, password) {
 }
 
 function verifyTokenAndProceed(token) {
-  const returnTo = sessionStorage.getItem('rotur_return_to') || 'https://rotur.dev/me';
+  const returnTo = return_to;
   
   if (window.opener || window.parent !== window) {
     if (window.opener) {
@@ -315,7 +315,8 @@ window.addEventListener('load', () => {
   renderAccountList();
 
   const params = new URLSearchParams(location.search);
-  return_to = params.get('return_to') ?? sessionStorage.getItem('rotur_return_to') ?? 'https://rotur.dev/me';
+  const savedReturnTo = sessionStorage.getItem('rotur_return_to');
+  return_to = params.get('return_to') ?? savedReturnTo ?? 'https://rotur.dev/me';
   const systemParam = params.get('system');
   if (systemParam?.trim()) systemName = systemParam.trim();
   sessionStorage.removeItem('rotur_return_to');

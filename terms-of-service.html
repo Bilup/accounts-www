@@ -997,6 +997,7 @@
         window.onload = async function () {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
+            const returnTo = urlParams.get('return_to') || sessionStorage.getItem('rotur_return_to');
             const fromAuth = urlParams.get('from') === 'auth' || document.referrer.includes('auth/index.html');
 
             let userToken = token;
@@ -1004,6 +1005,7 @@
             if (token) {
                 const newUrl = new URL(window.location);
                 newUrl.searchParams.delete('token');
+                newUrl.searchParams.delete('return_to');
                 if (fromAuth) {
                     newUrl.searchParams.set('from', 'auth');
                 }
@@ -1029,10 +1031,12 @@
                             document.getElementById('success-container').style.display = 'block';
                             document.getElementById('token-display').innerHTML = '<strong>Terms of Service accepted successfully!</strong><br>Redirecting you back to continue...';
 
-                            const returnTo = sessionStorage.getItem('rotur_return_to');
                             const authUrl = new URL('./auth', window.location.href);
                             authUrl.searchParams.set('token', userToken);
-                            if (returnTo) authUrl.searchParams.set('return_to', returnTo);
+                            if (returnTo) {
+                                sessionStorage.setItem('rotur_return_to', returnTo);
+                                authUrl.searchParams.set('return_to', returnTo);
+                            }
                             setTimeout(() => window.location.href = authUrl.toString(), 1500);
                         } else {
                             button.innerHTML = 'Error - Try Again';
