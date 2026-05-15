@@ -279,6 +279,51 @@ async function requestAccount(username, password) {
   return json;
 }
 
+async function verifyTokenAndProceed(token) {
+  showLoading();
+  try {
+    const res = await fetch(`${API}/get_user?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+    
+    if (data.error) {
+      hideLoading();
+      alert('Authentication failed: ' + data.error);
+      return;
+    }
+    
+    if (`${data['sys.tos_accepted']}` !== 'true') {
+      hideLoading();
+      if (return_to) sessionStorage.setItem('rotur_return_to', return_to);
+      const url = new URL('../terms-of-service.html', location.href);
+      url.searchParams.set('token', data.key);
+      location.href = url.toString();
+      return;
+    }
+    
+    account = data;
+    saveAccount(data);
+    hideLoading();
+    
+    if (window.opener) {
+      window.opener.postMessage({ type: 'rotur-auth-token', token: account.key }, '*');
+    }
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'rotur-auth-token', token: account.key }, '*');
+    }
+    
+    if (return_to && return_to !== 'https://rotur.dev/me') {
+      const finalUrl = new URL(return_to);
+      finalUrl.searchParams.set('token', account.key);
+      location.href = finalUrl.toString();
+    } else {
+      location.href = 'https://rotur.dev/me?token=' + encodeURIComponent(account.key);
+    }
+  } catch (ex) {
+    hideLoading();
+    alert('Authentication error: ' + ex.message);
+  }
+}
+
 function checkTOSAcceptance(data) {
   if (`${data['sys.tos_accepted']}` !== 'true') {
     if (return_to) sessionStorage.setItem('rotur_return_to', return_to);
@@ -301,6 +346,11 @@ window.addEventListener('load', () => {
   const systemParam = params.get('system');
   if (systemParam?.trim()) systemName = systemParam.trim();
   sessionStorage.removeItem('rotur_return_to');
+  
+  if (tokenParam) {
+    verifyTokenAndProceed(tokenParam);
+    return;
+  }
 
   el('add-account-btn').addEventListener('click', () => {
     const main = el('main-content');
