@@ -1029,32 +1029,11 @@
                             document.getElementById('success-container').style.display = 'block';
                             document.getElementById('token-display').innerHTML = '<strong>Terms of Service accepted successfully!</strong><br>Redirecting you back to continue...';
 
-                            if (window.opener) {
-                                window.opener.postMessage({
-                                    type: 'rotur-auth-token',
-                                    token: userToken
-                                }, '*');
-                            }
-
-                            if (window.parent !== window) {
-                                window.parent.postMessage({
-                                    type: 'rotur-auth-token',
-                                    token: userToken
-                                }, '*');
-                            }
-
                             const returnTo = sessionStorage.getItem('rotur_return_to');
-                            
-                            if (returnTo) {
-                                sessionStorage.setItem('rotur_return_to', returnTo);
-                            }
-                            
                             const authUrl = new URL('./auth', window.location.href);
                             authUrl.searchParams.set('token', userToken);
-                            if (returnTo) {
-                                authUrl.searchParams.set('return_to', returnTo);
-                            }
-                            window.location.href = authUrl.toString();
+                            if (returnTo) authUrl.searchParams.set('return_to', returnTo);
+                            setTimeout(() => window.location.href = authUrl.toString(), 1500);
                         } else {
                             button.innerHTML = 'Error - Try Again';
                             button.style.backgroundColor = '#e74c3c';

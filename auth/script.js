@@ -279,49 +279,22 @@ async function requestAccount(username, password) {
   return json;
 }
 
-async function verifyTokenAndProceed(token) {
-  showLoading();
-  try {
-    const res = await fetch(`${API}/get_user?token=${encodeURIComponent(token)}`);
-    const data = await res.json();
-    
-    if (data.error) {
-      hideLoading();
-      alert('Authentication failed: ' + data.error);
-      return;
-    }
-    
-    if (`${data['sys.tos_accepted']}` !== 'true') {
-      hideLoading();
-      if (return_to) sessionStorage.setItem('rotur_return_to', return_to);
-      const url = new URL('../terms-of-service.html', location.href);
-      url.searchParams.set('token', data.key);
-      location.href = url.toString();
-      return;
-    }
-    
-    account = data;
-    saveAccount(data);
-    hideLoading();
-    
+function verifyTokenAndProceed(token) {
+  const returnTo = sessionStorage.getItem('rotur_return_to') || 'https://rotur.dev/me';
+  
+  if (window.opener || window.parent !== window) {
     if (window.opener) {
-      window.opener.postMessage({ type: 'rotur-auth-token', token: account.key }, '*');
-    }
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: 'rotur-auth-token', token: account.key }, '*');
-    }
-    
-    if (return_to && return_to !== 'https://rotur.dev/me') {
-      const finalUrl = new URL(return_to);
-      finalUrl.searchParams.set('token', account.key);
-      location.href = finalUrl.toString();
+      window.opener.postMessage({ type: 'rotur-auth-token', token: token, return_to: returnTo }, '*');
+      setTimeout(() => window.close(), 300);
     } else {
-      location.href = 'https://rotur.dev/me?token=' + encodeURIComponent(account.key);
+      window.parent.postMessage({ type: 'rotur-auth-token', token: token, return_to: returnTo }, '*');
     }
-  } catch (ex) {
-    hideLoading();
-    alert('Authentication error: ' + ex.message);
+    return;
   }
+  
+  const finalUrl = new URL(returnTo);
+  finalUrl.searchParams.set('token', token);
+  location.href = finalUrl.toString();
 }
 
 function checkTOSAcceptance(data) {
@@ -347,6 +320,7 @@ window.addEventListener('load', () => {
   if (systemParam?.trim()) systemName = systemParam.trim();
   sessionStorage.removeItem('rotur_return_to');
   
+  const tokenParam = params.get('token');
   if (tokenParam) {
     verifyTokenAndProceed(tokenParam);
     return;
