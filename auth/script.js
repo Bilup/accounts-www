@@ -328,10 +328,9 @@ async function verifyResend() {
   if (!pendingVerification) return;
   const { token } = pendingVerification;
   try {
-    const res = await fetch(`${API}/me/resend_verification`, {
+    const res = await fetch(`${API}/me/resend_verification?auth=${token}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ auth: token })
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
