@@ -3,6 +3,7 @@ let return_to = '';
 let account = '';
 let savedAccounts = [];
 let systemName = 'rotur';
+let pendingVerification = null;
 
 const $ = (sel, ctx) => (ctx || document).querySelector(sel);
 const $$ = (sel, ctx) => (ctx || document).querySelectorAll(sel);
@@ -271,12 +272,88 @@ async function requestAccount(username, password) {
   const res = await fetch(`${API}/get_user?username=${username}&password=${password}`);
   const json = await res.json();
   if (json.error) {
+
     if (json.error.includes('Terms-Of-Service') && json.token) {
       return { error: json.error, key: json.token, username, 'sys.tos_accepted': false, requiresTOSAcceptance: true };
     }
+
+    if (json.error === 'Email address not verified' && json.token) {
+      return { error: json.error, token: json.token, username: json.username, requiresEmailVerification: true };
+    }
+
     return { error: json.error };
   }
   return json;
+}
+
+function showEmailVerificationUI(info) {
+  pendingVerification = { token: info.token, username: info.username };
+  const signinForm = el('signin-form');
+  const verifyPrompt = el('email-verify-prompt');
+  const verifyAddr = el('verify-email-address');
+  const verifyMsg = el('verify-msg');
+  if (signinForm) signinForm.style.display = 'none';
+  if (verifyPrompt) verifyPrompt.style.display = 'block';
+  if (verifyAddr) verifyAddr.textContent = info.username;
+  if (verifyMsg) verifyMsg.style.display = 'none';
+}
+
+async function verifyDone() {
+  if (!pendingVerification) return;
+  const { token } = pendingVerification;
+  try {
+    const res = await fetch(`${API}/me?auth=${token}`);
+    const data = await res.json();
+    if (data['sys.email_verified']) {
+      account = data;
+      saveAccount(data);
+      updateModalForLoggedInUser();
+      el('email-verify-prompt').style.display = 'none';
+      pendingVerification = null;
+    } else {
+      el('verify-msg').textContent = 'Email still not verified. Please check your inbox.';
+      el('verify-msg').style.display = 'block';
+    }
+  } catch (e) {
+    console.error('verifyDone error:', e);
+    const msgEl = el('verify-msg');
+    if (msgEl) {
+      msgEl.textContent = 'Error checking verification.';
+      msgEl.style.display = 'block';
+    }
+  }
+}
+
+async function verifyResend() {
+  if (!pendingVerification) return;
+  const { token } = pendingVerification;
+  try {
+    const res = await fetch(`${API}/me/resend_verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auth: token })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const msgEl = el('verify-msg');
+    if (msgEl) {
+      msgEl.textContent = data.message || 'Verification email sent.';
+      msgEl.style.display = 'block';
+    }
+  } catch (e) {
+    console.error('verifyResend error:', e);
+    const msgEl = el('verify-msg');
+    if (msgEl) {
+      msgEl.textContent = 'Failed to resend email.';
+      msgEl.style.display = 'block';
+    }
+  }
+}
+
+function verifyCancel() {
+  pendingVerification = null;
+  el('email-verify-prompt').style.display = 'none';
+  el('signin-form').style.display = 'block';
 }
 
 function verifyTokenAndProceed(token) {
@@ -344,6 +421,14 @@ window.addEventListener('load', () => {
     el('google-signin-container').classList.toggle('show');
   });
 
+
+  const verifyDoneBtn = el('verify-done-btn');
+  if (verifyDoneBtn) verifyDoneBtn.addEventListener('click', verifyDone);
+  const verifyResendBtn = el('verify-resend-btn');
+  if (verifyResendBtn) verifyResendBtn.addEventListener('click', verifyResend);
+  const verifyCancelBtn = el('verify-cancel-btn');
+  if (verifyCancelBtn) verifyCancelBtn.addEventListener('click', verifyCancel);
+
   el('signin-form-element').addEventListener('submit', async e => {
     e.preventDefault();
     e.stopPropagation();
@@ -364,11 +449,19 @@ window.addEventListener('load', () => {
         saveAccount(data);
         updateModalForLoggedInUser();
       } else {
+
         if (data.requiresTOSAcceptance) {
           const url = new URL('../terms-of-service.html', location.href);
           url.searchParams.set('token', data.key);
           if (return_to) url.searchParams.set('return_to', return_to);
           location.href = url.toString();
+          return;
+        }
+
+        if (data.requiresEmailVerification) {
+          showEmailVerificationUI(data);
+          btn.disabled = false;
+          btn.textContent = 'Sign in';
           return;
         }
         btn.textContent = data.error || 'Invalid credentials';
