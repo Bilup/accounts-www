@@ -4,7 +4,8 @@ import preact from '@preact/preset-vite'
 export default defineConfig({
   plugins: [preact()],
   publicDir: 'public',
-  build: {
+  build: { // sourcemap disabled
+    sourcemap: false,
     outDir: 'dist',
   },
   css: {
