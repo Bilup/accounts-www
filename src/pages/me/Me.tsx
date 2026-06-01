@@ -206,7 +206,7 @@ export function Me() {
                 You need to be signed in to view your Rotur account dashboard.
               </p>
               <a
-                href={`/auth?return_to=${encodeURIComponent("/me")}`}
+                href={`/auth?return_to=${encodeURIComponent(`${window.location.origin}/me`)}`}
                 class={s.btnPrimary}
               >
                 <LogIn size={14} /> Sign in
