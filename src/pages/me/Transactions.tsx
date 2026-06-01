@@ -115,6 +115,20 @@ const TYPE_META: Record<
     icon: Gift,
     color: "#facc15",
   },
+  escrow_in: {
+    label: "Escrow Received",
+    isIncome: true,
+    category: "transfer",
+    icon: ArrowDownLeft,
+    color: "#4ade80",
+  },
+  escrow_out: {
+    label: "Escrow Sent",
+    isIncome: false,
+    category: "transfer",
+    icon: ArrowUpRight,
+    color: "#f87171",
+  },
 };
 
 const RANGE_LABELS: Record<RangeKey, string> = {

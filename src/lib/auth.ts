@@ -46,7 +46,9 @@ export type TransactionType =
   | "key_sale"
   | "key_buy"
   | "gift_create"
-  | "gift_claimed";
+  | "gift_claimed"
+  | "escrow_in"
+  | "escrow_out";
 
 export type Transaction = {
   type: TransactionType;

@@ -4,6 +4,19 @@ import {
   useRef,
   useMemo,
 } from "preact/hooks";
+import {
+  Key,
+  PlusCircle,
+  Copy,
+  Trash2,
+  RotateCcw,
+  X,
+  Shield,
+  Clock,
+  Globe,
+  FileText,
+  ExternalLink,
+} from "lucide-preact";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { useAuth, getToken } from "../lib/auth";
@@ -104,6 +117,13 @@ function statusOf(token: SubToken): { label: string; cls: string } {
   return { label: "Active", cls: "tagActive" };
 }
 
+type TabName = "your-tokens" | "create-token";
+
+const TABS: { id: TabName; label: string; icon: typeof Key }[] = [
+  { id: "your-tokens", label: "Your Tokens", icon: Key },
+  { id: "create-token", label: "Create Token", icon: PlusCircle },
+];
+
 export function TokenManager() {
   const { user } = useAuth();
   const currentUser = user?.username || "";
@@ -111,13 +131,12 @@ export function TokenManager() {
   const [tokens, setTokens] = useState<SubToken[]>([]);
   const [tokensLoading, setTokensLoading] = useState(false);
   const [schema, setSchema] = useState<PermissionSchema | null>(null);
-
-  const [expandedTokens, setExpandedTokens] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [selectedToken, setSelectedToken] = useState<SubToken | null>(null);
   const [tokenMessages, setTokenMessages] = useState<
     Record<string, { text: string; type: "success" | "error" }>
   >({});
+
+  const [activeTab, setActiveTab] = useState<TabName>("your-tokens");
 
   // Create form state
   const [createName, setCreateName] = useState("");
@@ -155,6 +174,14 @@ export function TokenManager() {
       fetchSchema();
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && selectedToken) setSelectedToken(null);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [selectedToken]);
 
   // ── Auth ──
 
@@ -382,9 +409,7 @@ export function TokenManager() {
     }
   }
 
-  async function saveEditedPerms(tokenId: string) {
-    const perms = editingPerms[tokenId];
-    if (!perms) return;
+  async function saveEditedPerms(tokenId: string, perms: Set<string>) {
     if (perms.size === 0) {
       setTokenMsg(tokenId, "At least one permission is required", "error");
       return;
@@ -449,6 +474,7 @@ export function TokenManager() {
       );
       const data = await res.json();
       if (res.ok) {
+        setSelectedToken(null);
         fetchUserTokens();
       } else {
         setTokenMsg(tokenId, data.error || "Failed to delete", "error");
@@ -476,10 +502,6 @@ export function TokenManager() {
     }
   }
 
-  function toggleTokenExpand(tokenId: string) {
-    setExpandedTokens((prev) => ({ ...prev, [tokenId]: !prev[tokenId] }));
-  }
-
   function startEditPerms(token: SubToken) {
     setEditingPerms((prev) => ({
       ...prev,
@@ -497,618 +519,671 @@ export function TokenManager() {
 
   // ── Render ──
 
-  return (
-    <div class={s.page}>
-      <Header />
-      <div class={s.wrapper}>
-        <h1 class={s.title}>Token Manager</h1>
-        <p class={s.subtitle}>
-          Create and manage permission-scoped sub-tokens for the apps you use.
-        </p>
-        <div class={s.rule} />
-
-          <div class={s.userInfo}>
-            <div>
-              <div class={s.welcomeText}>
-                Welcome, <strong>{escapeHtml(currentUser)}</strong>!
+  if (!currentUser) {
+    return (
+      <div>
+        <Header />
+        <div class={s.page}>
+          <div class={s.layout}>
+            <div class={s.authRequired}>
+              <div class={s.authRequiredIcon}>
+                <Key size={28} />
               </div>
-              <p class={s.welcomeSub}>
-                Sub-tokens start with <code>rotur_st_</code> and can only
-                perform actions you've explicitly allowed.
+              <div class={s.authRequiredTitle}>
+                Sign in to manage sub-tokens
+              </div>
+              <p class={s.authRequiredText}>
+                Sign in to create and manage permission-scoped sub-tokens for
+                the apps you use.
+              </p>
+              <a
+                href={`/auth?return_to=${encodeURIComponent("/tokens")}`}
+                class={s.btnPrimary}
+              >
+                Sign in
+              </a>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Header />
+      <div class={s.page}>
+        <div class={s.layout}>
+          <div class={s.pageHeader}>
+            <div>
+              <h1 class={s.pageTitle}>Token Manager</h1>
+              <p class={s.pageSubtitle}>
+                Create and manage permission-scoped sub-tokens for the apps you
+                use
               </p>
             </div>
+          </div>
 
-            {/* Newly created token reveal */}
-            {createdToken && (
-              <div class={s.tokenReveal}>
-                <h3 class={s.tokenRevealTitle}>
-                  <i class="fas fa-check-circle" /> Token created:{" "}
-                  {escapeHtml(createdToken.name)}
-                </h3>
-                <p class={s.tokenRevealText}>
-                  Copy this token now.{" "}
-                  <strong>It will never be shown again.</strong> Store it
-                  somewhere safe, you'll need to provide it to the app that
-                  requested it.
-                </p>
-                <div class={s.tokenRevealValue}>
-                  <code>{createdToken.token}</code>
-                  <button
-                    class={s.copyButton}
-                    onClick={() =>
-                      copyToClipboard(createdToken.token, "__new__")
-                    }
-                  >
-                    Copy
-                  </button>
-                </div>
+          {/* Newly created token reveal */}
+          {createdToken && (
+            <div class={s.tokenReveal}>
+              <div class={s.tokenRevealHeader}>
+                <Shield size={16} /> Token created:{" "}
+                {escapeHtml(createdToken.name)}
+              </div>
+              <p class={s.tokenRevealText}>
+                Copy this token now.{" "}
+                <strong>It will never be shown again.</strong> Store it
+                somewhere safe, you'll need to provide it to the app that
+                requested it.
+              </p>
+              <div class={s.tokenRevealValue}>
+                <code>{createdToken.token}</code>
                 <button
-                  class={`${s.invBtn} ${s.invBtnSecondary}`}
-                  style={{ marginTop: "0.75rem" }}
-                  onClick={() => setCreatedToken(null)}
+                  class={s.copyBtn}
+                  onClick={() => copyToClipboard(createdToken.token, "__new__")}
                 >
-                  Dismiss
+                  <Copy size={12} /> Copy
                 </button>
+              </div>
+              <button
+                class={s.btnSecondary}
+                style={{ marginTop: "0.75rem" }}
+                onClick={() => setCreatedToken(null)}
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          <div class={s.tabsBar} role="tablist" aria-label="Token sections">
+            <div class={s.tabs}>
+              {TABS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={activeTab === id}
+                  class={`${s.tab} ${activeTab === id ? s.tabActive : ""}`}
+                  onClick={() => setActiveTab(id)}
+                >
+                  <Icon size={15} />
+                  <span>{label}</span>
+                  {id === "your-tokens" && tokens.length > 0 && (
+                    <span class={s.tabBadge}>{tokens.length}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div role="tabpanel" class={s.tabPanel}>
+            {activeTab === "your-tokens" && (
+              <div class={s.section}>
+                <div class={s.sectionHeader}>
+                  <div class={s.sectionTitleGroup}>
+                    <div class={s.sectionIcon}>
+                      <Key size={18} />
+                    </div>
+                    <div>
+                      <h2 class={s.sectionTitle}>Your Sub-Tokens</h2>
+                      <p class={s.sectionSubtitle}>
+                        {tokens.length}/25 created
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div class={s.sectionBody}>
+                  {tokensLoading && (
+                    <div class={s.loading}>Loading your tokens…</div>
+                  )}
+                  {!tokensLoading && tokens.length === 0 && (
+                    <div class={s.empty}>
+                      <div class={s.emptyIcon}>
+                        <Key size={24} />
+                      </div>
+                      <div class={s.emptyTitle}>No sub-tokens yet</div>
+                      <div class={s.emptyText}>
+                        Create one in the Create Token tab or grant scoped
+                        access from the /auth page.
+                      </div>
+                    </div>
+                  )}
+                  <div class={s.tokenGrid}>
+                    {tokens.map((token) => {
+                      const st = statusOf(token);
+                      return (
+                        <div
+                          key={token.id}
+                          class={`${s.tokenCard} ${token.revoked ? s.tokenCardRevoked : ""}`}
+                          onClick={() => setSelectedToken(token)}
+                        >
+                          <div class={s.tokenHeader}>
+                            <h3 class={s.tokenName}>
+                              {escapeHtml(token.name)}
+                            </h3>
+                            <span class={`${s.tokenTag} ${s[st.cls]}`}>
+                              {st.label}
+                            </span>
+                          </div>
+                          <div class={s.tokenInfo}>
+                            <div class={s.tokenInfoRow}>
+                              <span class={s.tokenInfoLabel}>Permissions:</span>
+                              <span class={s.tokenInfoValue}>
+                                {token.permissions.length}
+                              </span>
+                            </div>
+                            <div class={s.tokenInfoRow}>
+                              <span class={s.tokenInfoLabel}>Created:</span>
+                              <span class={s.tokenInfoValue}>
+                                {formatDate(token.created_at)}
+                              </span>
+                            </div>
+                            {token.origin && (
+                              <div class={s.tokenInfoRow}>
+                                <span class={s.tokenInfoLabel}>Origin:</span>
+                                <span class={s.tokenInfoValue}>
+                                  {escapeHtml(token.origin)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Tokens list */}
-            <div style={{ width: "100%" }}>
-              <h2 class={s.sectionHeading}>
-                Your Sub-Tokens ({tokens.length}/25)
-              </h2>
-              {tokensLoading && (
-                <div class={s.loading}>Loading your tokens…</div>
-              )}
-              {!tokensLoading && tokens.length === 0 && (
-                <div class={s.noTokens}>
-                  You haven't created any sub-tokens yet. Create one below or
-                  grant scoped access from the /auth page.
-                </div>
-              )}
-              {tokens.map((token) => {
-                const tokenId = token.id;
-                const isOpen = !!expandedTokens[tokenId];
-                const msg = tokenMessages[tokenId];
-                const st = statusOf(token);
-                const editing = editingPerms[tokenId];
-                const editSet = editing ?? new Set(token.permissions);
-                const editQuery = (editSearch[tokenId] || "").toLowerCase();
-                const editFiltered = editQuery
-                  ? allPerms.filter((p) => p.toLowerCase().includes(editQuery))
-                  : allPerms;
-                const editGroups = categorizePermissions(editFiltered);
-                const createdPerms = categorizePermissions(token.permissions);
-
-                return (
-                  <div
-                    key={tokenId}
-                    class={`${s.tokenItem} ${token.revoked ? s.tokenItemRevoked : ""} ${token.expires_at && token.expires_at < Date.now() ? s.tokenItemExpired : ""}`}
-                  >
-                    <div
-                      class={s.tokenSummary}
-                      onClick={() => toggleTokenExpand(tokenId)}
-                    >
-                      <div class={s.tokenSummaryLeft}>
-                        <h3 class={s.tokenNameTitle}>
-                          {escapeHtml(token.name)}
-                        </h3>
-                        <div class={s.tokenSummaryInfo}>
-                          <span>
-                            {token.permissions.length} permission
-                            {token.permissions.length !== 1 ? "s" : ""}
-                          </span>
-                          {token.origin && (
-                            <span>for {escapeHtml(token.origin)}</span>
-                          )}
-                          <span>Created {formatDate(token.created_at)}</span>
-                        </div>
-                      </div>
-                      <div class={s.tokenSummaryRight}>
-                        <span class={`${s.tokenTag} ${s[st.cls]}`}>
-                          {st.label}
-                        </span>
-                        <span
-                          class={`${s.expandIcon} ${isOpen ? s.expandIconOpen : ""}`}
-                        >
-                          ▼
-                        </span>
-                      </div>
+            {activeTab === "create-token" && (
+              <div class={s.section}>
+                <div class={s.sectionHeader}>
+                  <div class={s.sectionTitleGroup}>
+                    <div class={s.sectionIcon}>
+                      <PlusCircle size={18} />
                     </div>
-
-                    {/* Collapsible details */}
-                    <div
-                      class={`${s.tokenDetails} ${isOpen ? s.tokenDetailsOpen : ""}`}
-                    >
-                      <div class={s.tokenGrid}>
-                        <div class={s.infoSection}>
-                          <h4>Token Information</h4>
-                          <div class={s.infoRow}>
-                            <div class={s.infoLabel}>ID:</div>
-                            <div class={s.infoValue}>
-                              <span class={s.tokenIdValue}>{tokenId}</span>
-                              <button
-                                class={s.copyButton}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyToClipboard(tokenId, tokenId);
-                                }}
-                              >
-                                Copy
-                              </button>
-                            </div>
-                          </div>
-                          <div class={s.infoRow}>
-                            <div class={s.infoLabel}>Name:</div>
-                            <div
-                              class={s.infoValue}
-                              style={{
-                                fontWeight: "bold",
-                                color: "var(--text)",
-                              }}
-                            >
-                              {escapeHtml(token.name)}
-                            </div>
-                          </div>
-                          <div class={s.infoRow}>
-                            <div class={s.infoLabel}>Status:</div>
-                            <div class={s.infoValue}>
-                              <span class={`${s.tokenTag} ${s[st.cls]}`}>
-                                {st.label}
-                              </span>
-                            </div>
-                          </div>
-                          <div class={s.infoRow}>
-                            <div class={s.infoLabel}>Created:</div>
-                            <div class={s.infoValue}>
-                              {formatDate(token.created_at)}
-                            </div>
-                          </div>
-                          <div class={s.infoRow}>
-                            <div class={s.infoLabel}>Last used:</div>
-                            <div class={s.infoValue}>
-                              {formatDate(token.last_used_at)}
-                            </div>
-                          </div>
-                          <div class={s.infoRow}>
-                            <div class={s.infoLabel}>Expires:</div>
-                            <div class={s.infoValue}>
-                              {token.expires_at
-                                ? formatDate(token.expires_at)
-                                : "Never"}
-                            </div>
-                          </div>
-                          {token.revoked && token.revoked_at && (
-                            <div class={s.infoRow}>
-                              <div class={s.infoLabel}>Revoked at:</div>
-                              <div class={s.infoValue}>
-                                {formatDate(token.revoked_at)}
-                              </div>
-                            </div>
-                          )}
-                          {token.origin && (
-                            <div class={s.infoRow}>
-                              <div class={s.infoLabel}>Origin:</div>
-                              <div class={s.infoValue}>
-                                {escapeHtml(token.origin)}
-                              </div>
-                            </div>
-                          )}
-                          {token.websites && token.websites.length > 0 && (
-                            <div class={s.infoRow}>
-                              <div class={s.infoLabel}>Websites:</div>
-                              <div class={s.infoValue}>
-                                {token.websites
-                                  .map((w) => escapeHtml(w))
-                                  .join(", ")}
-                              </div>
-                            </div>
-                          )}
-                          {token.description && (
-                            <div class={s.infoRow}>
-                              <div class={s.infoLabel}>Description:</div>
-                              <div class={s.infoValue}>
-                                {escapeHtml(token.description)}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div class={s.infoSection}>
-                          <h4>Current Permissions</h4>
-                          {token.permissions.length === 0 ? (
-                            <div
-                              style={{
-                                color: "var(--text-subtle)",
-                                fontSize: "0.8rem",
-                              }}
-                            >
-                              No permissions.
-                            </div>
-                          ) : (
-                            <div>
-                              {Object.entries(createdPerms).map(
-                                ([cat, perms]) => (
-                                  <div
-                                    key={cat}
-                                    style={{ marginBottom: "0.5rem" }}
-                                  >
-                                    <div class={s.permGroupLabel}>{cat}</div>
-                                    <div class={s.permChips}>
-                                      {perms.map((p) => (
-                                        <span key={p} class={s.permChip}>
-                                          {p}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Edit permissions */}
-                      {!token.revoked && (
-                        <div class={s.adminSection}>
-                          <h4
-                            style={{
-                              fontFamily: "var(--font-heading)",
-                              fontWeight: 600,
-                              fontSize: "0.9rem",
-                              color: "var(--text)",
-                              margin: "0 0 0.75rem",
-                            }}
-                          >
-                            Edit Permissions
-                          </h4>
-                          {editing === null ? (
-                            <button
-                              class={`${s.invBtn} ${s.invBtnPrimary}`}
-                              onClick={() => startEditPerms(token)}
-                            >
-                              Modify Permissions
-                            </button>
-                          ) : (
-                            <div class={s.permPicker}>
-                              <div class={s.permPickerHeader}>
-                                <h5 class={s.permPickerTitle}>
-                                  Pick the permissions for this token
-                                </h5>
-                                <div class={s.permPickerActions}>
-                                  {schema?.groups &&
-                                    schema.groups.length > 0 && (
-                                      <select
-                                        class={s.formInput}
-                                        style={{
-                                          width: "auto",
-                                          padding: "0.3rem 0.5rem",
-                                          fontSize: "0.75rem",
-                                        }}
-                                        onChange={(e: any) => {
-                                          const g = schema.groups.find(
-                                            (x) => x.name === e.target.value,
-                                          );
-                                          if (g) {
-                                            setEditingPerms((prev) => ({
-                                              ...prev,
-                                              [tokenId]: applyGroup(
-                                                editSet,
-                                                g.permissions,
-                                              ),
-                                            }));
-                                          }
-                                          e.target.value = "";
-                                        }}
-                                        defaultValue=""
-                                      >
-                                        <option value="" disabled>
-                                          Apply group…
-                                        </option>
-                                        {schema.groups.map((g) => (
-                                          <option key={g.name} value={g.name}>
-                                            {g.name}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    )}
-                                  <button
-                                    class={s.permApplyBtn}
-                                    onClick={() =>
-                                      setEditingPerms((prev) => ({
-                                        ...prev,
-                                        [tokenId]: new Set(),
-                                      }))
-                                    }
-                                  >
-                                    Clear all
-                                  </button>
-                                </div>
-                              </div>
-                              <input
-                                type="text"
-                                class={`${s.formInput} ${s.permPickerSearch}`}
-                                placeholder="Search permissions…"
-                                value={editSearch[tokenId] || ""}
-                                onInput={(e: any) =>
-                                  setEditSearch((prev) => ({
-                                    ...prev,
-                                    [tokenId]: e.target.value,
-                                  }))
-                                }
-                              />
-                              {Object.entries(editGroups).map(
-                                ([cat, perms]) => (
-                                  <div key={cat} class={s.permGroup}>
-                                    <div class={s.permGroupHeader}>
-                                      <span>{cat}</span>
-                                      <div class={s.permGroupActions}>
-                                        <button
-                                          class={s.permApplyBtn}
-                                          onClick={() =>
-                                            setEditingPerms((prev) => ({
-                                              ...prev,
-                                              [tokenId]: applyGroup(
-                                                editSet,
-                                                perms,
-                                              ),
-                                            }))
-                                          }
-                                        >
-                                          All
-                                        </button>
-                                        <button
-                                          class={s.permApplyBtn}
-                                          onClick={() =>
-                                            setEditingPerms((prev) => ({
-                                              ...prev,
-                                              [tokenId]: clearGroup(
-                                                editSet,
-                                                perms,
-                                              ),
-                                            }))
-                                          }
-                                        >
-                                          None
-                                        </button>
-                                      </div>
-                                    </div>
-                                    <div class={s.permList}>
-                                      {perms.map((p) => {
-                                        const forbidden =
-                                          FORBIDDEN_PERMISSIONS.has(p);
-                                        const checked = editSet.has(p);
-                                        return (
-                                          <label
-                                            key={p}
-                                            class={`${s.permItem} ${checked ? s.permItemChecked : ""} ${forbidden ? s.permForbidden : ""}`}
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={checked}
-                                              disabled={forbidden}
-                                              onChange={() => {
-                                                if (forbidden) return;
-                                                setEditingPerms((prev) => ({
-                                                  ...prev,
-                                                  [tokenId]: togglePerm(
-                                                    editSet,
-                                                    p,
-                                                  ),
-                                                }));
-                                              }}
-                                            />
-                                            <span class={s.permItemLabel}>
-                                              {p}
-                                            </span>
-                                            {forbidden && (
-                                              <span class={s.permBadge}>
-                                                forbidden
-                                              </span>
-                                            )}
-                                          </label>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                ),
-                              )}
-                              <div class={s.permPickerFooter}>
-                                <span>
-                                  <span class={s.permPickerCount}>
-                                    {editSet.size}
-                                  </span>{" "}
-                                  permission{editSet.size !== 1 ? "s" : ""}{" "}
-                                  selected
-                                </span>
-                                <div style={{ display: "flex", gap: "0.4rem" }}>
-                                  <button
-                                    class={`${s.invBtn} ${s.invBtnSecondary}`}
-                                    onClick={() => cancelEditPerms(tokenId)}
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button
-                                    class={`${s.invBtn} ${s.invBtnPrimary}`}
-                                    onClick={() => saveEditedPerms(tokenId)}
-                                  >
-                                    Save Permissions
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Admin controls */}
-                      <div class={s.adminSection}>
-                        <div class={s.adminGrid}>
-                          <div class={s.adminGroup}>
-                            <h4>Set Token Name</h4>
-                            <div class={s.formGroup}>
-                              <input
-                                ref={(el) => {
-                                  nameInputRefs.current[tokenId] = el;
-                                }}
-                                type="text"
-                                class={s.formInput}
-                                placeholder="Set token name"
-                                defaultValue={token.name}
-                                maxLength={50}
-                              />
-                            </div>
-                            <button
-                              class={`${s.invBtn} ${s.invBtnPrimary}`}
-                              onClick={() => renameToken(tokenId)}
-                            >
-                              Update Name
-                            </button>
-                          </div>
-
-                          <div class={s.adminGroup}>
-                            <h4>Set Description</h4>
-                            <div class={s.formGroup}>
-                              <textarea
-                                ref={(el) => {
-                                  descInputRefs.current[tokenId] = el as any;
-                                }}
-                                class={s.formInput}
-                                placeholder="What is this token for?"
-                                defaultValue={token.description || ""}
-                                rows={2}
-                              />
-                            </div>
-                            <button
-                              class={`${s.invBtn} ${s.invBtnPrimary}`}
-                              onClick={() => updateDescription(tokenId)}
-                            >
-                              Update Description
-                            </button>
-                          </div>
-
-                          <div class={s.adminGroup}>
-                            <h4>Token Management</h4>
-                            <div class={s.adminButtons}>
-                              {!token.revoked && (
-                                <button
-                                  class={`${s.invBtn} ${s.invBtnSecondary}`}
-                                  onClick={() => revokeToken(tokenId)}
-                                >
-                                  Revoke
-                                </button>
-                              )}
-                              <button
-                                class={`${s.invBtn} ${s.invBtnDanger}`}
-                                onClick={() => deleteToken(tokenId)}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {msg && (
-                        <div
-                          class={msg.type === "success" ? s.success : s.error}
-                          style={{ marginTop: "0.75rem" }}
-                        >
-                          {msg.text}
-                        </div>
-                      )}
+                    <div>
+                      <h2 class={s.sectionTitle}>Create New Sub-Token</h2>
+                      <p class={s.sectionSubtitle}>
+                        Set up a new permission-scoped token
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-
-              {/* Create new token */}
-              <h2 class={s.sectionHeading}>Create New Sub-Token</h2>
-              <div class={s.createTokenSection}>
-                <div class={s.formGroup}>
-                  <label for="new-token-name">
-                    Token Name{" "}
-                    <span style={{ color: "var(--text-subtle)" }}>
-                      (1–50 chars)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    id="new-token-name"
-                    class={s.formInput}
-                    placeholder='e.g. "My App, read-only"'
-                    value={createName}
-                    maxLength={50}
-                    onInput={(e: any) => setCreateName(e.target.value)}
-                  />
                 </div>
-
-                <div class={s.formRow}>
+                <div class={s.sectionBody}>
                   <div class={s.formGroup}>
-                    <label for="new-token-origin">Origin / App</label>
-                    <input
-                      type="text"
-                      id="new-token-origin"
-                      class={s.formInput}
-                      placeholder="https://myapp.example.com"
-                      value={createOrigin}
-                      onInput={(e: any) => setCreateOrigin(e.target.value)}
-                    />
-                  </div>
-                  <div class={s.formGroup}>
-                    <label for="new-token-expires">
-                      Expires in (hours){" "}
+                    <label for="new-token-name">
+                      Token Name{" "}
                       <span style={{ color: "var(--text-subtle)" }}>
-                        (blank = never)
+                        (1–50 chars)
                       </span>
                     </label>
                     <input
-                      type="number"
-                      id="new-token-expires"
+                      type="text"
+                      id="new-token-name"
                       class={s.formInput}
-                      placeholder="e.g. 720 for 30 days"
-                      min={0}
-                      max={8760}
-                      value={createExpiresHrs}
-                      onInput={(e: any) => setCreateExpiresHrs(e.target.value)}
+                      placeholder='e.g. "My App, read-only"'
+                      value={createName}
+                      maxLength={50}
+                      onInput={(e: any) => setCreateName(e.target.value)}
                     />
                   </div>
-                </div>
 
-                <div class={s.formGroup}>
-                  <label for="new-token-websites">
-                    Websites{" "}
-                    <span style={{ color: "var(--text-subtle)" }}>
-                      (comma or space separated)
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    id="new-token-websites"
-                    class={s.formInput}
-                    placeholder="https://myapp.example.com, https://other.example.com"
-                    value={createWebsites}
-                    onInput={(e: any) => setCreateWebsites(e.target.value)}
-                  />
-                </div>
+                  <div class={s.formRow}>
+                    <div class={s.formGroup}>
+                      <label for="new-token-origin">Origin / App</label>
+                      <input
+                        type="text"
+                        id="new-token-origin"
+                        class={s.formInput}
+                        placeholder="https://myapp.example.com"
+                        value={createOrigin}
+                        onInput={(e: any) => setCreateOrigin(e.target.value)}
+                      />
+                    </div>
+                    <div class={s.formGroup}>
+                      <label for="new-token-expires">
+                        Expires in (hours){" "}
+                        <span style={{ color: "var(--text-subtle)" }}>
+                          (blank = never)
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        id="new-token-expires"
+                        class={s.formInput}
+                        placeholder="e.g. 720 for 30 days"
+                        min={0}
+                        max={8760}
+                        value={createExpiresHrs}
+                        onInput={(e: any) => setCreateExpiresHrs(e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-                <div class={s.formGroup}>
-                  <label for="new-token-description">Description</label>
-                  <textarea
-                    id="new-token-description"
-                    class={s.formInput}
-                    placeholder="What is this token for?"
-                    value={createDescription}
-                    onInput={(e: any) => setCreateDescription(e.target.value)}
-                    rows={2}
-                  />
-                </div>
+                  <div class={s.formGroup}>
+                    <label for="new-token-websites">
+                      Websites{" "}
+                      <span style={{ color: "var(--text-subtle)" }}>
+                        (comma or space separated)
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      id="new-token-websites"
+                      class={s.formInput}
+                      placeholder="https://myapp.example.com, https://other.example.com"
+                      value={createWebsites}
+                      onInput={(e: any) => setCreateWebsites(e.target.value)}
+                    />
+                  </div>
 
-                {/* Permission picker */}
+                  <div class={s.formGroup}>
+                    <label for="new-token-description">Description</label>
+                    <textarea
+                      id="new-token-description"
+                      class={s.formInput}
+                      placeholder="What is this token for?"
+                      value={createDescription}
+                      onInput={(e: any) => setCreateDescription(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Permission picker */}
+                  <div class={s.permPicker}>
+                    <div class={s.permPickerHeader}>
+                      <h5 class={s.permPickerTitle}>Permissions</h5>
+                      <div class={s.permPickerActions}>
+                        {schema?.groups && schema.groups.length > 0 && (
+                          <select
+                            class={s.formInput}
+                            style={{
+                              width: "auto",
+                              padding: "0.3rem 0.5rem",
+                              fontSize: "0.75rem",
+                            }}
+                            onChange={(e: any) => {
+                              const g = schema.groups.find(
+                                (x) => x.name === e.target.value,
+                              );
+                              if (g)
+                                setCreatePerms(
+                                  applyGroup(createPerms, g.permissions),
+                                );
+                              e.target.value = "";
+                            }}
+                            defaultValue=""
+                          >
+                            <option value="" disabled>
+                              Apply group…
+                            </option>
+                            {schema.groups.map((g) => (
+                              <option key={g.name} value={g.name}>
+                                {g.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        <button
+                          class={s.permApplyBtn}
+                          onClick={() => setCreatePerms(new Set())}
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      class={s.formInput}
+                      placeholder="Search permissions…"
+                      value={createPermSearch}
+                      onInput={(e: any) => setCreatePermSearch(e.target.value)}
+                      style={{ marginBottom: "0.75rem" }}
+                    />
+                    {Object.entries(groupedPerms).map(([cat, perms]) => {
+                      const visible = filteredCreatePerms.filter((p) =>
+                        perms.includes(p),
+                      );
+                      if (visible.length === 0) return null;
+                      return (
+                        <div key={cat} class={s.permGroup}>
+                          <div class={s.permGroupHeader}>
+                            <span>{cat}</span>
+                            <div class={s.permGroupActions}>
+                              <button
+                                class={s.permApplyBtn}
+                                onClick={() =>
+                                  setCreatePerms(
+                                    applyGroup(createPerms, visible),
+                                  )
+                                }
+                              >
+                                All
+                              </button>
+                              <button
+                                class={s.permApplyBtn}
+                                onClick={() =>
+                                  setCreatePerms(
+                                    clearGroup(createPerms, visible),
+                                  )
+                                }
+                              >
+                                None
+                              </button>
+                            </div>
+                          </div>
+                          <div class={s.permList}>
+                            {visible.map((p) => {
+                              const forbidden =
+                                FORBIDDEN_PERMISSIONS.has(p);
+                              const checked = createPerms.has(p);
+                              return (
+                                <label
+                                  key={p}
+                                  class={`${s.permItem} ${checked ? s.permItemChecked : ""} ${forbidden ? s.permForbidden : ""}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    disabled={forbidden}
+                                    onChange={() =>
+                                      setCreatePerms(
+                                        togglePerm(createPerms, p),
+                                      )
+                                    }
+                                  />
+                                  <span class={s.permItemLabel}>{p}</span>
+                                  {forbidden && (
+                                    <span class={s.permBadge}>forbidden</span>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div class={s.permPickerFooter}>
+                      <span>
+                        <span class={s.permPickerCount}>
+                          {createPerms.size}
+                        </span>{" "}
+                        permission{createPerms.size !== 1 ? "s" : ""} selected
+                        {createPerms.size === 0 && (
+                          <span
+                            style={{
+                              color: "#fbbf24",
+                              marginLeft: "0.5rem",
+                            }}
+                          >
+                            - pick at least one
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.7rem",
+                          color: "var(--text-subtle)",
+                        }}
+                      >
+                        <code>tokens:manage</code> and{" "}
+                        <code>account:delete</code> cannot be granted
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class={s.formGroup}>
+                    <button
+                      class={s.btnPrimary}
+                      style={{ width: "100%" }}
+                      onClick={createNewToken}
+                      disabled={createSubmitting}
+                    >
+                      <PlusCircle size={14} />{" "}
+                      {createSubmitting ? "Creating…" : "Create Sub-Token"}
+                    </button>
+                  </div>
+                  {createMessage && (
+                    <div
+                      class={
+                        createMessageType === "success" ? s.success : s.error
+                      }
+                    >
+                      {createMessage}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <a
+            href="https://docs.rotur.dev/assorted-apis/tokens"
+            target="_blank"
+            rel="noopener noreferrer"
+            class={s.docsLink}
+          >
+            <ExternalLink size={14} /> Tokens API docs
+          </a>
+        </div>
+      </div>
+
+      {selectedToken && (
+        <TokenDetailModal
+          token={selectedToken}
+          allPerms={allPerms}
+          schema={schema}
+          message={tokenMessages[selectedToken.id]}
+          editing={editingPerms[selectedToken.id]}
+          editSearch={editSearch[selectedToken.id] || ""}
+          onClose={() => {
+            setSelectedToken(null);
+            cancelEditPerms(selectedToken.id);
+          }}
+          onCopy={copyToClipboard}
+          onRename={renameToken}
+          onUpdateDescription={updateDescription}
+          onSavePerms={(perms) => saveEditedPerms(selectedToken.id, perms)}
+          onStartEditPerms={() => startEditPerms(selectedToken)}
+          onCancelEditPerms={() => cancelEditPerms(selectedToken.id)}
+          onSetEditingPerms={(perms) =>
+            setEditingPerms((prev) => ({
+              ...prev,
+              [selectedToken.id]: perms,
+            }))
+          }
+          onSetEditSearch={(q) =>
+            setEditSearch((prev) => ({ ...prev, [selectedToken.id]: q }))
+          }
+          onRevoke={() => revokeToken(selectedToken.id)}
+          onDelete={() => deleteToken(selectedToken.id)}
+          nameInputRefs={nameInputRefs}
+          descInputRefs={descInputRefs}
+        />
+      )}
+
+      <Footer />
+    </div>
+  );
+}
+
+// ── Token detail modal ──
+
+function TokenDetailModal({
+  token,
+  allPerms,
+  schema,
+  message,
+  editing,
+  editSearch,
+  onClose,
+  onCopy,
+  onRename,
+  onUpdateDescription,
+  onSavePerms,
+  onStartEditPerms,
+  onCancelEditPerms,
+  onSetEditingPerms,
+  onSetEditSearch,
+  onRevoke,
+  onDelete,
+  nameInputRefs,
+  descInputRefs,
+}: {
+  token: SubToken;
+  allPerms: string[];
+  schema: PermissionSchema | null;
+  message: { text: string; type: "success" | "error" } | undefined;
+  editing: Set<string> | null | undefined;
+  editSearch: string;
+  onClose: () => void;
+  onCopy: (text: string, key: string) => void;
+  onRename: (tokenId: string) => void;
+  onUpdateDescription: (tokenId: string) => void;
+  onSavePerms: (perms: Set<string>) => void;
+  onStartEditPerms: () => void;
+  onCancelEditPerms: () => void;
+  onSetEditingPerms: (perms: Set<string>) => void;
+  onSetEditSearch: (q: string) => void;
+  onRevoke: () => void;
+  onDelete: () => void;
+  nameInputRefs: { current: Record<string, HTMLInputElement | null> };
+  descInputRefs: { current: Record<string, HTMLInputElement | null> };
+}) {
+  const tokenId = token.id;
+  const st = statusOf(token);
+  const editSet = editing ?? new Set(token.permissions);
+  const editQuery = editSearch.toLowerCase();
+  const editFiltered = editQuery
+    ? allPerms.filter((p) => p.toLowerCase().includes(editQuery))
+    : allPerms;
+  const editGroups = categorizePermissions(editFiltered);
+  const createdPerms = categorizePermissions(token.permissions);
+
+  return (
+    <div class={s.modal} onClick={onClose}>
+      <div class={s.modalOverlay} />
+      <div class={s.modalContainer} onClick={(e) => e.stopPropagation()}>
+        <button class={s.modalClose} onClick={onClose}>
+          <X size={20} />
+        </button>
+        <div class={s.modalContent}>
+          <div class={s.modalHeader}>
+            <span class={s.modalType}>{st.label} Sub-Token</span>
+            <h2 class={s.modalName}>{escapeHtml(token.name)}</h2>
+          </div>
+
+          {message && (
+            <div class={message.type === "success" ? s.success : s.error}>
+              {message.text}
+            </div>
+          )}
+
+          <div class={s.modalStats}>
+            <div class={s.modalStatItem}>
+              <Key size={16} />
+              <span style={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+                {tokenId.substring(0, 12)}…
+              </span>
+              <button
+                class={s.copyBtn}
+                onClick={() => onCopy(tokenId, tokenId)}
+              >
+                <Copy size={12} /> Copy
+              </button>
+            </div>
+            <div class={s.modalStatItem}>
+              <Shield size={16} />
+              <span>{token.permissions.length} permissions</span>
+            </div>
+            <div class={s.modalStatItem}>
+              <Clock size={16} />
+              <span>Created {formatDate(token.created_at)}</span>
+            </div>
+            {token.last_used_at && (
+              <div class={s.modalStatItem}>
+                <Clock size={16} />
+                <span>Last used {formatDate(token.last_used_at)}</span>
+              </div>
+            )}
+            {token.expires_at && (
+              <div class={s.modalStatItem}>
+                <Clock size={16} />
+                <span>
+                  {token.expires_at < Date.now()
+                    ? `Expired ${formatDate(token.expires_at)}`
+                    : `Expires ${formatDate(token.expires_at)}`}
+                </span>
+              </div>
+            )}
+            {token.origin && (
+              <div class={s.modalStatItem}>
+                <Globe size={16} />
+                <span>{escapeHtml(token.origin)}</span>
+              </div>
+            )}
+            {token.websites && token.websites.length > 0 && (
+              <div class={s.modalStatItem}>
+                <Globe size={16} />
+                <span>
+                  {token.websites.map((w) => escapeHtml(w)).join(", ")}
+                </span>
+              </div>
+            )}
+            {token.description && (
+              <div class={s.modalStatItem}>
+                <FileText size={16} />
+                <span>{escapeHtml(token.description)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Current Permissions */}
+          <div class={s.modalSection}>
+            <h4>Current Permissions</h4>
+            {token.permissions.length === 0 ? (
+              <div
+                style={{
+                  color: "var(--text-subtle)",
+                  fontSize: "0.8rem",
+                }}
+              >
+                No permissions.
+              </div>
+            ) : (
+              <div>
+                {Object.entries(createdPerms).map(([cat, perms]) => (
+                  <div key={cat} style={{ marginBottom: "0.5rem" }}>
+                    <div class={s.permGroupLabel}>{cat}</div>
+                    <div class={s.permChips}>
+                      {perms.map((p) => (
+                        <span key={p} class={s.permChip}>
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Edit Permissions */}
+          {!token.revoked && (
+            <div class={s.modalSection}>
+              <h4>Edit Permissions</h4>
+              {editing === null || editing === undefined ? (
+                <button class={s.btnSecondary} onClick={onStartEditPerms}>
+                  <Shield size={14} /> Modify Permissions
+                </button>
+              ) : (
                 <div class={s.permPicker}>
                   <div class={s.permPickerHeader}>
-                    <h5 class={s.permPickerTitle}>Permissions</h5>
+                    <h5 class={s.permPickerTitle}>
+                      Pick the permissions for this token
+                    </h5>
                     <div class={s.permPickerActions}>
                       {schema?.groups && schema.groups.length > 0 && (
                         <select
@@ -1122,10 +1197,9 @@ export function TokenManager() {
                             const g = schema.groups.find(
                               (x) => x.name === e.target.value,
                             );
-                            if (g)
-                              setCreatePerms(
-                                applyGroup(createPerms, g.permissions),
-                              );
+                            if (g) {
+                              onSetEditingPerms(applyGroup(editSet, g.permissions));
+                            }
                             e.target.value = "";
                           }}
                           defaultValue=""
@@ -1142,7 +1216,7 @@ export function TokenManager() {
                       )}
                       <button
                         class={s.permApplyBtn}
-                        onClick={() => setCreatePerms(new Set())}
+                        onClick={() => onSetEditingPerms(new Set())}
                       >
                         Clear all
                       </button>
@@ -1150,139 +1224,145 @@ export function TokenManager() {
                   </div>
                   <input
                     type="text"
-                    class={`${s.formInput} ${s.permPickerSearch}`}
+                    class={s.formInput}
                     placeholder="Search permissions…"
-                    value={createPermSearch}
-                    onInput={(e: any) => setCreatePermSearch(e.target.value)}
+                    value={editSearch}
+                    onInput={(e: any) => onSetEditSearch(e.target.value)}
+                    style={{ marginBottom: "0.75rem" }}
                   />
-                  {Object.entries(groupedPerms).map(([cat, perms]) => {
-                    const visible = filteredCreatePerms.filter((p) =>
-                      perms.includes(p),
-                    );
-                    if (visible.length === 0) return null;
-                    return (
-                      <div key={cat} class={s.permGroup}>
-                        <div class={s.permGroupHeader}>
-                          <span>{cat}</span>
-                          <div class={s.permGroupActions}>
-                            <button
-                              class={s.permApplyBtn}
-                              onClick={() =>
-                                setCreatePerms(applyGroup(createPerms, visible))
-                              }
-                            >
-                              All
-                            </button>
-                            <button
-                              class={s.permApplyBtn}
-                              onClick={() =>
-                                setCreatePerms(clearGroup(createPerms, visible))
-                              }
-                            >
-                              None
-                            </button>
-                          </div>
-                        </div>
-                        <div class={s.permList}>
-                          {visible.map((p) => {
-                            const forbidden = FORBIDDEN_PERMISSIONS.has(p);
-                            const checked = createPerms.has(p);
-                            return (
-                              <label
-                                key={p}
-                                class={`${s.permItem} ${checked ? s.permItemChecked : ""} ${forbidden ? s.permForbidden : ""}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  disabled={forbidden}
-                                  onChange={() =>
-                                    setCreatePerms(togglePerm(createPerms, p))
-                                  }
-                                />
-                                <span class={s.permItemLabel}>{p}</span>
-                                {forbidden && (
-                                  <span class={s.permBadge}>forbidden</span>
-                                )}
-                              </label>
-                            );
-                          })}
+                  {Object.entries(editGroups).map(([cat, perms]) => (
+                    <div key={cat} class={s.permGroup}>
+                      <div class={s.permGroupHeader}>
+                        <span>{cat}</span>
+                        <div class={s.permGroupActions}>
+                          <button
+                            class={s.permApplyBtn}
+                            onClick={() =>
+                              onSetEditingPerms(applyGroup(editSet, perms))
+                            }
+                          >
+                            All
+                          </button>
+                          <button
+                            class={s.permApplyBtn}
+                            onClick={() =>
+                              onSetEditingPerms(clearGroup(editSet, perms))
+                            }
+                          >
+                            None
+                          </button>
                         </div>
                       </div>
-                    );
-                  })}
+                      <div class={s.permList}>
+                        {perms.map((p) => {
+                          const forbidden = FORBIDDEN_PERMISSIONS.has(p);
+                          const checked = editSet.has(p);
+                          return (
+                            <label
+                              key={p}
+                              class={`${s.permItem} ${checked ? s.permItemChecked : ""} ${forbidden ? s.permForbidden : ""}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                disabled={forbidden}
+                                onChange={() => {
+                                  if (forbidden) return;
+                                  onSetEditingPerms(togglePerm(editSet, p));
+                                }}
+                              />
+                              <span class={s.permItemLabel}>{p}</span>
+                              {forbidden && (
+                                <span class={s.permBadge}>forbidden</span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                   <div class={s.permPickerFooter}>
                     <span>
-                      <span class={s.permPickerCount}>{createPerms.size}</span>{" "}
-                      permission{createPerms.size !== 1 ? "s" : ""} selected
-                      {createPerms.size === 0 && (
-                        <span
-                          style={{ color: "#fbbf24", marginLeft: "0.5rem" }}
-                        >
-                          - pick at least one
-                        </span>
-                      )}
+                      <span class={s.permPickerCount}>{editSet.size}</span>{" "}
+                      permission{editSet.size !== 1 ? "s" : ""} selected
                     </span>
-                    <span
-                      style={{
-                        fontSize: "0.7rem",
-                        color: "var(--text-subtle)",
-                      }}
-                    >
-                      <code>tokens:manage</code> and <code>account:delete</code>{" "}
-                      cannot be granted
-                    </span>
+                    <div style={{ display: "flex", gap: "0.4rem" }}>
+                      <button class={s.btnSecondary} onClick={onCancelEditPerms}>
+                        Cancel
+                      </button>
+                      <button
+                        class={s.btnPrimary}
+                        onClick={() => onSavePerms(editSet)}
+                      >
+                        Save Permissions
+                      </button>
+                    </div>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
 
-                <div class={s.formGroup}>
-                  <button
-                    class={`${s.invBtn} ${s.invBtnPrimary}`}
-                    style={{
-                      width: "100%",
-                      padding: "0.65rem 1.25rem",
-                      fontSize: "0.85rem",
-                    }}
-                    onClick={createNewToken}
-                    disabled={createSubmitting}
-                  >
-                    {createSubmitting ? "Creating…" : "Create Sub-Token"}
-                  </button>
-                </div>
-                {createMessage && (
-                  <div
-                    class={
-                      createMessageType === "success" ? s.success : s.error
-                    }
-                  >
-                    {createMessage}
-                  </div>
-                )}
+          {/* Edit Name / Description */}
+          <div class={s.modalSection}>
+            <h4>Token Settings</h4>
+            <div class={s.modalEditGrid}>
+              <div class={s.detailItem}>
+                <h4>Name</h4>
+                <input
+                  ref={(el) => {
+                    nameInputRefs.current[tokenId] = el;
+                  }}
+                  type="text"
+                  class={s.formInput}
+                  placeholder="Set token name"
+                  defaultValue={token.name}
+                  maxLength={50}
+                />
+                <button
+                  class={s.btnSecondary}
+                  onClick={() => onRename(tokenId)}
+                  style={{ marginTop: "0.5rem" }}
+                >
+                  Update
+                </button>
               </div>
 
-              <p
-                style={{
-                  color: "var(--text-subtle)",
-                  fontSize: "0.8rem",
-                  textAlign: "center",
-                  margin: "1.5rem 0 0",
-                }}
-              >
-                <i class="fas fa-info-circle" /> Read the{" "}
-                <a
-                  href="https://docs.rotur.dev/assorted-apis/tokens"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "var(--accent)" }}
+              <div class={s.detailItem}>
+                <h4>Description</h4>
+                <textarea
+                  ref={(el) => {
+                    descInputRefs.current[tokenId] = el as any;
+                  }}
+                  class={s.formInput}
+                  placeholder="What is this token for?"
+                  defaultValue={token.description || ""}
+                  rows={2}
+                />
+                <button
+                  class={s.btnSecondary}
+                  onClick={() => onUpdateDescription(tokenId)}
+                  style={{ marginTop: "0.5rem" }}
                 >
-                  Tokens API docs
-                </a>{" "}
-                for full details.
-              </p>
+                  Update
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Actions */}
+          <div class={s.modalFooter}>
+            {!token.revoked && (
+              <button class={s.btnSecondary} onClick={onRevoke}>
+                <RotateCcw size={14} /> Revoke
+              </button>
+            )}
+            <button class={s.btnDanger} onClick={onDelete}>
+              <Trash2 size={14} /> Delete
+            </button>
+          </div>
+        </div>
       </div>
-      <Footer />
     </div>
   );
 }

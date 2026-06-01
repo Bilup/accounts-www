@@ -25,8 +25,8 @@ import s from "./Me.module.css";
 
 const API = "https://api.rotur.dev";
 
-const INCOME_TYPES = ["tax", "in", "gift_claim", "key_sale"];
-const EXPENSE_TYPES = ["out", "gift_create", "key_buy", "gift_claimed"];
+const INCOME_TYPES = ["tax", "in", "gift_claim", "key_sale", "escrow_in"];
+const EXPENSE_TYPES = ["out", "gift_create", "key_buy", "gift_claimed", "escrow_out"];
 
 interface KeyRecord {
   key: string;
