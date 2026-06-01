@@ -99,6 +99,26 @@ function categorizePermissions(perms: string[]) {
   return groups;
 }
 
+function togglePerm(set: Set<string>, perm: string): Set<string> {
+  if (FORBIDDEN_PERMISSIONS.has(perm)) return set;
+  const next = new Set(set);
+  if (next.has(perm)) next.delete(perm);
+  else next.add(perm);
+  return next;
+}
+
+function applyGroup(set: Set<string>, perms: string[]): Set<string> {
+  const next = new Set(set);
+  for (const p of perms) if (!FORBIDDEN_PERMISSIONS.has(p)) next.add(p);
+  return next;
+}
+
+function clearGroup(set: Set<string>, perms: string[]): Set<string> {
+  const next = new Set(set);
+  for (const p of perms) next.delete(p);
+  return next;
+}
+
 function formatDate(ts?: number | null): string {
   if (!ts) return "Never";
   return new Date(ts).toLocaleString(undefined, {
@@ -248,26 +268,6 @@ export function TokenManager() {
     const q = createPermSearch.toLowerCase();
     return allPerms.filter((p) => p.toLowerCase().includes(q));
   }, [allPerms, createPermSearch]);
-
-  function togglePerm(set: Set<string>, perm: string): Set<string> {
-    if (FORBIDDEN_PERMISSIONS.has(perm)) return set;
-    const next = new Set(set);
-    if (next.has(perm)) next.delete(perm);
-    else next.add(perm);
-    return next;
-  }
-
-  function applyGroup(set: Set<string>, perms: string[]): Set<string> {
-    const next = new Set(set);
-    for (const p of perms) if (!FORBIDDEN_PERMISSIONS.has(p)) next.add(p);
-    return next;
-  }
-
-  function clearGroup(set: Set<string>, perms: string[]): Set<string> {
-    const next = new Set(set);
-    for (const p of perms) next.delete(p);
-    return next;
-  }
 
   // ── Create token ──
 
