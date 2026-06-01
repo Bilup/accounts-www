@@ -1,0 +1,90 @@
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 40px var(--accent-glow),
+      0 0 80px var(--accent-glow-2);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+:root {
+  --gradient-heading: linear-gradient(
+    135deg,
+    #f5f7fa 0%,
+    var(--accent) 60%,
+    var(--accent-dim) 100%
+  );
+  --section-padding: 6rem 1.5rem;
+  --inner-max: 72rem;
+  --heading-font: var(--font-display);
+  --heading-size: 1.875rem;
+  --heading-spacing: 0.1rem;
+  --label-font: var(--font-body);
+  --label-size: 0.75rem;
+  --label-color: var(--accent);
+  --label-spacing: 0.1em;
+  --label-transform: uppercase;
+  --sub-color: var(--text-muted);
+  --sub-font: var(--font-body);
+  --sub-size: 1rem;
+  --sub-line-height: 1.625;
+  --btn-radius: 0.75rem;
+  --btn-primary-bg: var(--accent);
+  --btn-primary-color: var(--void);
+  --btn-primary-font: var(--font-heading);
+  --btn-primary-weight: 600;
+  --btn-primary-size: 0.875rem;
+  --btn-primary-spacing: 0.025em;
+  --btn-secondary-border: 1px solid var(--border);
+  --btn-secondary-bg: var(--surface-a60);
+  --btn-secondary-color: var(--text-muted);
+  --btn-secondary-font: var(--font-heading);
+  --btn-secondary-weight: 500;
+  --btn-secondary-size: 0.875rem;
+  --btn-secondary-spacing: 0.025em;
+}

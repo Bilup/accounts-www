@@ -1,0 +1,111 @@
+.fadeUp {
+  animation: fadeUp 0.7s ease-out both;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+.section {
+  padding: var(--section-padding);
+  position: relative;
+}
+
+.sectionInner {
+  max-width: var(--inner-max);
+  margin: 0 auto;
+}
+
+.sectionLabel {
+  font-family: var(--label-font);
+  font-size: var(--label-size);
+  color: var(--label-color);
+  letter-spacing: var(--label-spacing);
+  text-transform: var(--label-transform);
+}
+
+.sectionHeading {
+  font-family: var(--heading-font);
+  font-size: var(--heading-size);
+  letter-spacing: var(--heading-spacing);
+  background: var(--gradient-heading);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@media (min-width: 40rem) {
+  .sectionHeading {
+    font-size: 2.25rem;
+  }
+}
+
+.sectionSub {
+  color: var(--sub-color);
+  font-family: var(--sub-font);
+  font-size: var(--sub-size);
+  line-height: var(--sub-line-height);
+}
+
+.gradientText {
+  background: var(--gradient-heading);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (min-width: 40rem) {
+  .buttons {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.btnPrimary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  border-radius: var(--btn-radius);
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  font-family: var(--btn-primary-font);
+  font-weight: var(--btn-primary-weight);
+  font-size: var(--btn-primary-size);
+  letter-spacing: var(--btn-primary-spacing);
+  transition: filter 0.2s;
+}
+
+.btnPrimary:hover {
+  filter: brightness(1.1);
+}
+
+.btnSecondary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  border-radius: var(--btn-radius);
+  border: var(--btn-secondary-border);
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-color);
+  font-family: var(--btn-secondary-font);
+  font-weight: var(--btn-secondary-weight);
+  font-size: var(--btn-secondary-size);
+  letter-spacing: var(--btn-secondary-spacing);
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+
+.btnSecondary:hover {
+  color: var(--text);
+  background-color: var(--surface-a80);
+}

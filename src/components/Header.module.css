@@ -1,0 +1,268 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  backdrop-filter: blur(24px);
+}
+
+.inner {
+  max-width: var(--inner-max);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logoImg {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  transition: transform 0.5s;
+}
+
+.logo:hover .logoImg {
+  transform: rotate(60deg);
+}
+
+.logoText {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.desktopNav {
+  display: none;
+}
+
+@media (min-width: 48rem) {
+  .desktopNav {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}
+
+.navLink {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+
+.navLink:hover {
+  color: var(--text);
+  background-color: var(--surface);
+}
+
+.upgradeBtn {
+  margin-left: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+  background-color: var(--accent);
+  color: var(--void);
+  transition: filter 0.2s;
+}
+
+.upgradeBtn:hover {
+  filter: brightness(1.1);
+}
+
+.hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.hamburger:hover {
+  background-color: var(--surface);
+}
+
+@media (min-width: 48rem) {
+  .hamburger {
+    display: none;
+  }
+}
+
+.bar {
+  display: block;
+  width: 1.25rem;
+  height: 0.125rem;
+  background-color: var(--text-muted);
+  border-radius: 1px;
+  transition:
+    transform 0.3s,
+    opacity 0.3s;
+}
+
+.bar1Open {
+  transform: rotate(45deg) translate(0.375rem, 0.375rem);
+}
+.bar2Open {
+  opacity: 0;
+}
+.bar3Open {
+  transform: rotate(-45deg) translate(0.375rem, -0.375rem);
+}
+
+.mobileMenu {
+  background-color: var(--surface);
+  border-top: 1px solid var(--border-subtle);
+  padding: 1rem 1.5rem;
+}
+
+@media (min-width: 48rem) {
+  .mobileMenu {
+    display: none;
+  }
+}
+
+.mobileLink {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+
+.mobileLink:hover {
+  color: var(--text);
+  background-color: var(--surface-2);
+}
+
+.mobileUpgrade {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+  background-color: var(--accent);
+  color: var(--void);
+  text-align: center;
+}
+
+.userChip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+  border-radius: 999px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+  max-width: 12rem;
+}
+
+.userChip:hover {
+  background-color: var(--surface-2);
+  border-color: var(--border);
+}
+
+.userChipImg {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.userChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signInBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--accent);
+  color: var(--void);
+  font-family: var(--font-heading);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: filter 0.2s;
+}
+
+.signInBtn:hover {
+  filter: brightness(1.1);
+}
+
+.mobileUserChip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  background-color: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.mobileUserChipImg {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.mobileSignIn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--accent);
+  color: var(--void);
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 600;
+}

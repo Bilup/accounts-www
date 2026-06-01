@@ -1,0 +1,843 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--void);
+  padding-top: 5rem;
+}
+
+.wrapper {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  margin-bottom: 0.5rem;
+  background: var(--gradient-heading);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+
+.rule {
+  height: 1px;
+  width: 100%;
+  background-color: var(--text-subtle);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Login ── */
+.loginBox {
+  text-align: center;
+  margin: 2rem 0;
+  padding: 2rem;
+  background-color: var(--surface-3);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 28rem;
+}
+
+.loginBox h2 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.35rem;
+  margin: 0 0 0.5rem;
+  background: var(--gradient-heading);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.loginBox p {
+  color: var(--text-muted);
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+}
+
+.loginBtn {
+  padding: 0.7rem 2rem;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--accent);
+  color: var(--void);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition:
+    filter 0.2s,
+    transform 0.15s;
+}
+
+.loginBtn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* ── User info ── */
+.userInfo {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.welcomeText {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  color: var(--text);
+  font-size: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.welcomeSub {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0;
+}
+
+.logoutBtn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+  background-color: var(--surface-2);
+  color: var(--text);
+}
+
+/* ── Shared message styles ── */
+.error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.success {
+  color: #6bff9f;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.loading {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 2rem 0;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.noTokens {
+  text-align: center;
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-style: italic;
+  padding: 2rem 0;
+  font-size: 0.95rem;
+}
+
+/* ── Token items ── */
+.tokenItem {
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--surface-3) 0%, var(--surface) 100%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s,
+    border-color 0.25s;
+  border-left: 4px solid var(--accent);
+}
+
+.tokenItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  border-color: var(--accent);
+}
+
+.tokenItemRevoked {
+  border-left-color: #ff6b6b;
+  opacity: 0.75;
+}
+
+.tokenItemExpired {
+  border-left-color: #fbbf24;
+  opacity: 0.85;
+}
+
+.tokenSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 0.75rem;
+}
+
+.tokenSummaryLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.tokenSummaryRight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.tokenNameTitle {
+  color: var(--text);
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1rem;
+  word-break: break-word;
+}
+
+.tokenSummaryInfo {
+  color: var(--text-muted);
+  opacity: 0.8;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  margin-top: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tokenTag {
+  display: inline-block;
+  background-color: var(--surface-2);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-family: var(--font-heading);
+  white-space: nowrap;
+}
+
+.tagActive {
+  background-color: #6bff9f;
+  color: #0e1015;
+}
+
+.tagRevoked {
+  background-color: #ff6b6b;
+  color: #0e1015;
+}
+
+.tagExpired {
+  background-color: #fbbf24;
+  color: #0e1015;
+}
+
+.expandIcon {
+  display: inline-block;
+  font-weight: bold;
+  transition: transform 0.3s;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.expandIconOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Token details (collapsible) ── */
+.tokenDetails {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out;
+  margin-top: 0;
+}
+
+.tokenDetailsOpen {
+  max-height: 4000px;
+  transition: max-height 0.5s ease-in;
+  margin-top: 0.75rem;
+}
+
+.infoSection {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.infoSection h4 {
+  margin: 0 0 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0.35rem;
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.infoRow {
+  display: flex;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.infoLabel {
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.7;
+  width: 110px;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  color: var(--text-muted);
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.tokenIdValue {
+  color: var(--accent);
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.copyButton {
+  display: inline-block;
+  cursor: pointer;
+  background-color: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  margin-left: 8px;
+  transition: all 0.2s;
+  font-family: var(--font-body);
+}
+
+.copyButton:hover {
+  background-color: var(--accent);
+  color: var(--void);
+  border-color: var(--accent);
+}
+
+.tokenGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* ── Permission chips ── */
+.permChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.permChip {
+  display: inline-block;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-family: monospace;
+}
+
+.permGroupLabel {
+  width: 100%;
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.5rem;
+  font-family: var(--font-heading);
+}
+
+/* ── Admin section ── */
+.adminSection {
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.adminGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.adminGroup {
+  background-color: var(--surface);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.adminGroup h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+.adminGroup a {
+  color: var(--accent);
+  font-size: 0.7rem;
+  text-decoration: none;
+}
+
+.adminButtons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.adminButtons .invBtn {
+  flex: 1;
+  min-width: 100px;
+  text-align: center;
+}
+
+/* ── Form input ── */
+.formInput {
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  transition:
+    border-color 0.25s,
+    background-color 0.25s,
+    box-shadow 0.25s;
+  box-sizing: border-box;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  background-color: var(--surface-3);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.formInput::placeholder {
+  color: var(--text-subtle);
+}
+
+.formInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  display: block;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+textarea.formInput {
+  font-family: monospace;
+  font-size: 0.8rem;
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+/* ── Buttons ── */
+.invBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 0.75rem;
+  transition: all 0.25s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.invBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.invBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.invBtnPrimary {
+  background: linear-gradient(135deg, var(--accent), #b388ff);
+  color: var(--void);
+}
+
+.invBtnPrimary:hover {
+  filter: brightness(1.1);
+}
+
+.invBtnSecondary {
+  background-color: var(--surface-3);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.invBtnSecondary:hover {
+  background-color: var(--surface-2);
+  color: var(--text);
+}
+
+.invBtnDanger {
+  background: linear-gradient(135deg, #f44336, #e53935);
+  color: white;
+}
+
+.invBtnDanger:hover {
+  background: linear-gradient(135deg, #da190b, #c62828);
+}
+
+/* ── Create token section ── */
+.createTokenSection {
+  background-color: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.createTokenSection h2 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin: 0 0 1rem;
+  color: var(--text);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Permission picker ── */
+.permPicker {
+  background-color: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.permPickerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.permPickerTitle {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 0;
+}
+
+.permPickerActions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.permPickerSearch {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.permGroup {
+  margin-bottom: 0.75rem;
+}
+
+.permGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.permGroupActions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.permApplyBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-family: var(--font-body);
+  padding: 2px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: all 0.2s;
+}
+
+.permApplyBtn:hover {
+  background-color: var(--accent);
+  color: var(--void);
+  border-color: var(--accent);
+}
+
+.permList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.3rem;
+}
+
+.permItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-family: monospace;
+  color: var(--text-muted);
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+  user-select: none;
+}
+
+.permItem:hover {
+  background-color: var(--surface-2);
+  color: var(--text);
+}
+
+.permItem input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.permItemChecked {
+  background-color: var(--accent-glow);
+  color: var(--text);
+}
+
+.permForbidden {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.permForbidden input {
+  cursor: not-allowed;
+}
+
+.permItemLabel {
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.permBadge {
+  font-size: 0.6rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-subtle);
+  font-family: var(--font-body);
+  text-transform: none;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+.permPickerFooter {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.permPickerCount {
+  font-family: monospace;
+  color: var(--accent);
+}
+
+/* ── Newly created token reveal ── */
+.tokenReveal {
+  background-color: rgba(107, 255, 159, 0.06);
+  border: 1px solid rgba(107, 255, 159, 0.3);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin: 1rem 0;
+}
+
+.tokenRevealTitle {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: #6bff9f;
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tokenRevealText {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.tokenRevealValue {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--void);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--accent);
+  word-break: break-all;
+  flex-wrap: wrap;
+}
+
+.tokenRevealValue code {
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+}
+
+/* ── Section heading ── */
+.sectionHeading {
+  width: 100%;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--text);
+  margin: 1.5rem 0 0.75rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 48rem) {
+  .wrapper {
+    padding: 0 1rem 2rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .tokenGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .adminGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .infoRow {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .infoLabel {
+    width: auto;
+  }
+
+  .permList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 30rem) {
+  .page {
+    padding-top: 4rem;
+  }
+
+  .tokenItem {
+    padding: 1rem;
+  }
+
+  .createTokenSection {
+    padding: 1.25rem;
+  }
+
+  .tokenNameTitle {
+    font-size: 0.9rem;
+  }
+}

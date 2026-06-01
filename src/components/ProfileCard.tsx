@@ -1,0 +1,703 @@
+import { useState, useRef, useEffect } from "preact/hooks";
+import {
+  Camera,
+  Image as ImageIcon,
+  Pencil,
+  Check,
+  X,
+  Monitor,
+  UserPlus,
+  UserCheck,
+  Calendar,
+  Coins,
+  Users,
+  UserMinus,
+  Send,
+  type LucideIcon,
+} from "lucide-preact";
+import s from "./ProfileCard.module.css";
+import { bannerUrl as buildBannerUrl } from "../lib/avatar";
+import { type AuthUser, type PublicProfile, getToken } from "../lib/auth";
+import { UserAvatar } from "./UserAvatar";
+import { ImageCropper, type CropperKind } from "./ImageCropper";
+
+const API = "https://api.rotur.dev";
+
+type FriendState = "self" | "friend" | "pending" | "blocked" | "none";
+
+interface ProfileCardProps {
+  user: AuthUser | PublicProfile;
+  editable?: boolean;
+  showActions?: boolean;
+  isSelf?: boolean;
+  isFollowing?: boolean;
+  friendState?: FriendState;
+  followerCount?: number;
+  followingCount?: number;
+  viewerBalance?: number | null;
+  onFollowToggle?: () => void;
+  onFriendAction?: (action: "add" | "remove" | "accept" | "reject") => void;
+  onTransferComplete?: (debited: number) => void;
+  onEdit?: (changes: Record<string, unknown>) => Promise<void> | void;
+}
+
+function formatJoinDate(timestamp: number | undefined): string | null {
+  if (!timestamp) return null;
+  return new Date(timestamp).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+  });
+}
+
+function isPublicProfile(u: AuthUser | PublicProfile): u is PublicProfile {
+  return (u as PublicProfile).index !== undefined;
+}
+
+export function ProfileCard({
+  user,
+  editable = false,
+  showActions = true,
+  isSelf = false,
+  isFollowing = false,
+  friendState = "none",
+  followerCount,
+  followingCount,
+  viewerBalance = null,
+  onFollowToggle,
+  onFriendAction,
+  onTransferComplete,
+  onEdit,
+}: ProfileCardProps) {
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioDraft, setBioDraft] = useState(user.bio || "");
+  const [bioError, setBioError] = useState<string | null>(null);
+  const [bioSaving, setBioSaving] = useState(false);
+  const [editingPronouns, setEditingPronouns] = useState(false);
+  const [pronounsDraft, setPronounsDraft] = useState(user.pronouns || "");
+  const [pronounsError, setPronounsError] = useState<string | null>(null);
+  const [pronounsSaving, setPronounsSaving] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{
+    kind: CropperKind;
+    file: File;
+  } | null>(null);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendAmount, setSendAmount] = useState("");
+  const [sendNote, setSendNote] = useState("");
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendSuccess, setSendSuccess] = useState<string | null>(null);
+  const [sendSending, setSendSending] = useState(false);
+  const [currentBalance, setCurrentBalance] = useState<number | null>(null);
+  const sendAmountRef = useRef<HTMLInputElement>(null);
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const pronounsInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!editingBio) {
+      setBioDraft(user.bio || "");
+      setBioError(null);
+    }
+  }, [user.bio, editingBio]);
+
+  useEffect(() => {
+    if (!editingPronouns) {
+      setPronounsDraft(user.pronouns || "");
+      setPronounsError(null);
+    } else {
+      pronounsInputRef.current?.focus();
+      pronounsInputRef.current?.select();
+    }
+  }, [user.pronouns, editingPronouns]);
+
+  const handleFileChosen = (event: Event, kind: CropperKind) => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      input.value = "";
+      return;
+    }
+    setPendingFile({ kind, file });
+    input.value = "";
+  };
+
+  const uploadImage = async (key: "pfp" | "banner", dataUrl: string) => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      await fetch(`${API}/me/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ key, value: dataUrl }),
+      });
+      if (onEdit) await onEdit({ [key]: dataUrl });
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const saveBio = async () => {
+    const val = bioDraft.trim();
+    if (val === (user.bio || "").trim()) {
+      setEditingBio(false);
+      return;
+    }
+    setBioSaving(true);
+    setBioError(null);
+    try {
+      const token = getToken();
+      if (!token) throw new Error("not authenticated");
+      const res = await fetch(`${API}/users`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "bio", value: val, auth: token }),
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+      if (onEdit) await onEdit({ bio: val });
+      setEditingBio(false);
+    } catch (e) {
+      setBioError((e as Error).message || "Failed to save");
+    } finally {
+      setBioSaving(false);
+    }
+  };
+
+  const savePronouns = async () => {
+    const val = pronounsDraft.trim();
+    if (val === (user.pronouns || "").trim()) {
+      setEditingPronouns(false);
+      return;
+    }
+    if (val.length > 50) {
+      setPronounsError("Pronouns must be 50 characters or fewer");
+      return;
+    }
+    setPronounsSaving(true);
+    setPronounsError(null);
+    try {
+      const token = getToken();
+      if (!token) throw new Error("not authenticated");
+      const res = await fetch(`${API}/me/update`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ key: "pronouns", value: val }),
+      });
+      const result = await res.json();
+      if (result?.error) throw new Error(result.error);
+      if (onEdit) await onEdit({ pronouns: val });
+      setEditingPronouns(false);
+    } catch (e) {
+      setPronounsError((e as Error).message || "Failed to save");
+    } finally {
+      setPronounsSaving(false);
+    }
+  };
+
+  const publicProfile = isPublicProfile(user) ? user : null;
+
+  const openSend = () => {
+    setSendOpen(true);
+    setSendError(null);
+    setSendSuccess(null);
+    setSendAmount("");
+    setSendNote("");
+    setCurrentBalance(viewerBalance);
+    requestAnimationFrame(() => sendAmountRef.current?.focus());
+  };
+
+  const cancelSend = () => {
+    setSendOpen(false);
+    setSendError(null);
+    setSendSuccess(null);
+    setSendAmount("");
+    setSendNote("");
+    setSendSending(false);
+  };
+
+  const submitSend = async () => {
+    setSendError(null);
+    setSendSuccess(null);
+    const trimmed = sendAmount.trim();
+    if (!trimmed) {
+      setSendError("Enter an amount");
+      return;
+    }
+    const num = Number(trimmed);
+    if (!Number.isFinite(num) || num < 0.01) {
+      setSendError("Minimum amount is 0.01");
+      return;
+    }
+    if (viewerBalance !== null && num > viewerBalance) {
+      setSendError("You don't have enough credits");
+      return;
+    }
+    if (sendNote.length > 200) {
+      setSendError("Note must be 200 characters or fewer");
+      return;
+    }
+    const token = getToken();
+    if (!token) {
+      setSendError("You must be signed in to send credits");
+      return;
+    }
+    setSendSending(true);
+    try {
+      const res = await fetch(`${API}/me/transfer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          to: user.username,
+          amount: trimmed,
+          note: sendNote.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSendError(data?.error || "Transfer failed");
+        return;
+      }
+      const debited = Number(data?.debited ?? num);
+      setCurrentBalance((b) => (b === null ? b : Math.max(0, b - debited)));
+      setSendSuccess(
+        `Sent ${debited.toLocaleString()} credit${debited === 1 ? "" : "s"} to @${user.username}`,
+      );
+      setSendAmount("");
+      setSendNote("");
+      onTransferComplete?.(debited);
+    } catch {
+      setSendError("Network error");
+    } finally {
+      setSendSending(false);
+    }
+  };
+
+  const displayName = publicProfile
+    ? publicProfile.username
+    : (user as AuthUser).display_name || (user as AuthUser).username;
+  const hasNickname = publicProfile
+    ? false
+    : (user as AuthUser).display_name !== (user as AuthUser).username &&
+      !!(user as AuthUser).display_name;
+  const index = publicProfile?.index;
+  const joined = formatJoinDate(user.created);
+  const credits = publicProfile
+    ? publicProfile.currency
+    : ((user as AuthUser)["sys.currency"] ?? 0);
+  const finalFollowerCount = followerCount ?? publicProfile?.followers ?? 0;
+  const finalFollowingCount = followingCount ?? publicProfile?.following ?? 0;
+  const pronouns = user.pronouns;
+
+  return (
+    <div class={s.card}>
+      <div class={s.banner}>
+        {user.banner ? (
+          <img src={user.banner} alt="" class={s.bannerImg} />
+        ) : (
+          <img
+            src={buildBannerUrl(user.username)}
+            alt=""
+            class={s.bannerImg}
+            onError={(e: any) => {
+              e.target.style.display = "none";
+            }}
+          />
+        )}
+        {editable && (
+          <>
+            <div
+              class={s.bannerEditOverlay}
+              onClick={() => bannerInputRef.current?.click()}
+            >
+              <ImageIcon size={28} />
+              <span class={s.bannerEditCost}>
+                <Coins size={12} /> Cost: 10 credits
+              </span>
+            </div>
+            <input
+              ref={bannerInputRef}
+              type="file"
+              accept="image/*"
+              class={s.hiddenFile}
+              onChange={(e) => handleFileChosen(e, "banner")}
+            />
+          </>
+        )}
+      </div>
+
+      <div class={s.avatarRow}>
+        <div class={s.avatarWrap}>
+          <UserAvatar
+            username={user.username}
+            pfp={user.pfp}
+            className={s.avatar}
+            alt={user.username}
+          />
+          {editable && (
+            <>
+              <div
+                class={s.avatarEditOverlay}
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                <Camera size={22} />
+              </div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                class={s.hiddenFile}
+                onChange={(e) => handleFileChosen(e, "pfp")}
+              />
+            </>
+          )}
+        </div>
+      </div>
+
+      <div class={s.body}>
+        <div class={s.nameRow}>
+          <div class={s.displayName}>
+            {displayName}
+            {index !== undefined && index !== null && (
+              <span class={s.index}>#{index}</span>
+            )}
+          </div>
+          {user.system && (
+            <span class={s.systemPill} title={user.system}>
+              <Monitor size={11} />
+              <span>{user.system}</span>
+            </span>
+          )}
+        </div>
+
+        <div class={s.metaRow}>
+          {hasNickname && <span class={s.username}>@{user.username}</span>}
+          {hasNickname && (pronouns || editingPronouns) && (
+            <span class={s.separator}>•</span>
+          )}
+          {editingPronouns ? (
+            <span class={s.pronounsEditWrap}>
+              <input
+                ref={pronounsInputRef}
+                class={s.pronounsInput}
+                value={pronounsDraft}
+                onInput={(e: any) => setPronounsDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") savePronouns();
+                  else if (e.key === "Escape") {
+                    setEditingPronouns(false);
+                    setPronounsDraft(user.pronouns || "");
+                    setPronounsError(null);
+                  }
+                }}
+                placeholder="e.g. they/them"
+                maxLength={50}
+                disabled={pronounsSaving}
+              />
+              <button
+                class={`${s.pronounsIconBtn} ${s.pronounsIconBtnConfirm}`}
+                onClick={savePronouns}
+                disabled={pronounsSaving}
+                aria-label="Save pronouns"
+                title="Save"
+              >
+                <Check size={12} />
+              </button>
+              <button
+                class={s.pronounsIconBtn}
+                onClick={() => {
+                  setEditingPronouns(false);
+                  setPronounsDraft(user.pronouns || "");
+                  setPronounsError(null);
+                }}
+                disabled={pronounsSaving}
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ) : (
+            <>
+              {pronouns && <span class={s.pronouns}>{pronouns}</span>}
+              {editable && (
+                <button
+                  class={s.pronounsAddBtn}
+                  onClick={() => setEditingPronouns(true)}
+                  aria-label={pronouns ? "Edit pronouns" : "Add pronouns"}
+                  title={pronouns ? "Edit pronouns" : "Add pronouns"}
+                >
+                  <Pencil size={11} />
+                </button>
+              )}
+            </>
+          )}
+          {joined && (
+            <>
+              {(hasNickname || pronouns || editingPronouns) && (
+                <span class={s.separator}>•</span>
+              )}
+              <span class={s.metaItem}>
+                <Calendar size={12} /> Joined {joined}
+              </span>
+            </>
+          )}
+        </div>
+        {pronounsError && editingPronouns && (
+          <div class={s.pronounsError}>{pronounsError}</div>
+        )}
+
+        {editingBio ? (
+          <div class={s.bioEditWrap}>
+            <textarea
+              class={s.bioTextarea}
+              autoFocus
+              value={bioDraft}
+              onInput={(e: any) => setBioDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setEditingBio(false);
+              }}
+              placeholder="Tell people about yourself..."
+              maxLength={1000}
+            />
+            {bioError && <div class={s.bioError}>{bioError}</div>}
+            <div class={s.bioActions}>
+              <button
+                class={`${s.actionBtn} ${s.actionBtnPrimary}`}
+                onClick={saveBio}
+                disabled={bioSaving}
+              >
+                <Check size={14} /> {bioSaving ? "Saving..." : "Save"}
+              </button>
+              <button
+                class={s.actionBtn}
+                onClick={() => {
+                  setEditingBio(false);
+                  setBioDraft(user.bio || "");
+                }}
+                disabled={bioSaving}
+              >
+                <X size={14} /> Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div class={s.bioRow}>
+            <div class={s.bioText}>
+              {user.bio ? (
+                user.bio
+              ) : (
+                <span class={s.bioPlaceholder}>No bio yet.</span>
+              )}
+            </div>
+            {editable && (
+              <button
+                class={s.bioEditBtn}
+                onClick={() => setEditingBio(true)}
+                aria-label="Edit bio"
+                title="Edit bio"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {showActions && !isSelf && (
+          <div class={s.actionBar}>
+            <div class={s.actionBarRow}>
+              {friendState === "friend" ? (
+                <button
+                  class={`${s.actionBtn} ${s.actionBtnDanger}`}
+                  onClick={() => onFriendAction?.("remove")}
+                  title="Remove friend"
+                >
+                  <UserMinus size={14} /> Friend
+                </button>
+              ) : friendState === "pending" ? (
+                <>
+                  <button
+                    class={`${s.actionBtn} ${s.actionBtnSuccess}`}
+                    onClick={() => onFriendAction?.("accept")}
+                  >
+                    <UserCheck size={14} /> Accept
+                  </button>
+                  <button
+                    class={`${s.actionBtn} ${s.actionBtnDanger}`}
+                    onClick={() => onFriendAction?.("reject")}
+                  >
+                    <X size={14} /> Reject
+                  </button>
+                </>
+              ) : friendState !== "blocked" ? (
+                <button
+                  class={s.actionBtn}
+                  onClick={() => onFriendAction?.("add")}
+                >
+                  <UserPlus size={14} /> Add friend
+                </button>
+              ) : null}
+              <button
+                class={`${s.actionBtn} ${isFollowing ? s.actionBtnSuccess : s.actionBtnPrimary}`}
+                onClick={onFollowToggle}
+              >
+                {isFollowing ? (
+                  <>
+                    <UserCheck size={14} /> Following
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={14} /> Follow
+                  </>
+                )}
+              </button>
+              <button
+                class={`${s.actionBtn} ${s.actionBtnAccent}`}
+                onClick={sendOpen ? cancelSend : openSend}
+                aria-expanded={sendOpen}
+                aria-controls="send-credits-panel"
+                title="Send credits"
+              >
+                <Coins size={14} /> Send credits
+              </button>
+            </div>
+
+            {sendOpen && (
+              <div class={s.sendPanel} id="send-credits-panel">
+                <div class={s.sendHeader}>
+                  <span class={s.sendTitle}>
+                    Send credits to @{user.username}
+                  </span>
+                  {currentBalance !== null && (
+                    <span class={s.sendBalance}>
+                      <Coins size={12} /> Balance:{" "}
+                      {currentBalance.toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div class={s.sendField}>
+                  <label class={s.sendLabel} for="send-amount">
+                    Amount
+                  </label>
+                  <input
+                    id="send-amount"
+                    ref={sendAmountRef}
+                    type="number"
+                    inputMode="decimal"
+                    min="0.01"
+                    step="0.01"
+                    max={currentBalance ?? undefined}
+                    class={s.sendInput}
+                    placeholder="0.00"
+                    value={sendAmount}
+                    disabled={sendSending}
+                    onInput={(e: any) => {
+                      setSendAmount(e.target.value);
+                      setSendSuccess(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitSend();
+                      else if (e.key === "Escape") cancelSend();
+                    }}
+                  />
+                </div>
+                <div class={s.sendField}>
+                  <label class={s.sendLabel} for="send-note">
+                    Note (optional)
+                  </label>
+                  <input
+                    id="send-note"
+                    type="text"
+                    maxLength={200}
+                    class={s.sendInput}
+                    placeholder="Say something nice…"
+                    value={sendNote}
+                    disabled={sendSending}
+                    onInput={(e: any) => {
+                      setSendNote(e.target.value);
+                      setSendSuccess(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") cancelSend();
+                    }}
+                  />
+                </div>
+                {sendError && <div class={s.sendError}>{sendError}</div>}
+                {sendSuccess && <div class={s.sendSuccess}>{sendSuccess}</div>}
+                <div class={s.sendActions}>
+                  <button
+                    class={`${s.actionBtn} ${s.actionBtnPrimary}`}
+                    onClick={submitSend}
+                    disabled={sendSending}
+                  >
+                    <Send size={14} /> {sendSending ? "Sending…" : "Send"}
+                  </button>
+                  <button
+                    class={s.actionBtn}
+                    onClick={cancelSend}
+                    disabled={sendSending}
+                  >
+                    <X size={14} /> Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div class={s.statsRow}>
+          <Stat icon={Coins} value={credits.toLocaleString()} label="Credits" />
+          <Stat
+            icon={Users}
+            value={finalFollowerCount.toLocaleString()}
+            label="Followers"
+          />
+          <Stat
+            icon={UserPlus}
+            value={finalFollowingCount.toLocaleString()}
+            label="Following"
+          />
+        </div>
+      </div>
+
+      {pendingFile && (
+        <ImageCropper
+          kind={pendingFile.kind}
+          file={pendingFile.file}
+          onCancel={() => setPendingFile(null)}
+          onSave={async (dataUrl) => {
+            await uploadImage(pendingFile.kind, dataUrl);
+            setPendingFile(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function Stat({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: LucideIcon;
+  value: string | number;
+  label: string;
+}) {
+  return (
+    <div class={s.stat}>
+      <Icon size={16} />
+      <div class={s.statValue}>{value}</div>
+      <div class={s.statLabel}>{label}</div>
+    </div>
+  );
+}

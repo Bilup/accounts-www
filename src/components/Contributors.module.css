@@ -1,0 +1,90 @@
+.contributors {
+  padding: 4rem 0;
+  overflow: hidden;
+}
+
+.header {
+  max-width: var(--inner-max);
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+}
+
+.label {
+  composes: sectionLabel from "./shared.module.css";
+}
+
+.heading {
+  composes: sectionHeading from "./shared.module.css";
+  font-size: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 40rem) {
+  .heading {
+    font-size: 2.25rem;
+  }
+}
+
+.sub {
+  composes: sectionSub from "./shared.module.css";
+  color: var(--text-subtle);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.carouselOuter {
+  position: relative;
+  max-width: var(--inner-max);
+  margin: 0 auto;
+}
+
+.fadeLeft {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4rem;
+  background: linear-gradient(to right, var(--void), transparent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.fadeRight {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4rem;
+  background: linear-gradient(to left, var(--void), transparent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.carouselInner {
+  overflow: hidden;
+}
+
+.track {
+  display: flex;
+  gap: 1rem;
+  will-change: transform;
+  cursor: grab;
+}
+
+.track:active {
+  cursor: grabbing;
+}
+.avatar {
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 0.5rem;
+  transition: border-color 0.2s;
+}
+
+.avatarImg:hover {
+  border-color: var(--accent-30);
+}

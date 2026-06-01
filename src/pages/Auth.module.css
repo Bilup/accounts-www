@@ -1,0 +1,1362 @@
+.hidden {
+  display: none !important;
+}
+
+.signinForm {
+  max-width: 480px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.accountItemWrap {
+  position: relative;
+}
+
+.accountItemWrap:hover .accountItemRemove {
+  opacity: 1;
+}
+
+.accountItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+  background: transparent;
+  border: 1px solid transparent;
+  width: 100%;
+  text-align: left;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.accountItemBusy {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.accountItemQuick {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  flex-shrink: 0;
+}
+
+.accountItemRemove {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--surface);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    background-color 0.15s,
+    color 0.15s;
+  font-size: 0.7rem;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.accountItemRemove:hover {
+  background: var(--auth-danger, #f87171);
+  color: var(--void);
+}
+
+@media (hover: none) {
+  .accountItemRemove {
+    opacity: 0.6;
+  }
+}
+
+.accountItem:hover {
+  background-color: var(--surface);
+  border-color: var(--border-subtle);
+}
+
+.accountItemActive {
+  background: var(--accent-3);
+  border-color: var(--accent-10);
+}
+
+.accountItem img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.accountItemInfo h3 {
+  font-family: var(--font-heading);
+  font-size: 0.825rem;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.accountItemInfo p {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  margin: 0;
+}
+
+.noAccounts {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--text-subtle);
+}
+
+.noAccountsIcon {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.4;
+}
+
+.noAccountsTitle {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 0.825rem;
+  color: var(--text-muted);
+}
+
+.noAccountsSub {
+  margin: 0.25rem 0 0;
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+}
+
+.confirmBtns {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.welcomeArea {
+  flex: 1;
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.welcomeLogo img {
+  width: 56px;
+  height: 56px;
+  border-radius: 1rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.welcomeContent {
+  text-align: center;
+  width: 100%;
+}
+
+.welcomeContent h1 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: 0.02em;
+}
+
+.welcomeContent p {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0 0 1.75rem 0;
+  line-height: 1.6;
+}
+
+.welcomeButtons {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.625rem;
+  width: 100%;
+}
+
+.btnWelcomePrimary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    filter 0.2s,
+    transform 0.1s;
+  letter-spacing: 0.025em;
+  background-color: var(--accent);
+  color: var(--void);
+  border: none;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btnWelcomePrimary:hover {
+  filter: brightness(1.1);
+}
+
+.btnWelcomePrimary:active {
+  transform: scale(0.98);
+}
+
+.btnWelcomeSecondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background-color 0.2s,
+    border-color 0.2s;
+  background: var(--surface-a60);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btnWelcomeSecondary:hover {
+  color: var(--text);
+  background-color: var(--surface-a80);
+  border-color: var(--border);
+}
+
+.verifyBtns {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.verifyInstruction {
+  font-family: var(--font-body);
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.6;
+  width: 100%;
+}
+
+.verifyMsg {
+  margin-top: 1rem;
+  color: #f87171;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+  border-radius: 0.5rem;
+  width: 100%;
+}
+
+.formGroup {
+  margin-bottom: 0.75rem;
+  width: 100%;
+}
+
+/* ── Permission scope view ── */
+.permView {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.75rem 2rem 1.5rem;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.permViewHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.permViewActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.permActionFull {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+  text-align: left;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.permActionFull:hover {
+  background-color: var(--surface-3);
+  border-color: var(--accent);
+}
+
+.permActionFull > i {
+  color: var(--accent);
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.permActionExisting {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--accent-3);
+  border: 1px solid var(--accent-10);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    transform 0.1s;
+  text-align: left;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.permActionExisting:hover {
+  background-color: var(--accent-10);
+  border-color: var(--accent);
+}
+
+.permActionExisting:active {
+  transform: scale(0.99);
+}
+
+.permActionExisting > i {
+  color: var(--accent);
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.permGroupGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+.permGroupCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    transform 0.1s;
+  text-align: left;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.permGroupCard:hover {
+  background-color: var(--surface-3);
+  border-color: var(--border);
+}
+
+.permGroupCard:active {
+  transform: scale(0.98);
+}
+
+.permGroupCardActive {
+  background-color: var(--accent-3);
+  border-color: var(--accent);
+}
+
+.permGroupCardActive:hover {
+  background-color: var(--accent-10);
+}
+
+.permGroupCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.15rem;
+}
+
+.permGroupCardIcon {
+  font-size: 1rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.permGroupCardActive .permGroupCardIcon {
+  color: var(--accent);
+}
+
+.permGroupCardCheck {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: var(--text-subtle);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+  flex-shrink: 0;
+}
+
+.permGroupCardActive .permGroupCardCheck {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--void);
+}
+
+.permGroupCardName {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.permGroupCardDesc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.permGroupCardMeta {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  font-family: var(--font-body);
+  margin-top: 0.15rem;
+}
+
+.permCustomizeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.permCustomizeToggle:hover {
+  color: var(--text);
+}
+
+.permActionTitle {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.permActionSub {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  margin-left: auto;
+  font-weight: 400;
+}
+
+.permActionDivider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-subtle);
+  font-size: 0.7rem;
+  font-family: var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0.25rem 0;
+}
+
+.permActionDivider::before,
+.permActionDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.permPickerInline {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.permPickerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.permPickerTitle {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.permPickerTitle > i {
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+.permPickerControls {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.permGroupSelect {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 1.25rem;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%2394959b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.4rem center;
+}
+
+.permGroupSelect:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.permLinkBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+
+.permLinkBtn:hover {
+  color: var(--accent);
+  background: var(--surface);
+}
+
+.permSearch {
+  width: 100%;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.permSearch:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.permSearch::placeholder {
+  color: var(--text-subtle);
+}
+
+.permListScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: var(--surface);
+  padding: 0.4rem;
+}
+
+.permListScroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.permListScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.permListScroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.permListScroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-subtle);
+}
+
+.permLoading {
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: 0.75rem;
+  padding: 1rem 0;
+  font-family: var(--font-body);
+}
+
+.permCategory {
+  margin-bottom: 0.4rem;
+}
+
+.permCategoryHeader {
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-subtle);
+  padding: 0.2rem 0.3rem;
+  margin-bottom: 0.15rem;
+}
+
+.permList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.1rem;
+}
+
+.permItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: var(--text-muted);
+  transition:
+    background-color 0.1s,
+    color 0.1s;
+  user-select: none;
+  min-width: 0;
+}
+
+.permItem:hover {
+  background-color: var(--surface-3);
+  color: var(--text);
+}
+
+.permItem input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+}
+
+.permItemChecked {
+  background-color: var(--accent-glow);
+  color: var(--text);
+}
+
+.permItemForbidden {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.permItemForbidden input {
+  cursor: not-allowed;
+}
+
+.permItemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.permBadge {
+  font-size: 0.55rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-subtle);
+  font-family: var(--font-body);
+  flex-shrink: 0;
+}
+
+.permPickerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.permPickerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.permCount {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+
+.permCount strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.permAllowBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  border: none;
+  background: var(--accent);
+  color: var(--void);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition:
+    filter 0.15s,
+    transform 0.1s,
+    background-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.permAllowBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.permAllowBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.permAllowBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.permAllowBtnDanger {
+  background: #f87171;
+}
+
+.permAllowBtnDanger:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.permError {
+  font-size: 0.7rem;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.15);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  font-family: var(--font-body);
+}
+
+.permCancelBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.permCancelBtn:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.permFullAccessToggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+  text-align: left;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.permFullAccessToggle:hover {
+  background-color: var(--surface-3);
+}
+
+.permFullAccessToggleActive {
+  background-color: var(--accent-3);
+  border-color: var(--accent);
+}
+
+.permFullAccessToggleActive:hover {
+  background-color: var(--accent-10);
+}
+
+.permFullAccessToggleDanger.permFullAccessToggleActive {
+  background-color: rgba(248, 113, 113, 0.06);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.permFullAccessToggleDanger.permFullAccessToggleActive:hover {
+  background-color: rgba(248, 113, 113, 0.1);
+}
+
+.permFullAccessToggleDanger.permFullAccessToggleActive .permFullAccessCheck {
+  background-color: #f87171;
+  border-color: #f87171;
+}
+
+.permFullAccessToggleDanger.permFullAccessToggleActive
+  .permFullAccessTitle
+  > i {
+  color: #f87171;
+}
+
+.permFullAccessCheckbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.permFullAccessCheck {
+  width: 20px;
+  height: 20px;
+  border-radius: 0.25rem;
+  border: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: var(--void);
+  background: var(--surface);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.permFullAccessToggleActive .permFullAccessCheck {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.permFullAccessBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.permFullAccessTitle {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.permFullAccessTitle > i {
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.permFullAccessSub {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  line-height: 1.4;
+}
+
+.permDangerWarning {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  width: 100%;
+  animation: permDangerIn 0.2s ease-out;
+}
+
+@keyframes permDangerIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.permDangerWarningHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  color: #f87171;
+}
+
+.permDangerWarningHead > i {
+  font-size: 0.9rem;
+}
+
+.permDangerWarningHead strong {
+  font-weight: 600;
+}
+
+.permDangerWarningList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.permDangerWarningList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.permDangerWarningList li > i {
+  color: #f87171;
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+  flex-shrink: 0;
+}
+
+.permDangerWarningNote {
+  margin: 0.25rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(248, 113, 113, 0.15);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.permDangerWarningNote strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .welcomeArea {
+    padding: 2rem 1.5rem;
+    max-width: 360px;
+  }
+
+  .permView {
+    padding: 1.5rem 1.25rem 1.25rem;
+    max-width: none;
+  }
+
+  .permGroupGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .permList {
+    grid-template-columns: 1fr;
+  }
+
+  .welcomeContent h1 {
+    font-size: 1.35rem;
+  }
+
+  .welcomeLogo img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .accountItem {
+    flex-shrink: 0;
+    padding: 0.5rem 0.625rem;
+    gap: 0.5rem;
+  }
+
+  .accountItem img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .accountItemInfo h3 {
+    font-size: 0.75rem;
+  }
+
+  .accountItemInfo p {
+    display: none;
+  }
+
+  .noAccounts {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .noAccountsIcon {
+    font-size: 1.25rem;
+    margin-bottom: 0.375rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .accountItem {
+    flex-shrink: 1;
+  }
+
+  .permActionSub {
+    display: none;
+  }
+
+  .permPickerFooter {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .permPickerActions {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .permAllowBtn,
+  .permCancelBtn {
+    flex: 1;
+  }
+
+  .accountItemInfo p {
+    display: block;
+  }
+
+  .welcomeArea {
+    padding: 1.75rem 1.25rem;
+    max-width: none;
+  }
+
+  .welcomeContent h1 {
+    font-size: 1.2rem;
+  }
+
+  .welcomeContent p {
+    font-size: 0.825rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .btnWelcomePrimary,
+  .btnWelcomeSecondary {
+    font-size: 16px;
+    padding: 0.875rem 1.25rem;
+  }
+
+  .verifyInstruction {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .welcomeArea {
+    padding: 1.25rem 1rem;
+  }
+
+  .welcomeContent h1 {
+    font-size: 1.1rem;
+  }
+
+  .welcomeContent p {
+    font-size: 0.8rem;
+  }
+
+  .btnWelcomePrimary,
+  .btnWelcomeSecondary {
+    padding: 0.75rem 1rem;
+  }
+}
+
+.permRequiredNotice {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(250, 204, 21, 0.06);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.permRequiredHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  color: #fbbf24;
+}
+
+.permRequiredHead > i {
+  font-size: 0.9rem;
+}
+
+.permRequiredHead strong {
+  font-weight: 600;
+}
+
+.permRequiredTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.permRequiredTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem 0.2rem 0.4rem;
+  font-family: monospace;
+  font-size: 0.7rem;
+  background: var(--surface-2);
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.permRequiredTag > i {
+  font-size: 0.55rem;
+  color: #fbbf24;
+}
+
+.permRequiredTagMissing {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.permRequiredTagMissing > i {
+  color: #f87171;
+}
+
+.permRequiredSub {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.permItemRequested .permItemLabel {
+  color: var(--text);
+}
+
+.permItemRequested {
+  border-left: 2px solid rgba(250, 204, 21, 0.6);
+}
+
+.permItemRequestedMissing {
+  border-left-color: rgba(248, 113, 113, 0.6);
+}
+
+.permMissingWarn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  width: 100%;
+  animation: permDangerIn 0.2s ease-out;
+}
+
+.permMissingWarnHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  color: #f87171;
+}
+
+.permMissingWarnHead > i {
+  font-size: 0.9rem;
+}
+
+.permMissingWarnHead strong {
+  font-weight: 600;
+}
+
+.permMissingWarnText {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.permMissingWarnSub {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.permMissingWarnActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+@media (max-height: 500px) and (max-width: 768px) {
+  .welcomeArea {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .welcomeLogo img {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0.75rem;
+  }
+
+  .welcomeContent h1 {
+    font-size: 1.15rem;
+  }
+
+  .welcomeContent p {
+    margin-bottom: 1rem;
+  }
+
+  .welcomeButtons {
+    gap: 0.5rem;
+  }
+
+  .btnWelcomePrimary,
+  .btnWelcomeSecondary {
+    padding: 0.625rem 1rem;
+  }
+}

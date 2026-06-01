@@ -1,0 +1,141 @@
+.about {
+  padding: var(--section-padding);
+  position: relative;
+  overflow: hidden;
+}
+
+.row {
+  max-width: var(--inner-max);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+}
+
+@media (min-width: 64rem) {
+  .row {
+    flex-direction: row;
+    gap: 4rem;
+  }
+}
+
+.text {
+  flex: 1;
+  text-align: center;
+}
+
+@media (min-width: 64rem) {
+  .text {
+    text-align: left;
+  }
+}
+
+.label {
+  composes: sectionLabel from "./shared.module.css";
+}
+
+.heading {
+  composes: sectionHeading from "./shared.module.css";
+  margin-top: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.paragraphs {
+  max-width: 36rem;
+}
+
+.p {
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  line-height: 1.625;
+  font-size: 1rem;
+  margin: 0 0 1rem;
+}
+
+.highlight {
+  color: var(--text);
+  font-weight: 500;
+}
+.visual {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+.logoWrapper {
+  position: relative;
+  width: 16rem;
+  height: 16rem;
+}
+
+@media (min-width: 40rem) {
+  .logoWrapper {
+    width: 18rem;
+    height: 18rem;
+  }
+}
+
+.logoGlow {
+  position: absolute;
+  inset: 0;
+  background-color: var(--accent-10);
+  border-radius: 1.5rem;
+  filter: blur(40px);
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+.logoCard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.logoImg {
+  width: 12rem;
+  height: 12rem;
+  border-radius: 1rem;
+  animation: float 4s ease-in-out infinite;
+}
+
+@media (min-width: 40rem) {
+  .logoImg {
+    width: 14rem;
+    height: 14rem;
+  }
+}
+
+.floatCard {
+  position: absolute;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  animation: float 4s ease-in-out infinite;
+}
+
+.floatCard1 {
+  top: -1rem;
+  right: -1rem;
+  animation-delay: 100ms;
+}
+.floatCard2 {
+  bottom: -1rem;
+  left: -1rem;
+  animation-delay: 300ms;
+}
+.accent {
+  color: var(--accent);
+}
+.fadeUp {
+  composes: fadeUp from "./shared.module.css";
+}
+.hidden {
+  composes: hidden from "./shared.module.css";
+}

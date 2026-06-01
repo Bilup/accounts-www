@@ -1,0 +1,38 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--void);
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.title {
+  font-family: var(--heading-font);
+  font-size: var(--heading-size);
+  background: var(--gradient-heading);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+}
+
+.text {
+  color: var(--sub-color);
+  font-family: var(--sub-font);
+  font-size: var(--sub-size);
+  line-height: var(--sub-line-height);
+}
+
+.homeLink {
+  margin-top: 1rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: bold;
+}

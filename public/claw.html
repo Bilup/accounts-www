@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Claw - A Simple Social Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cal+Sans&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!-- OpenGraph Meta Tags -->
+  <meta property="og:title" content="Claw: A Simple Social Platform" />
+  <meta property="og:description" content="Claw is a simple social platform made for Rotur. Without any algorithms, Claw is a simple way to post small announcements!" />
+  <meta property="og:url" content="https://rotur.dev/claw" />
+  <meta property="og:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  <meta property="og:image:alt" content="Rotur Logo" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Rotur" />
+  
+  <!-- Twitter Card Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Claw: A Simple Social Platform" />
+  <meta name="twitter:description" content="Claw is a simple social platform made for Rotur. Without any algorithms, Claw is a simple way to post small announcements!" />
+  <meta name="twitter:image" content="https://avatars.githubusercontent.com/u/174211781?s=256&v=4" />
+  
+  <!-- General Meta Tags -->
+  <meta name="description" content="Claw is a simple social platform made for Rotur. Without any algorithms, Claw is a simple way to post small announcements!" />
+  <meta name="theme-color" content="#121212" />
+  <style>
+    .headings {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="header-wrapper">
+    <div id="header" class="row">
+      <a href="https://rotur.dev" class="tab">
+        <img src="assets/branding/rotur-logo.svg" id="logo">
+      </a>
+      <div class="vrule"></div>
+      <a href="https://github.com/roturTW" class="tab">
+        <p>Github</p>
+      </a>
+      <a href="https://rotur.dev/systems" class="tab">
+        <p>Systems</p>
+      </a>
+      <a href="https://rotur.dev/status" class="tab">
+        <p>Status</p>
+      </a>
+      <a href="https://docs.rotur.dev/" class="tab">
+        <p>Docs</p>
+      </a>
+    </div>
+  </div>
+
+  <div id="backdrop"></div>
+
+  <div id="content" class="column">
+    <div id="wrapper-claw" class="column">
+      <p class="title">
+        Claw
+      </p>
+      <div class="rule"></div>
+      <p class="body">
+        A Simple Social Platform
+      </p>
+      
+      <div class="claw-container">
+        <div class="hero">
+          <img src="https://apps.rotur.dev/apps/screenshots/Claw/main.png" alt="Claw Screenshot" draggable="false" class="logo">
+        </div>
+        
+        <div class="about">
+          <p class="title">About</p>
+          <p class="body">Claw is a simple social platform made for Rotur. Without any algorithms, Claw is a simple way to post small announcements!</p>
+        </div>
+        
+        <div class="api-endpoints">
+          <p class="title">API Endpoints</p>
+          <div class="endpoint-list">
+            <div class="endpoint">
+              <h3 class="title">GET /feed</h3>
+              <p class="body">Gets recent global posts</p>
+              <code class="body">https://claw.rotur.dev/feed?limit=(max100)</code>
+            </div>
+            <div class="endpoint">
+              <h3 class="title">GET /post</h3>
+              <p class="body">Adds a post for your account</p>
+              <code class="body">https://claw.rotur.dev/post?content=(maxlen500)&auth=(roturtoken)</code>
+            </div>
+            <div class="endpoint">
+              <h3 class="title">GET /profile</h3>
+              <p class="body">Returns user info and all posts</p>
+              <code class="body">https://claw.rotur.dev/profile?name=(roturusername)</code>
+            </div>
+            <div class="endpoint">
+              <h3 class="title">GET /delete</h3>
+              <p class="body">Deletes a post from the database (if you are owner of post)</p>
+              <code class="body">https://claw.rotur.dev/delete?id=(postid)&auth=(roturtoken)</code>
+            </div>
+            <div class="endpoint">
+              <h3 class="title">GET /rate</h3>
+              <p class="body">Likes or removes a like from a post</p>
+              <code class="body">https://claw.rotur.dev/rate?id=(postid)&auth=(roturtoken)&rating=(1/0)</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="footer" class="column">
+      <div class="legal row">
+        <a href="https://rotur.dev/terms-of-service">
+          Terms of Service
+        </a>
+        <div class="vrule2"></div>
+        <a href="https://rotur.dev/privacy-policy">
+          Privacy Policy
+        </a>
+      </div>
+      <p class="body">
+        &copy; 2026 Rotur. All rights reserved.
+      </p>
+    </div>
+  </div>
+  <style>
+    .api-endpoints {
+      text-align: center;
+    }
+    .dropdown {
+      width: fit-content;
+      margin: 10px auto;
+      display: inline-block;
+      position: relative;
+    }
+    .dropbtn {
+      width: fit-content;
+      background-color: #3f2f3c;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      text-align: left;
+    }
+    .dropdown-content {
+      text-align: center;
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #3f2f3c;
+      box-shadow: 0px -8px 16px 0px rgba(0,0,0,0.2);
+      border-radius: 5px;
+      font-size: medium;
+      padding: 10px;
+      width: fit-content;
+      white-space: nowrap;
+      z-index: 1;
+      margin-bottom: 5px;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .dropdown-content p {
+      margin: 0;
+    }
+  </style>
+  <script src="./nav.js"></script>
+</body>
+</html>

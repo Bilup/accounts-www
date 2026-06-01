@@ -1,0 +1,129 @@
+.features {
+  padding: var(--section-padding);
+  position: relative;
+}
+
+.bgOrb {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18rem;
+  height: 18rem;
+  background-color: var(--accent-3);
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+}
+
+.inner {
+  composes: sectionInner from "./shared.module.css";
+  position: relative;
+}
+.header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+.label {
+  composes: sectionLabel from "./shared.module.css";
+}
+.heading {
+  composes: sectionHeading from "./shared.module.css";
+  margin-top: 0.75rem;
+}
+
+.sub {
+  composes: sectionSub from "./shared.module.css";
+  margin-top: 1rem;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 48rem) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.cardTitle {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text);
+  letter-spacing: 0.025em;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background-color: var(--surface-2-a50);
+  border: 1px solid transparent;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+  cursor: default;
+}
+
+.item:hover {
+  border-color: var(--border);
+  background-color: var(--surface-2);
+}
+
+.itemHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.itemIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.itemName {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text);
+}
+
+.itemDesc {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+  line-height: 1.5;
+  padding-left: 2rem;
+}
+
+.fadeUp {
+  composes: fadeUp from "./shared.module.css";
+}
+.hidden {
+  composes: hidden from "./shared.module.css";
+}
