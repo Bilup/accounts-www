@@ -428,12 +428,12 @@ export function Shop() {
               </p>
             </div>
           </div>
-    {user && (
-      <div class={s.balance}>
-        <Coins size={16} />
-        <span>{user["sys.currency"].toLocaleString()} credits</span>
-      </div>
-    )}
+          {user && (
+            <div class={s.balance}>
+              <Coins size={16} />
+              <span>{user["sys.currency"].toLocaleString()} credits</span>
+            </div>
+          )}
         </div>
 
         <div class={s.tabs} role="tablist">
@@ -489,9 +489,9 @@ export function Shop() {
             onRetry={fetchCosmetics}
           />
         ) : (
-    <OwnedTab
-      user={user}
-      loading={myLoading}
+          <OwnedTab
+            user={user}
+            loading={myLoading}
             ownedItems={ownedItems}
             activeItems={activeItems}
             isEquipped={isEquipped}

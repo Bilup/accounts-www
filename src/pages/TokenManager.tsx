@@ -1,9 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-} from "preact/hooks";
+import { useState, useEffect, useRef, useMemo } from "preact/hooks";
 import {
   Key,
   PlusCircle,
@@ -757,7 +752,9 @@ export function TokenManager() {
                         min={0}
                         max={8760}
                         value={createExpiresHrs}
-                        onInput={(e: any) => setCreateExpiresHrs(e.target.value)}
+                        onInput={(e: any) =>
+                          setCreateExpiresHrs(e.target.value)
+                        }
                       />
                     </div>
                   </div>
@@ -876,8 +873,7 @@ export function TokenManager() {
                           </div>
                           <div class={s.permList}>
                             {visible.map((p) => {
-                              const forbidden =
-                                FORBIDDEN_PERMISSIONS.has(p);
+                              const forbidden = FORBIDDEN_PERMISSIONS.has(p);
                               const checked = createPerms.has(p);
                               return (
                                 <label
@@ -889,9 +885,7 @@ export function TokenManager() {
                                     checked={checked}
                                     disabled={forbidden}
                                     onChange={() =>
-                                      setCreatePerms(
-                                        togglePerm(createPerms, p),
-                                      )
+                                      setCreatePerms(togglePerm(createPerms, p))
                                     }
                                   />
                                   <span class={s.permItemLabel}>{p}</span>
@@ -1198,7 +1192,9 @@ function TokenDetailModal({
                               (x) => x.name === e.target.value,
                             );
                             if (g) {
-                              onSetEditingPerms(applyGroup(editSet, g.permissions));
+                              onSetEditingPerms(
+                                applyGroup(editSet, g.permissions),
+                              );
                             }
                             e.target.value = "";
                           }}
@@ -1287,7 +1283,10 @@ function TokenDetailModal({
                       permission{editSet.size !== 1 ? "s" : ""} selected
                     </span>
                     <div style={{ display: "flex", gap: "0.4rem" }}>
-                      <button class={s.btnSecondary} onClick={onCancelEditPerms}>
+                      <button
+                        class={s.btnSecondary}
+                        onClick={onCancelEditPerms}
+                      >
                         Cancel
                       </button>
                       <button

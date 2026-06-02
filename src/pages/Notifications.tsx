@@ -1,11 +1,5 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
-import {
-  Smartphone,
-  UserCheck,
-  ScrollText,
-  Trash2,
-  Copy,
-} from "lucide-preact";
+import { Smartphone, UserCheck, ScrollText, Trash2, Copy } from "lucide-preact";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import {
@@ -169,8 +163,6 @@ export function Notifications() {
 
   // ── Auth ──
 
-
-
   // ── Actions ──
 
   async function deleteDevice(deviceId: string) {
@@ -288,20 +280,20 @@ export function Notifications() {
           you notifications, and review your recent notification history.
         </p>
 
-      {user && (
-        <>
-          <div class={s.userInfo}>
-            <div>
-              <div class={s.welcomeText}>
-                Welcome, <strong>{escapeHtml(currentUser)}</strong>
+        {user && (
+          <>
+            <div class={s.userInfo}>
+              <div>
+                <div class={s.welcomeText}>
+                  Welcome, <strong>{escapeHtml(currentUser)}</strong>
+                </div>
+                <p class={s.welcomeSub}>
+                  {endpoints.length} device{endpoints.length !== 1 ? "s" : ""} ·{" "}
+                  {totalSenders} allowed sender{totalSenders !== 1 ? "s" : ""} ·{" "}
+                  {log.length} log entr{log.length !== 1 ? "ies" : "y"}
+                </p>
               </div>
-              <p class={s.welcomeSub}>
-                {endpoints.length} device{endpoints.length !== 1 ? "s" : ""} ·{" "}
-                {totalSenders} allowed sender{totalSenders !== 1 ? "s" : ""} ·{" "}
-                {log.length} log entr{log.length !== 1 ? "ies" : "y"}
-              </p>
             </div>
-          </div>
 
             {/* Tabs */}
             <div class={s.tabs} role="tablist">

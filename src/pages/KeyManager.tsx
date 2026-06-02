@@ -88,12 +88,8 @@ export function KeyManager() {
 
   const priceInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const nameInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const webhookInputRefs = useRef<Record<string, HTMLInputElement | null>>(
-    {},
-  );
-  const addUserInputRefs = useRef<Record<string, HTMLInputElement | null>>(
-    {},
-  );
+  const webhookInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const addUserInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
     if (currentUser) fetchUserKeys();
@@ -392,9 +388,7 @@ export function KeyManager() {
                     </div>
                     <div>
                       <h2 class={s.sectionTitle}>Your Keys</h2>
-                      <p class={s.sectionSubtitle}>
-                        {keys.length} created
-                      </p>
+                      <p class={s.sectionSubtitle}>{keys.length} created</p>
                     </div>
                   </div>
                 </div>
@@ -444,9 +438,7 @@ export function KeyManager() {
                             </div>
                             <div class={s.keyInfoRow}>
                               <span class={s.keyInfoLabel}>Users:</span>
-                              <span class={s.keyInfoValue}>
-                                {users.length}
-                              </span>
+                              <span class={s.keyInfoValue}>{users.length}</span>
                             </div>
                           </div>
                         </div>
@@ -481,9 +473,7 @@ export function KeyManager() {
                         placeholder="Enter a descriptive name"
                         value={createName}
                         onInput={(e) =>
-                          setCreateName(
-                            (e.target as HTMLInputElement).value,
-                          )
+                          setCreateName((e.target as HTMLInputElement).value)
                         }
                       />
                     </div>
@@ -497,9 +487,7 @@ export function KeyManager() {
                         min={0}
                         value={createPrice}
                         onInput={(e) =>
-                          setCreatePrice(
-                            (e.target as HTMLInputElement).value,
-                          )
+                          setCreatePrice((e.target as HTMLInputElement).value)
                         }
                       />
                     </div>
@@ -569,9 +557,7 @@ export function KeyManager() {
                   {createMessage && (
                     <div
                       class={
-                        createMessageType === "success"
-                          ? s.success
-                          : s.error
+                        createMessageType === "success" ? s.success : s.error
                       }
                     >
                       {createMessage}
@@ -659,8 +645,12 @@ function KeyDetailModal({
         </button>
         <div class={s.modalContent}>
           <div class={s.modalHeader}>
-            <span class={s.modalType}>{isSubscription ? "Subscription" : "Regular"}</span>
-            <h2 class={s.modalName}>{keyData.name || `${keyId.substring(0, 8)}…`}</h2>
+            <span class={s.modalType}>
+              {isSubscription ? "Subscription" : "Regular"}
+            </span>
+            <h2 class={s.modalName}>
+              {keyData.name || `${keyId.substring(0, 8)}…`}
+            </h2>
           </div>
 
           {message && (
@@ -673,10 +663,7 @@ function KeyDetailModal({
             <div class={s.modalStatItem}>
               <Key size={16} />
               <span class={s.keyIdDisplay}>{keyId}</span>
-              <button
-                class={s.copyBtn}
-                onClick={() => onCopy(keyId, keyId)}
-              >
+              <button class={s.copyBtn} onClick={() => onCopy(keyId, keyId)}>
                 <Copy size={12} /> Copy
               </button>
             </div>
@@ -686,7 +673,9 @@ function KeyDetailModal({
             </div>
             <div class={s.modalStatItem}>
               <UserPlus size={16} />
-              <span>{users.length} authorized user{users.length !== 1 ? "s" : ""}</span>
+              <span>
+                {users.length} authorized user{users.length !== 1 ? "s" : ""}
+              </span>
             </div>
             {isSubscription && sub && (
               <div class={s.modalStatItem}>
@@ -808,26 +797,17 @@ function KeyDetailModal({
                   if (e.key === "Enter") onAddUser(keyId);
                 }}
               />
-              <button
-                class={s.btnPrimary}
-                onClick={() => onAddUser(keyId)}
-              >
+              <button class={s.btnPrimary} onClick={() => onAddUser(keyId)}>
                 <UserPlus size={14} /> Add
               </button>
             </div>
           </div>
 
           <div class={s.modalFooter}>
-            <button
-              class={s.btnSecondary}
-              onClick={() => onRevoke(keyId)}
-            >
+            <button class={s.btnSecondary} onClick={() => onRevoke(keyId)}>
               <RotateCcw size={14} /> Revoke Key
             </button>
-            <button
-              class={s.btnDanger}
-              onClick={() => onDelete(keyId)}
-            >
+            <button class={s.btnDanger} onClick={() => onDelete(keyId)}>
               <Trash2 size={14} /> Delete Key
             </button>
           </div>

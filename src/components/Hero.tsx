@@ -12,7 +12,9 @@ export function Hero() {
 
       <div class={s.content}>
         <h1 class={s.heading}>
-          Connecting worlds,<br />one packet
+          Connecting worlds,
+          <br />
+          one packet
           <span class={s.gradient}> at a time.</span>
         </h1>
 

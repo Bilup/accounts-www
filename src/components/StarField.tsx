@@ -91,7 +91,9 @@ export function StarField() {
     }
 
     function drawStar(star: Star, time: number) {
-      const twinkle = Math.sin(time * 0.001 * star.twinkleSpeed + star.twinkleOffset);
+      const twinkle = Math.sin(
+        time * 0.001 * star.twinkleSpeed + star.twinkleOffset,
+      );
       const opacity = star.baseOpacity * (0.5 + 0.5 * twinkle);
       const depthScale = 0.3 + star.z * 0.7;
       const size = star.size * depthScale;
@@ -160,7 +162,11 @@ export function StarField() {
           ss.x += Math.cos(ss.angle) * ss.speed * dt;
           ss.y += Math.sin(ss.angle) * ss.speed * dt;
 
-          if (ss.life >= ss.maxLife || ss.x > width + 200 || ss.y > height + 200) {
+          if (
+            ss.life >= ss.maxLife ||
+            ss.x > width + 200 ||
+            ss.y > height + 200
+          ) {
             spawnShootingStar(ss);
             ss.active = false;
             ss.life = -(2 + Math.random() * 4);

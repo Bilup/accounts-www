@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from "preact/hooks";
 import {
-	Package,
-	ShoppingBag,
-	PlusCircle,
-	Coins,
-	ArrowLeft,
-	Search,
-	Trash2,
-	Tag,
-	Send,
-	Link2,
+  Package,
+  ShoppingBag,
+  PlusCircle,
+  Coins,
+  ArrowLeft,
+  Search,
+  Trash2,
+  Tag,
+  Send,
+  Link2,
 } from "lucide-preact";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
@@ -79,9 +79,7 @@ export function InventoryManager() {
 
   const [myItems, setMyItems] = useState<InventoryItem[]>([]);
   const [myItemsLoading, setMyItemsLoading] = useState(false);
-  const [marketplaceItems, setMarketplaceItems] = useState<InventoryItem[]>(
-    [],
-  );
+  const [marketplaceItems, setMarketplaceItems] = useState<InventoryItem[]>([]);
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
   const [marketplaceSearch, setMarketplaceSearch] = useState("");
 
@@ -104,9 +102,7 @@ export function InventoryManager() {
   >({});
 
   const priceInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const transferInputRefs = useRef<Record<string, HTMLInputElement | null>>(
-    {},
-  );
+  const transferInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [singleItemMsg, setSingleItemMsg] = useState("");
   const [singleItemErr, setSingleItemErr] = useState("");
@@ -556,19 +552,21 @@ export function InventoryManager() {
                   </div>
                 )}
               </div>
-                <div class={s.singleItemActions}>
-                  {item.selling && user && !isOwnItem && (
-                    <button class={s.btnPrimary} onClick={buySingleItem}>
-                      <Coins size={14} /> Buy for {formatPrice(item.price)}{" "}
-                      credits
-                    </button>
-                  )}
-                  {isOwnItem && <div class={s.ownItemNotice}>This is your item</div>}
-                  {!item.selling && !isOwnItem && (
-                    <div class={s.notForSaleNotice}>
-                      This item is not currently for sale
-                    </div>
-                  )}
+              <div class={s.singleItemActions}>
+                {item.selling && user && !isOwnItem && (
+                  <button class={s.btnPrimary} onClick={buySingleItem}>
+                    <Coins size={14} /> Buy for {formatPrice(item.price)}{" "}
+                    credits
+                  </button>
+                )}
+                {isOwnItem && (
+                  <div class={s.ownItemNotice}>This is your item</div>
+                )}
+                {!item.selling && !isOwnItem && (
+                  <div class={s.notForSaleNotice}>
+                    This item is not currently for sale
+                  </div>
+                )}
               </div>
               {singleItemMsg && <div class={s.success}>{singleItemMsg}</div>}
               {singleItemErr && <div class={s.error}>{singleItemErr}</div>}
@@ -649,9 +647,7 @@ export function InventoryManager() {
                       return (
                         <div key={item.name} class={s.itemCard}>
                           <div class={s.itemHeader}>
-                            <h3 class={s.itemName}>
-                              {escapeHtml(item.name)}
-                            </h3>
+                            <h3 class={s.itemName}>{escapeHtml(item.name)}</h3>
                             {item.selling ? (
                               <span class={`${s.itemTag} ${s.forSale}`}>
                                 For Sale
@@ -862,9 +858,7 @@ export function InventoryManager() {
                       return (
                         <div key={item.name} class={s.itemCard}>
                           <div class={s.itemHeader}>
-                            <h3 class={s.itemName}>
-                              {escapeHtml(item.name)}
-                            </h3>
+                            <h3 class={s.itemName}>{escapeHtml(item.name)}</h3>
                             <button
                               class={s.copyBtn}
                               onClick={() => copyItemLink(item.name)}

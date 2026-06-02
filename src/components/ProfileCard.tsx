@@ -13,11 +13,19 @@ import {
   Users,
   UserMinus,
   Send,
+  StickyNote,
+  Trash2,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-preact";
 import s from "./ProfileCard.module.css";
 import { bannerUrl as buildBannerUrl } from "../lib/avatar";
-import { type AuthUser, type PublicProfile, getToken } from "../lib/auth";
+import {
+  type AuthUser,
+  type PublicProfile,
+  type Benefits,
+  getToken,
+} from "../lib/auth";
 import { UserAvatar } from "./UserAvatar";
 import { ImageCropper, type CropperKind } from "./ImageCropper";
 
@@ -35,9 +43,12 @@ interface ProfileCardProps {
   followerCount?: number;
   followingCount?: number;
   viewerBalance?: number | null;
+  benefits?: Benefits | null;
+  viewerNotes?: Record<string, string>;
   onFollowToggle?: () => void;
   onFriendAction?: (action: "add" | "remove" | "accept" | "reject") => void;
   onTransferComplete?: (debited: number) => void;
+  onNoteUpdate?: (username: string, note: string) => void;
   onEdit?: (changes: Record<string, unknown>) => Promise<void> | void;
 }
 
@@ -63,9 +74,12 @@ export function ProfileCard({
   followerCount,
   followingCount,
   viewerBalance = null,
+  benefits = null,
+  viewerNotes,
   onFollowToggle,
   onFriendAction,
   onTransferComplete,
+  onNoteUpdate,
   onEdit,
 }: ProfileCardProps) {
   const [editingBio, setEditingBio] = useState(false);
@@ -86,6 +100,9 @@ export function ProfileCard({
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendSuccess, setSendSuccess] = useState<string | null>(null);
   const [sendSending, setSendSending] = useState(false);
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const sendAmountRef = useRef<HTMLInputElement>(null);
 
@@ -115,6 +132,24 @@ export function ProfileCard({
     const file = input.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
+      input.value = "";
+      return;
+    }
+    const isAnimated =
+      file.type === "image/gif" ||
+      file.type === "image/webp" ||
+      file.type === "image/apng";
+    if (isAnimated && kind === "pfp" && !benefits?.animated_pfp) {
+      alert(
+        "Animated profile pictures require a subscription. Upgrade at ko-fi.com/mistium",
+      );
+      input.value = "";
+      return;
+    }
+    if (isAnimated && kind === "banner" && !benefits?.animated_banner) {
+      alert(
+        "Animated banners require a subscription. Upgrade at ko-fi.com/mistium",
+      );
       input.value = "";
       return;
     }
@@ -320,14 +355,25 @@ export function ProfileCard({
               onClick={() => bannerInputRef.current?.click()}
             >
               <ImageIcon size={28} />
-              <span class={s.bannerEditCost}>
-                <Coins size={12} /> Cost: 10 credits
-              </span>
+              {!benefits?.free_banner_uploads && (
+                <span class={s.bannerEditCost}>
+                  <Coins size={12} /> Cost: 10 credits
+                </span>
+              )}
+              {benefits?.free_banner_uploads && (
+                <span class={s.bannerEditCost}>
+                  <Check size={12} /> Free with your plan
+                </span>
+              )}
             </div>
             <input
               ref={bannerInputRef}
               type="file"
-              accept="image/*"
+              accept={
+                benefits?.animated_banner
+                  ? "image/*"
+                  : "image/png,image/jpeg,image/webp"
+              }
               class={s.hiddenFile}
               onChange={(e) => handleFileChosen(e, "banner")}
             />
@@ -354,7 +400,11 @@ export function ProfileCard({
               <input
                 ref={avatarInputRef}
                 type="file"
-                accept="image/*"
+                accept={
+                  benefits?.animated_pfp
+                    ? "image/*"
+                    : "image/png,image/jpeg,image/webp"
+                }
                 class={s.hiddenFile}
                 onChange={(e) => handleFileChosen(e, "pfp")}
               />
@@ -654,6 +704,123 @@ export function ProfileCard({
           </div>
         )}
 
+        {showActions && !isSelf && benefits?.profile_notes && (
+          <div class={s.noteSection}>
+            <div class={s.noteHeader}>
+              <StickyNote size={14} />
+              <span class={s.noteTitle}>Profile Note</span>
+              <span class={s.notePrivate}>Only visible to you</span>
+            </div>
+            {editingNote ? (
+              <div class={s.noteEditWrap}>
+                <textarea
+                  class={s.noteTextarea}
+                  autoFocus
+                  value={noteDraft}
+                  onInput={(e: any) => setNoteDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setEditingNote(false);
+                  }}
+                  placeholder={`Add a note about @${user.username}...`}
+                  maxLength={300}
+                  disabled={noteSaving}
+                />
+                <div class={s.noteActions}>
+                  <button
+                    class={`${s.actionBtn} ${s.actionBtnPrimary}`}
+                    onClick={async () => {
+                      if (noteSaving) return;
+                      setNoteSaving(true);
+                      try {
+                        onNoteUpdate?.(user.username, noteDraft.trim());
+                        setEditingNote(false);
+                      } finally {
+                        setNoteSaving(false);
+                      }
+                    }}
+                    disabled={noteSaving}
+                  >
+                    <Check size={14} /> {noteSaving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    class={s.actionBtn}
+                    onClick={() => setEditingNote(false)}
+                    disabled={noteSaving}
+                  >
+                    <X size={14} /> Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div class={s.noteDisplay}>
+                {viewerNotes?.[user.username] ? (
+                  <div class={s.noteText}>{viewerNotes[user.username]}</div>
+                ) : (
+                  <div class={s.notePlaceholder}>No note set</div>
+                )}
+                <button
+                  class={s.noteEditBtn}
+                  onClick={() => {
+                    setNoteDraft(viewerNotes?.[user.username] || "");
+                    setEditingNote(true);
+                  }}
+                  aria-label={
+                    viewerNotes?.[user.username] ? "Edit note" : "Add note"
+                  }
+                  title={
+                    viewerNotes?.[user.username] ? "Edit note" : "Add note"
+                  }
+                >
+                  <Pencil size={12} />
+                </button>
+                {viewerNotes?.[user.username] && (
+                  <button
+                    class={s.noteDeleteBtn}
+                    onClick={async () => {
+                      if (noteSaving) return;
+                      setNoteSaving(true);
+                      try {
+                        const token = getToken();
+                        if (token) {
+                          await fetch(
+                            `${API}/me/note/${encodeURIComponent(user.username)}?auth=${encodeURIComponent(token)}`,
+                            { method: "DELETE" },
+                          );
+                        }
+                        onNoteUpdate?.(user.username, "");
+                      } finally {
+                        setNoteSaving(false);
+                      }
+                    }}
+                    disabled={noteSaving}
+                    aria-label="Delete note"
+                    title="Delete note"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showActions && !isSelf && !benefits?.profile_notes && (
+          <div class={s.noteUpsell}>
+            <StickyNote size={14} />
+            <span class={s.noteUpsellText}>
+              Profile Notes let you privately remember things about other users.
+            </span>
+            <a
+              href="https://ko-fi.com/mistium"
+              target="_blank"
+              rel="noopener noreferrer"
+              class={s.noteUpsellLink}
+            >
+              Upgrade <ExternalLink size={12} />
+            </a>
+          </div>
+        )}
+
         <div class={s.statsRow}>
           <Stat icon={Coins} value={credits.toLocaleString()} label="Credits" />
           <Stat
@@ -673,6 +840,7 @@ export function ProfileCard({
         <ImageCropper
           kind={pendingFile.kind}
           file={pendingFile.file}
+          freeBannerUploads={!!benefits?.free_banner_uploads}
           onCancel={() => setPendingFile(null)}
           onSave={async (dataUrl) => {
             await uploadImage(pendingFile.kind, dataUrl);

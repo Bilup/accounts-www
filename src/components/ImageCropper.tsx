@@ -7,6 +7,7 @@ export type CropperKind = "pfp" | "banner";
 interface ImageCropperProps {
   kind: CropperKind;
   file: File;
+  freeBannerUploads?: boolean;
   onCancel: () => void;
   onSave: (dataUrl: string) => void | Promise<void>;
 }
@@ -30,6 +31,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 export function ImageCropper({
   kind,
   file,
+  freeBannerUploads = false,
   onCancel,
   onSave,
 }: ImageCropperProps) {
@@ -161,7 +163,7 @@ export function ImageCropper({
 
   const handleSave = async () => {
     if (saving || !img) return;
-    if (kind === "banner" && !confirmPaid) {
+    if (kind === "banner" && !freeBannerUploads && !confirmPaid) {
       const ok = confirm(
         `Setting a banner costs ${BANNER_COST} credits. Continue?`,
       );
@@ -197,7 +199,7 @@ export function ImageCropper({
           </button>
         </div>
 
-        {kind === "banner" && (
+        {kind === "banner" && !freeBannerUploads && (
           <div class={s.costNotice}>
             <Coins size={14} />
             <span>
@@ -280,7 +282,7 @@ export function ImageCropper({
               onClick={handleSave}
               disabled={saving || !img}
             >
-              {kind === "banner" && (
+              {kind === "banner" && !freeBannerUploads && (
                 <span class={s.cost}>
                   <Coins size={13} /> {BANNER_COST}
                 </span>

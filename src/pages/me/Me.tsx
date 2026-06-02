@@ -15,18 +15,34 @@ import {
   Bell,
   Shield,
   LayoutGrid,
+  StickyNote,
+  Trash2,
+  ExternalLink,
+  Heart,
 } from "lucide-preact";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { ProfileCard } from "../../components/ProfileCard";
 import { UserAvatar } from "../../components/UserAvatar";
-import { useAuth, type Transaction, captureTokenFromUrl } from "../../lib/auth";
+import {
+  useAuth,
+  useBenefits,
+  type Transaction,
+  captureTokenFromUrl,
+  getToken,
+} from "../../lib/auth";
 import s from "./Me.module.css";
 
 const API = "https://api.rotur.dev";
 
 const INCOME_TYPES = ["tax", "in", "gift_claim", "key_sale", "escrow_in"];
-const EXPENSE_TYPES = ["out", "gift_create", "key_buy", "gift_claimed", "escrow_out"];
+const EXPENSE_TYPES = [
+  "out",
+  "gift_create",
+  "key_buy",
+  "gift_claimed",
+  "escrow_out",
+];
 
 interface KeyRecord {
   key: string;
@@ -50,6 +66,7 @@ const MAIN_TABS: { id: MainTab; label: string; icon: typeof Users }[] = [
 
 export function Me() {
   const { user, isLoggedIn, token, reload, logout } = useAuth();
+  const { benefits } = useBenefits();
   const [activeTab, setActiveTab] = useState<MainTab>("profile");
   const [friendsTab, setFriendsTab] = useState<"all" | "requests">("all");
   const [friendInput, setFriendInput] = useState("");
@@ -231,6 +248,7 @@ export function Me() {
             editable
             showActions={false}
             isSelf
+            benefits={benefits?.benefits ?? null}
             onEdit={async () => {
               await reload();
             }}
@@ -262,16 +280,41 @@ export function Me() {
             )}
 
             {activeTab === "social" && (
-              <FriendsSection
-                friends={friends}
-                requests={requests}
-                tab={friendsTab}
-                setTab={setFriendsTab}
-                input={friendInput}
-                setInput={setFriendInput}
-                onSend={sendFriendRequest}
-                onAction={friendAction}
-              />
+              <>
+                <FriendsSection
+                  friends={friends}
+                  requests={requests}
+                  tab={friendsTab}
+                  setTab={setFriendsTab}
+                  input={friendInput}
+                  setInput={setFriendInput}
+                  onSend={sendFriendRequest}
+                  onAction={friendAction}
+                />
+                <NotesSection
+                  notes={user?.["sys.notes"] || {}}
+                  hasNotes={!!benefits?.benefits?.profile_notes}
+                  onNoteUpdate={async (username, note) => {
+                    if (!token) return;
+                    try {
+                      if (note) {
+                        await fetch(
+                          `${API}/me/note/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}&note=${encodeURIComponent(note)}`,
+                          { method: "POST" },
+                        );
+                      } else {
+                        await fetch(
+                          `${API}/me/note/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
+                          { method: "DELETE" },
+                        );
+                      }
+                      await reload();
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                />
+              </>
             )}
 
             {activeTab === "billing" && (
@@ -808,6 +851,206 @@ function CosmeticsSection({ activeOverlay }: { activeOverlay: string }) {
             >
               <Sparkles size={14} /> Visit the Shop
             </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface NotesSectionProps {
+  notes: Record<string, string>;
+  hasNotes: boolean;
+  onNoteUpdate: (username: string, note: string) => void;
+}
+
+function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
+  const [editUser, setEditUser] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [addInput, setAddInput] = useState("");
+
+  const noteEntries = Object.entries(notes);
+
+  const startEdit = (username: string) => {
+    setEditUser(username);
+    setEditDraft(notes[username] || "");
+  };
+
+  const saveNote = () => {
+    if (!editUser) return;
+    onNoteUpdate(editUser, editDraft.trim());
+    setEditUser(null);
+    setEditDraft("");
+  };
+
+  const addNote = () => {
+    const username = addInput.trim();
+    if (!username) return;
+    setAddInput("");
+    setEditUser(username);
+    setEditDraft(notes[username] || "");
+  };
+
+  if (!hasNotes) {
+    return (
+      <div class={s.section}>
+        <div class={s.sectionHeader}>
+          <div class={s.sectionTitleGroup}>
+            <div class={s.sectionIcon}>
+              <StickyNote size={18} />
+            </div>
+            <div>
+              <div class={s.sectionTitle}>Profile Notes</div>
+              <div class={s.sectionSubtitle}>
+                Privately remember things about other users
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class={s.sectionBody}>
+          <div class={s.empty}>
+            <div class={s.emptyIcon}>
+              <Heart size={24} />
+            </div>
+            <div class={s.emptyTitle}>Premium Feature</div>
+            <div class={s.emptyText}>
+              Profile Notes let you privately store reminders and context about
+              other users. Only you can see them.
+            </div>
+            <a
+              href="https://ko-fi.com/mistium"
+              target="_blank"
+              rel="noopener noreferrer"
+              class={s.btnPrimary}
+              style={{ marginTop: "0.75rem" }}
+            >
+              <Heart size={14} /> Subscribe to unlock
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div class={s.section}>
+      <div class={s.sectionHeader}>
+        <div class={s.sectionTitleGroup}>
+          <div class={s.sectionIcon}>
+            <StickyNote size={18} />
+          </div>
+          <div>
+            <div class={s.sectionTitle}>Profile Notes</div>
+            <div class={s.sectionSubtitle}>
+              {noteEntries.length} note{noteEntries.length !== 1 ? "s" : ""} •
+              Private
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class={s.sectionBody}>
+        <div class={s.addFriendForm}>
+          <input
+            type="text"
+            class={s.addFriendInput}
+            placeholder="Add a note for a username..."
+            value={addInput}
+            onInput={(e: any) => setAddInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addNote()}
+          />
+          <button
+            class={s.btnPrimary}
+            onClick={addNote}
+            disabled={!addInput.trim()}
+          >
+            <StickyNote size={14} /> Add
+          </button>
+        </div>
+
+        {editUser && (
+          <div class={s.noteEditPanel}>
+            <div class={s.noteEditHeader}>Note for @{editUser}</div>
+            <textarea
+              class={s.noteTextarea}
+              value={editDraft}
+              onInput={(e: any) => setEditDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setEditUser(null);
+                  setEditDraft("");
+                }
+              }}
+              placeholder={`Add a note about @${editUser}...`}
+              maxLength={300}
+            />
+            <div class={s.noteEditActions}>
+              <button
+                class={`${s.iconBtn} ${s.iconBtnSuccess}`}
+                onClick={saveNote}
+                title="Save"
+                aria-label="Save note"
+              >
+                <Check size={14} />
+              </button>
+              <button
+                class={s.iconBtn}
+                onClick={() => {
+                  setEditUser(null);
+                  setEditDraft("");
+                }}
+                title="Cancel"
+                aria-label="Cancel"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {noteEntries.length === 0 ? (
+          <div class={s.empty}>
+            <div class={s.emptyIcon}>
+              <StickyNote size={24} />
+            </div>
+            <div class={s.emptyTitle}>No notes yet</div>
+            <div class={s.emptyText}>
+              Add a note about any user to privately remember things about them.
+            </div>
+          </div>
+        ) : (
+          <div class={s.noteList}>
+            {noteEntries.map(([username, note]) => (
+              <div key={username} class={s.noteCard}>
+                <a
+                  href={`/profile/${username}`}
+                  style={{ display: "contents" }}
+                >
+                  <UserAvatar username={username} className={s.friendAvatar} />
+                  <div class={s.noteInfo}>
+                    <div class={s.noteCardName}>@{username}</div>
+                    <div class={s.noteCardText}>{note}</div>
+                  </div>
+                </a>
+                <div class={s.friendActions}>
+                  <button
+                    class={s.iconBtn}
+                    onClick={() => startEdit(username)}
+                    title="Edit note"
+                    aria-label="Edit note"
+                  >
+                    <StickyNote size={14} />
+                  </button>
+                  <button
+                    class={`${s.iconBtn} ${s.iconBtnDanger}`}
+                    onClick={() => onNoteUpdate(username, "")}
+                    title="Delete note"
+                    aria-label="Delete note"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -70,6 +70,30 @@ export type Status = {
 
 export type SubscriptionTier = "Free" | "Pro" | "Max";
 
+export type Benefits = {
+  max_keys: number;
+  max_login_history: number;
+  max_transaction_history: number;
+  max_rmails: number;
+  file_system_size: number;
+  bio_length: number;
+  animated_pfp: boolean;
+  animated_banner: boolean;
+  free_banner_uploads: boolean;
+  bio_templating: boolean;
+  profile_notes: boolean;
+  daily_credit_multiplier: number;
+};
+
+export type BenefitsResponse = {
+  benefits: Benefits;
+  subscription: {
+    active: boolean;
+    tier: SubscriptionTier;
+    next_billing: number;
+  };
+};
+
 export type Subscription = {
   active: boolean;
   next_billing: number;
@@ -442,6 +466,51 @@ export function usePublicProfile(username: string | null) {
   }, [username]);
 
   return { profile, loading, error };
+}
+
+let cachedBenefits: BenefitsResponse | null = null;
+let benefitsPromise: Promise<BenefitsResponse | null> | null = null;
+
+export async function fetchBenefits(): Promise<BenefitsResponse | null> {
+  const token = getToken();
+  if (!token) return null;
+  if (cachedBenefits) return cachedBenefits;
+  if (benefitsPromise) return benefitsPromise;
+  benefitsPromise = fetch(
+    `${API_BASE}/me/benefits?auth=${encodeURIComponent(token)}`,
+  )
+    .then(async (res) => {
+      if (!res.ok) return null;
+      const data = (await res.json()) as BenefitsResponse;
+      cachedBenefits = data;
+      return data;
+    })
+    .catch(() => null)
+    .finally(() => {
+      benefitsPromise = null;
+    });
+  return benefitsPromise;
+}
+
+export function useBenefits() {
+  const [benefits, setBenefits] = useState<BenefitsResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!getToken()) return;
+    setLoading(true);
+    fetchBenefits()
+      .then((data) => {
+        setBenefits(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setBenefits(null);
+        setLoading(false);
+      });
+  }, []);
+
+  return { benefits, loading };
 }
 
 export function avatarUrl(username: string): string {

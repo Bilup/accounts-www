@@ -3,7 +3,7 @@ import { Search, ArrowRight, UserX } from "lucide-preact";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ProfileCard } from "../components/ProfileCard";
-import { useAuth, usePublicProfile } from "../lib/auth";
+import { useAuth, usePublicProfile, useBenefits, getToken } from "../lib/auth";
 import s from "./Profile.module.css";
 
 const API = "https://api.rotur.dev";
@@ -79,9 +79,12 @@ function ProfileLookup() {
 function ProfileView({ username }: { username: string }) {
   const { profile, loading, error } = usePublicProfile(username);
   const { user: me, token, reload } = useAuth();
+  const { benefits } = useBenefits();
   const [isFollowing, setIsFollowing] = useState(false);
 
   const isSelf = !!me && me.username?.toLowerCase() === username.toLowerCase();
+
+  const viewerNotes = useMemo(() => me?.["sys.notes"] || {}, [me]);
 
   const friendState = useMemo<"self" | "friend" | "pending" | "none">(() => {
     if (isSelf) return "self";
@@ -139,6 +142,29 @@ function ProfileView({ username }: { username: string }) {
       }
     },
     [token, username, reload],
+  );
+
+  const onNoteUpdate = useCallback(
+    async (noteUsername: string, note: string) => {
+      if (!token) return;
+      try {
+        if (note) {
+          await fetch(
+            `${API}/me/note/${encodeURIComponent(noteUsername)}?auth=${encodeURIComponent(token)}&note=${encodeURIComponent(note)}`,
+            { method: "POST" },
+          );
+        } else {
+          await fetch(
+            `${API}/me/note/${encodeURIComponent(noteUsername)}?auth=${encodeURIComponent(token)}`,
+            { method: "DELETE" },
+          );
+        }
+        await reload();
+      } catch {
+        /* ignore */
+      }
+    },
+    [token, reload],
   );
 
   if (profile?.["sys.banned"]) {
@@ -203,8 +229,11 @@ function ProfileView({ username }: { username: string }) {
               isFollowing={isFollowing}
               friendState={friendState}
               viewerBalance={me ? (me["sys.currency"] ?? 0) : null}
+              benefits={benefits?.benefits ?? null}
+              viewerNotes={viewerNotes}
               onFollowToggle={onFollowToggle}
               onFriendAction={onFriendAction}
+              onNoteUpdate={onNoteUpdate}
               onTransferComplete={() => {
                 reload();
               }}

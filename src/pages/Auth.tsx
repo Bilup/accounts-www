@@ -217,6 +217,8 @@ export function Auth() {
   const [suPassword, setSuPassword] = useState("");
   const [suConfirm, setSuConfirm] = useState("");
   const [suBtn, setSuBtn] = useState<BtnState>(defaultBtn("Create Account"));
+  const captchaRef = useRef<HTMLDivElement | null>(null);
+  const captchaWidgetIdRef = useRef<string | null>(null);
 
   const [verifyMsg, setVerifyMsg] = useState("");
 
@@ -964,6 +966,58 @@ export function Auth() {
     }
   }, [view, account?.key, fetchSubTokens]);
 
+  useEffect(() => {
+    if (view !== "signup") {
+      if (
+        captchaWidgetIdRef.current !== null &&
+        typeof hcaptcha !== "undefined"
+      ) {
+        try {
+          hcaptcha.reset(captchaWidgetIdRef.current);
+        } catch {}
+      }
+      return;
+    }
+
+    let cancelled = false;
+
+    const tryRender = () => {
+      if (cancelled) return;
+      const el = captchaRef.current;
+      if (!el) return;
+      if (typeof hcaptcha === "undefined") {
+        setTimeout(tryRender, 100);
+        return;
+      }
+      if (captchaWidgetIdRef.current !== null) {
+        try {
+          hcaptcha.remove(captchaWidgetIdRef.current);
+        } catch {}
+        captchaWidgetIdRef.current = null;
+      }
+      try {
+        captchaWidgetIdRef.current = hcaptcha.render(el, {
+          sitekey: "09def114-5bba-4ba6-8302-640aec7c1df2",
+        });
+      } catch {}
+    };
+
+    tryRender();
+
+    return () => {
+      cancelled = true;
+      if (
+        captchaWidgetIdRef.current !== null &&
+        typeof hcaptcha !== "undefined"
+      ) {
+        try {
+          hcaptcha.remove(captchaWidgetIdRef.current);
+        } catch {}
+        captchaWidgetIdRef.current = null;
+      }
+    };
+  }, [view]);
+
   return (
     <AuthShell>
       <AuthSidebar
@@ -1536,10 +1590,7 @@ export function Auth() {
               />
             </AuthFormGroup>
             <div class={s.formGroup} style={{ marginTop: "0.75rem" }}>
-              <div
-                class="h-captcha"
-                data-sitekey="09def114-5bba-4ba6-8302-640aec7c1df2"
-              />
+              <div ref={captchaRef} />
             </div>
             <AuthBtnPrimary
               type="submit"
