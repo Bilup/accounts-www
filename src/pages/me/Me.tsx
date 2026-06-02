@@ -17,7 +17,6 @@ import {
   LayoutGrid,
   StickyNote,
   Trash2,
-  ExternalLink,
   Heart,
 } from "lucide-preact";
 import { Header } from "../../components/Header";
@@ -29,7 +28,6 @@ import {
   useBenefits,
   type Transaction,
   captureTokenFromUrl,
-  getToken,
 } from "../../lib/auth";
 import s from "./Me.module.css";
 

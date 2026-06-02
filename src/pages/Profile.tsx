@@ -3,7 +3,7 @@ import { Search, ArrowRight, UserX } from "lucide-preact";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { ProfileCard } from "../components/ProfileCard";
-import { useAuth, usePublicProfile, useBenefits, getToken } from "../lib/auth";
+import { useAuth, usePublicProfile, useBenefits } from "../lib/auth";
 import s from "./Profile.module.css";
 
 const API = "https://api.rotur.dev";
