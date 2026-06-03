@@ -48,7 +48,9 @@ export type TransactionType =
   | "gift_create"
   | "gift_claimed"
   | "escrow_in"
-  | "escrow_out";
+  | "escrow_out"
+  | "group_entry_fee";
+
 
 export type Transaction = {
   type: TransactionType;
@@ -122,6 +124,8 @@ export type NotifyLog = {
 
 export type WallpaperMode = "Fill" | "Fit" | "Stretch" | "Center";
 
+type standing = "good" | "warning" | "suspended" | "banned";
+
 export type RoturUser = {
   username: string;
   display_name: string;
@@ -164,6 +168,15 @@ export type RoturUser = {
   "sys.friends": string[];
   "sys.blocked": string[];
   "sys.requests": string[];
+  "sys.standing": standing;
+  "sys.standing_recover_at": number;
+  "sys.standing_history": Array<{
+    level: standing;
+    previous: standing;
+    reason: string;
+    admin_id: string;
+    timestamp: number;
+  }>;
   "sys.currency": number;
   "sys.items": string[];
   "sys.purchases": string[];

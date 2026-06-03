@@ -129,6 +129,13 @@ const TYPE_META: Record<
     icon: ArrowUpRight,
     color: "#f87171",
   },
+  group_entry_fee: {
+    label: "Group Entry Fee",
+    isIncome: false,
+    category: "transfer",
+    icon: ArrowUpRight,
+    color: "#f87171",
+  },
 };
 
 const RANGE_LABELS: Record<RangeKey, string> = {

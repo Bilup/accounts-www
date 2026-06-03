@@ -15,6 +15,8 @@ import { TokenManager } from "./pages/TokenManager";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
 import { Shop } from "./pages/Shop";
 import { Notifications } from "./pages/Notifications";
+import { Groups } from "./pages/groups/Groups";
+import { GroupDetail } from "./pages/groups/GroupDetail";
 import { StarField } from "./components/StarField";
 
 export function App() {
@@ -30,6 +32,8 @@ export function App() {
         <Route path="/token-manager" component={TokenManager} />
         <Route path="/shop" component={Shop} />
         <Route path="/notifications" component={Notifications} />
+        <Route path="/groups" component={Groups} />
+        <Route path="/groups/:grouptag" component={GroupDetail} />
         <Route path="/me" component={Me} />
         <Route path="/me/transactions" component={Transactions} />
         <Route path="/profile" component={Profile} />

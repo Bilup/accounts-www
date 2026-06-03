@@ -18,6 +18,12 @@ import {
   StickyNote,
   Trash2,
   Heart,
+  Ban,
+  ShieldOff,
+  Info,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
 } from "lucide-preact";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
@@ -26,6 +32,7 @@ import { UserAvatar } from "../../components/UserAvatar";
 import {
   useAuth,
   useBenefits,
+  type Benefits,
   type Transaction,
   captureTokenFromUrl,
 } from "../../lib/auth";
@@ -40,6 +47,7 @@ const EXPENSE_TYPES = [
   "key_buy",
   "gift_claimed",
   "escrow_out",
+  "group_entry_fee",
 ];
 
 interface KeyRecord {
@@ -114,6 +122,10 @@ export function Me() {
   );
   const requests = useMemo(
     () => (user?.["sys.requests"] ?? []) as string[],
+    [user],
+  );
+  const blocked = useMemo(
+    () => (user?.["sys.blocked"] ?? []) as string[],
     [user],
   );
   const transactions = useMemo(
@@ -204,6 +216,22 @@ export function Me() {
     [token, reload],
   );
 
+  const unblockUser = useCallback(
+    async (username: string) => {
+      if (!token) return;
+      try {
+        const res = await fetch(
+          `${API}/me/unblock/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
+          { method: "POST" },
+        );
+        if (res.ok) await reload();
+      } catch {
+        /* ignore */
+      }
+    },
+    [token, reload],
+  );
+
   if (!isLoggedIn) {
     return (
       <div>
@@ -274,7 +302,10 @@ export function Me() {
 
           <div role="tabpanel" class={s.tabPanel}>
             {activeTab === "profile" && (
-              <CosmeticsSection activeOverlay={user["sys.overlay"] || ""} />
+              <CosmeticsSection
+                activeOverlay={user["sys.overlay"] || ""}
+                benefits={benefits?.benefits ?? null}
+              />
             )}
 
             {activeTab === "social" && (
@@ -288,6 +319,12 @@ export function Me() {
                   setInput={setFriendInput}
                   onSend={sendFriendRequest}
                   onAction={friendAction}
+                />
+                <BlockedSection blocked={blocked} onUnblock={unblockUser} />
+                <StandingSection
+                  standing={user?.["sys.standing"] || "good"}
+                  recoverAt={user?.["sys.standing_recover_at"] || 0}
+                  history={user?.["sys.standing_history"] || []}
                 />
                 <NotesSection
                   notes={user?.["sys.notes"] || {}}
@@ -332,6 +369,7 @@ export function Me() {
 
             {activeTab === "security" && (
               <>
+                <ChangePasswordSection />
                 <SubTokensSection />
                 <NotificationsSection />
               </>
@@ -744,6 +782,169 @@ function NotificationsSection() {
   );
 }
 
+function ChangePasswordSection() {
+  const { token, logout } = useAuth();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(
+    null,
+  );
+
+  const onSubmit = useCallback(
+    async (e: Event) => {
+      e.preventDefault();
+      setMsg(null);
+      if (next.length < 8) {
+        setMsg({
+          kind: "err",
+          text: "New password must be at least 8 characters",
+        });
+        return;
+      }
+      if (next !== confirm) {
+        setMsg({ kind: "err", text: "New passwords do not match" });
+        return;
+      }
+      if (current === next) {
+        setMsg({
+          kind: "err",
+          text: "New password must be different from the current one",
+        });
+        return;
+      }
+      if (!token) return;
+      setBusy(true);
+      try {
+        const res = await fetch(
+          `${API}/me/change_password?auth=${encodeURIComponent(token)}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              current_password: current,
+              new_password: next,
+            }),
+          },
+        );
+        const data = await res.json().catch(() => ({}) as any);
+        if (!res.ok) {
+          setMsg({
+            kind: "err",
+            text: data.error || "Failed to change password",
+          });
+          setBusy(false);
+          return;
+        }
+        setMsg({
+          kind: "ok",
+          text: "Password updated. Please sign in again.",
+        });
+        setCurrent("");
+        setNext("");
+        setConfirm("");
+        setTimeout(() => {
+          logout();
+        }, 1500);
+      } catch {
+        setMsg({ kind: "err", text: "Network error" });
+      } finally {
+        setBusy(false);
+      }
+    },
+    [current, next, confirm, token, logout],
+  );
+
+  return (
+    <div class={s.section}>
+      <div class={s.sectionHeader}>
+        <div class={s.sectionTitleGroup}>
+          <div class={s.sectionIcon}>
+            <Key size={18} />
+          </div>
+          <div>
+            <div class={s.sectionTitle}>Change Password</div>
+            <div class={s.sectionSubtitle}>
+              Update the password used to sign in to your account
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class={s.sectionBody}>
+        <form onSubmit={onSubmit} class={s.changePwForm}>
+          <div class={s.changePwField}>
+            <label class={s.changePwLabel} for="cp-current">
+              Current password
+            </label>
+            <input
+              id="cp-current"
+              type="password"
+              class={s.changePwInput}
+              value={current}
+              onInput={(e: any) => setCurrent(e.target.value)}
+              required
+              autoComplete="current-password"
+              disabled={busy}
+            />
+          </div>
+          <div class={s.changePwField}>
+            <label class={s.changePwLabel} for="cp-new">
+              New password
+            </label>
+            <input
+              id="cp-new"
+              type="password"
+              class={s.changePwInput}
+              value={next}
+              onInput={(e: any) => setNext(e.target.value)}
+              required
+              minLength={8}
+              autoComplete="new-password"
+              disabled={busy}
+            />
+          </div>
+          <div class={s.changePwField}>
+            <label class={s.changePwLabel} for="cp-confirm">
+              Confirm new password
+            </label>
+            <input
+              id="cp-confirm"
+              type="password"
+              class={s.changePwInput}
+              value={confirm}
+              onInput={(e: any) => setConfirm(e.target.value)}
+              required
+              minLength={8}
+              autoComplete="new-password"
+              disabled={busy}
+            />
+          </div>
+          {msg && (
+            <div
+              class={`${s.changePwMsg} ${msg.kind === "ok" ? s.changePwMsgOk : s.changePwMsgErr}`}
+            >
+              <i
+                class={`fas ${msg.kind === "ok" ? "fa-check-circle" : "fa-circle-exclamation"}`}
+              />
+              <span>{msg.text}</span>
+            </div>
+          )}
+          <div class={s.changePwActions}>
+            <button
+              type="submit"
+              class={s.btnPrimary}
+              disabled={busy || !current || !next || !confirm}
+            >
+              <Key size={14} /> {busy ? "Updating…" : "Update password"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function SubTokensSection() {
   return (
     <div class={s.section}>
@@ -788,7 +989,18 @@ function SubTokensSection() {
   );
 }
 
-function CosmeticsSection({ activeOverlay }: { activeOverlay: string }) {
+function CosmeticsSection({
+  activeOverlay,
+  benefits,
+}: {
+  activeOverlay: string;
+  benefits: Benefits | null;
+}) {
+  const hasAnimatedPfp = benefits?.animated_pfp;
+  const hasAnimatedBanner = benefits?.animated_banner;
+  const hasFreeBanners = benefits?.free_banner_uploads;
+  const isSubscribed = hasAnimatedPfp || hasAnimatedBanner || hasFreeBanners;
+
   return (
     <div class={s.section}>
       <div class={s.sectionHeader}>
@@ -812,6 +1024,31 @@ function CosmeticsSection({ activeOverlay }: { activeOverlay: string }) {
         </div>
       </div>
       <div class={s.sectionBody}>
+        {!isSubscribed && (
+          <div class={s.upsellBanner}>
+            <div class={s.upsellIcon}>
+              <Heart size={16} />
+            </div>
+            <div class={s.upsellContent}>
+              <div class={s.upsellTitle}>Unlock animated uploads & more</div>
+              <div class={s.upsellText}>
+                Get animated profile pictures, animated banners, free banner
+                uploads, profile notes, and a{" "}
+                {benefits?.daily_credit_multiplier || 1}x daily credit
+                multiplier.
+              </div>
+            </div>
+            <a
+              href="https://ko-fi.com/mistium"
+              target="_blank"
+              rel="noopener noreferrer"
+              class={s.upsellBtn}
+            >
+              <Heart size={14} /> Subscribe
+            </a>
+          </div>
+        )}
+
         {activeOverlay ? (
           <div class={s.subCard}>
             <div class={s.subAvatar}>
@@ -1049,6 +1286,279 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface BlockedSectionProps {
+  blocked: string[];
+  onUnblock: (username: string) => void;
+}
+
+function BlockedSection({ blocked, onUnblock }: BlockedSectionProps) {
+  return (
+    <div class={s.section}>
+      <div class={s.sectionHeader}>
+        <div class={s.sectionTitleGroup}>
+          <div class={s.sectionIcon}>
+            <Ban size={18} />
+          </div>
+          <div>
+            <div class={s.sectionTitle}>Blocked Users</div>
+            <div class={s.sectionSubtitle}>
+              {blocked.length === 0
+                ? "You haven't blocked anyone"
+                : `${blocked.length} blocked`}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class={s.sectionBody}>
+        {blocked.length === 0 ? (
+          <div class={s.empty}>
+            <div class={s.emptyIcon}>
+              <Ban size={24} />
+            </div>
+            <div class={s.emptyTitle}>No blocked users</div>
+            <div class={s.emptyText}>
+              Users you block won't be able to follow you, send you friend
+              requests, or interact with your content.
+            </div>
+          </div>
+        ) : (
+          <div class={s.friendGrid}>
+            {blocked.map((username) => (
+              <div key={username} class={s.friendCard}>
+                <a
+                  href={`/profile/${username}`}
+                  style={{ display: "contents" }}
+                >
+                  <UserAvatar username={username} className={s.friendAvatar} />
+                  <div class={s.friendInfo}>
+                    <div class={s.friendName}>@{username}</div>
+                    <div class={s.friendHandle}>Blocked</div>
+                  </div>
+                </a>
+                <div class={s.friendActions}>
+                  <button
+                    class={`${s.iconBtn} ${s.iconBtnSuccess}`}
+                    onClick={() => onUnblock(username)}
+                    title="Unblock user"
+                    aria-label="Unblock user"
+                  >
+                    <ShieldOff size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type StandingLevel = "good" | "warning" | "suspended" | "banned";
+
+interface StandingHistoryEntry {
+  level: StandingLevel;
+  previous: StandingLevel;
+  reason: string;
+  admin_id: string;
+  timestamp: number;
+}
+
+const STANDING_INFO: Record<
+  StandingLevel,
+  {
+    label: string;
+    description: string;
+    allowed: string;
+    restricted: string;
+    color: string;
+  }
+> = {
+  good: {
+    label: "Good Standing",
+    description:
+      "Your account is in good standing. You have full access to all features.",
+    allowed: "All features",
+    restricted: "None",
+    color: "#4ade80",
+  },
+  warning: {
+    label: "Warning",
+    description:
+      "Your account has been flagged. You can still browse, follow, and buy, but actions that affect other users are limited until your standing recovers automatically.",
+    allowed:
+      "Browsing, following, buying items, claiming daily credits, buying cosmetics, claiming gifts",
+    restricted:
+      "Posting, replying, reposting, selling or transferring items, creating groups, sending friend requests, creating gifts",
+    color: "#fbbf24",
+  },
+  suspended: {
+    label: "Suspended",
+    description:
+      "Your account is suspended. Most actions are unavailable. Standing will automatically improve to warning after 30 days.",
+    allowed: "Browsing, viewing your own profile",
+    restricted:
+      "Posting, replying, following, buying or selling items, friend activity, gifting, cosmetics, groups, daily credits",
+    color: "#f87171",
+  },
+  banned: {
+    label: "Banned",
+    description:
+      "Your account has been permanently banned. You cannot sign in or use Rotur services.",
+    allowed: "Nothing",
+    restricted: "All features",
+    color: "#ef4444",
+  },
+};
+
+interface StandingSectionProps {
+  standing: StandingLevel;
+  recoverAt: number;
+  history: StandingHistoryEntry[];
+}
+
+function StandingSection({
+  standing,
+  recoverAt,
+  history,
+}: StandingSectionProps) {
+  const info = STANDING_INFO[standing] || STANDING_INFO.good;
+  const recoversMs = recoverAt > 0 ? recoverAt * 1000 : 0;
+  const willRecover =
+    recoversMs > 0 &&
+    (standing === "warning" || standing === "suspended") &&
+    recoversMs > Date.now();
+  const reverseHistory = [...history].reverse();
+
+  return (
+    <div class={s.section}>
+      <div class={s.sectionHeader}>
+        <div class={s.sectionTitleGroup}>
+          <div
+            class={s.sectionIcon}
+            style={{
+              backgroundColor: `${info.color}22`,
+              color: info.color,
+            }}
+          >
+            <Shield size={18} />
+          </div>
+          <div>
+            <div class={s.sectionTitle}>Account Standing</div>
+            <div class={s.sectionSubtitle}>
+              {willRecover
+                ? `Recovers ${new Date(recoversMs).toLocaleString()}`
+                : "Current account status"}
+            </div>
+          </div>
+        </div>
+        <div class={s.sectionActions}>
+          <span
+            class={s.standingPill}
+            style={{
+              backgroundColor: `${info.color}22`,
+              color: info.color,
+              borderColor: `${info.color}55`,
+            }}
+          >
+            {standing === "good" ? (
+              <CheckCircle2 size={13} />
+            ) : (
+              <AlertTriangle size={13} />
+            )}
+            {info.label}
+          </span>
+        </div>
+      </div>
+      <div class={s.sectionBody}>
+        <div class={s.standingDescription}>
+          <Info size={16} />
+          <span>{info.description}</span>
+        </div>
+
+        <div class={s.standingLevels}>
+          {(["good", "warning", "suspended", "banned"] as StandingLevel[]).map(
+            (lvl) => {
+              const li = STANDING_INFO[lvl];
+              const active = lvl === standing;
+              return (
+                <div
+                  key={lvl}
+                  class={`${s.standingLevel} ${active ? s.standingLevelActive : ""}`}
+                  style={
+                    active
+                      ? {
+                          borderColor: li.color,
+                          backgroundColor: `${li.color}11`,
+                        }
+                      : undefined
+                  }
+                >
+                  <div
+                    class={s.standingLevelDot}
+                    style={{ backgroundColor: li.color }}
+                  />
+                  <div class={s.standingLevelBody}>
+                    <div class={s.standingLevelLabel}>{li.label}</div>
+                    <div class={s.standingLevelAllowed}>
+                      <span class={s.standingLevelAllowedLabel}>Allowed:</span>{" "}
+                      {li.allowed}
+                    </div>
+                    {li.restricted !== "None" && (
+                      <div class={s.standingLevelRestricted}>
+                        <span class={s.standingLevelAllowedLabel}>
+                          Restricted:
+                        </span>{" "}
+                        {li.restricted}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            },
+          )}
+        </div>
+
+        {reverseHistory.length > 0 && (
+          <div class={s.standingHistoryWrap}>
+            <div class={s.standingHistoryTitle}>
+              <Clock size={14} /> Recent standing changes
+            </div>
+            <div class={s.standingHistory}>
+              {reverseHistory.slice(0, 5).map((entry, i) => {
+                const li = STANDING_INFO[entry.level] || STANDING_INFO.good;
+                return (
+                  <div key={i} class={s.standingHistoryItem}>
+                    <div
+                      class={s.standingHistoryDot}
+                      style={{ backgroundColor: li.color }}
+                    />
+                    <div class={s.standingHistoryBody}>
+                      <div class={s.standingHistoryHeader}>
+                        <span style={{ color: li.color, fontWeight: 600 }}>
+                          {li.label}
+                        </span>
+                        <span class={s.standingHistoryTime}>
+                          {new Date(entry.timestamp * 1000).toLocaleString()}
+                        </span>
+                      </div>
+                      {entry.reason && (
+                        <div class={s.standingHistoryReason}>
+                          {entry.reason}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

@@ -6,6 +6,7 @@ import s from "./Header.module.css";
 
 const links = [
   { label: "Docs", href: "https://docs.rotur.dev" },
+  { label: "Groups", href: "/groups" },
   { label: "Services", href: "/services" },
   { label: "Status", href: "https://status.rotur.dev" },
 ];

@@ -1,6 +1,6 @@
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
-import { useState, useCallback } from "preact/hooks";
+import { useState, useCallback, useRef, useEffect } from "preact/hooks";
 import "./TermsOfService.css";
 
 async function callAcceptTosAPI(token: string): Promise<boolean> {
@@ -39,6 +39,25 @@ export function TermsOfService() {
     const params = new URLSearchParams(window.location.search);
     return params.get("return_to") || sessionStorage.getItem("rotur_return_to");
   });
+  const [fromAuth] = useState(() => {
+    return new URLSearchParams(window.location.search).get("from") === "auth";
+  });
+  const [scrolledToBottom, setScrolledToBottom] = useState(false);
+  const termsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (success) return;
+    const el = termsRef.current;
+    if (!el) return;
+    const check = () => {
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 40) {
+        setScrolledToBottom(true);
+      }
+    };
+    check();
+    el.addEventListener("scroll", check);
+    return () => el.removeEventListener("scroll", check);
+  }, [success]);
 
   // Clean URL on mount (remove token/return_to from address bar, like the HTML version)
   useState(() => {
@@ -47,8 +66,8 @@ export function TermsOfService() {
     if (hadToken) {
       url.searchParams.delete("token");
       url.searchParams.delete("return_to");
-      const fromAuth = url.searchParams.get("from") === "auth";
-      if (!fromAuth) {
+      const fromAuthNow = url.searchParams.get("from") === "auth";
+      if (!fromAuthNow) {
         const ref = document.referrer;
         if (ref.includes("auth/index.html") || ref.includes("/auth")) {
           url.searchParams.set("from", "auth");
@@ -67,15 +86,25 @@ export function TermsOfService() {
       const ok = await callAcceptTosAPI(token);
       if (ok) {
         setSuccess(true);
-        const authUrl = new URL("/auth", window.location.origin);
-        authUrl.searchParams.set("token", token);
-        if (returnTo) {
-          sessionStorage.setItem("rotur_return_to", returnTo);
-          authUrl.searchParams.set("return_to", returnTo);
+        if (fromAuth) {
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch {
+              /* ignore */
+            }
+          }, 800);
+        } else {
+          const authUrl = new URL("/auth", window.location.origin);
+          authUrl.searchParams.set("token", token);
+          if (returnTo) {
+            sessionStorage.setItem("rotur_return_to", returnTo);
+            authUrl.searchParams.set("return_to", returnTo);
+          }
+          setTimeout(() => {
+            window.location.href = authUrl.toString();
+          }, 1500);
         }
-        setTimeout(() => {
-          window.location.href = authUrl.toString();
-        }, 1500);
       } else {
         setError(true);
         setLoading(false);
@@ -85,7 +114,7 @@ export function TermsOfService() {
       const returnUrl = encodeURIComponent(window.location.href);
       window.location.href = `/auth?return_to=${returnUrl}`;
     }
-  }, [accepted, token, returnTo]);
+  }, [accepted, token, returnTo, fromAuth]);
 
   const btnText = token
     ? loading
@@ -112,7 +141,7 @@ export function TermsOfService() {
 
         {!success ? (
           <div className="terms-container">
-            <div className="terms-content">
+            <div className="terms-content" ref={termsRef}>
               <h1>Terms of Service – Rotur</h1>
               <p>
                 <strong>Effective Date:</strong> May 15, 2026
@@ -1472,11 +1501,21 @@ export function TermsOfService() {
 
             {/* Acceptance section */}
             <div className="acceptance-section">
+              {!scrolledToBottom && (
+                <p
+                  className="sub"
+                  style={{ marginBottom: "0.75rem", textAlign: "left" }}
+                >
+                  ⬇️ Please scroll to the bottom of the terms above before
+                  accepting.
+                </p>
+              )}
               <div className="checkbox-container">
                 <input
                   type="checkbox"
                   id="accept-terms"
                   checked={accepted}
+                  disabled={!scrolledToBottom}
                   onChange={(e) =>
                     setAccepted((e.target as HTMLInputElement).checked)
                   }
@@ -1489,7 +1528,7 @@ export function TermsOfService() {
               </div>
               <button
                 className={`btn-accept${loading ? " loading" : ""}${error ? " error" : ""}`}
-                disabled={!accepted || loading}
+                disabled={!accepted || !scrolledToBottom || loading}
                 onClick={handleAccept}
               >
                 {btnText}
@@ -1503,6 +1542,18 @@ export function TermsOfService() {
                 Contact us at mistium@icloud.com for any questions about these
                 terms.
               </p>
+            </div>
+          </div>
+        ) : fromAuth ? (
+          /* Opened from the auth flow — close this tab on success */
+          <div className="success-container">
+            <p className="title">Terms Accepted!</p>
+            <p className="sub">
+              You can return to the previous tab — we'll continue signing you in
+              automatically.
+            </p>
+            <div className="token-display">
+              This tab will close automatically. You can also close it manually.
             </div>
           </div>
         ) : (

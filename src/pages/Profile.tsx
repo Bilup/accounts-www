@@ -105,6 +105,14 @@ function ProfileView({ username }: { username: string }) {
     return "none";
   }, [me, isSelf, username]);
 
+  const isBlocked = useMemo(() => {
+    if (!me || isSelf) return false;
+    const lower = username.toLowerCase();
+    return (me["sys.blocked"] || [])
+      .map((u: string) => u.toLowerCase())
+      .includes(lower);
+  }, [me, isSelf, username]);
+
   useEffect(() => {
     if (profile?.followed_by_you !== undefined) {
       setIsFollowing(profile.followed_by_you);
@@ -143,6 +151,21 @@ function ProfileView({ username }: { username: string }) {
     },
     [token, username, reload],
   );
+
+  const onBlockToggle = useCallback(async () => {
+    if (!token || isSelf) return;
+    const wasBlocked = isBlocked;
+    const endpoint = wasBlocked ? "unblock" : "block";
+    try {
+      const res = await fetch(
+        `${API}/me/${endpoint}/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
+        { method: "POST" },
+      );
+      if (res.ok) await reload();
+    } catch {
+      /* ignore */
+    }
+  }, [token, username, isSelf, isBlocked, reload]);
 
   const onNoteUpdate = useCallback(
     async (noteUsername: string, note: string) => {
@@ -227,12 +250,14 @@ function ProfileView({ username }: { username: string }) {
               editable={false}
               isSelf={isSelf}
               isFollowing={isFollowing}
+              isBlocked={isBlocked}
               friendState={friendState}
               viewerBalance={me ? (me["sys.currency"] ?? 0) : null}
               benefits={benefits?.benefits ?? null}
               viewerNotes={viewerNotes}
               onFollowToggle={onFollowToggle}
               onFriendAction={onFriendAction}
+              onBlockToggle={onBlockToggle}
               onNoteUpdate={onNoteUpdate}
               onTransferComplete={() => {
                 reload();

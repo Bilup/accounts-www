@@ -16,6 +16,8 @@ import {
   StickyNote,
   Trash2,
   ExternalLink,
+  Ban,
+  ShieldOff,
   type LucideIcon,
 } from "lucide-preact";
 import s from "./ProfileCard.module.css";
@@ -39,6 +41,7 @@ interface ProfileCardProps {
   showActions?: boolean;
   isSelf?: boolean;
   isFollowing?: boolean;
+  isBlocked?: boolean;
   friendState?: FriendState;
   followerCount?: number;
   followingCount?: number;
@@ -47,6 +50,7 @@ interface ProfileCardProps {
   viewerNotes?: Record<string, string>;
   onFollowToggle?: () => void;
   onFriendAction?: (action: "add" | "remove" | "accept" | "reject") => void;
+  onBlockToggle?: () => void;
   onTransferComplete?: (debited: number) => void;
   onNoteUpdate?: (username: string, note: string) => void;
   onEdit?: (changes: Record<string, unknown>) => Promise<void> | void;
@@ -70,6 +74,7 @@ export function ProfileCard({
   showActions = true,
   isSelf = false,
   isFollowing = false,
+  isBlocked = false,
   friendState = "none",
   followerCount,
   followingCount,
@@ -78,6 +83,7 @@ export function ProfileCard({
   viewerNotes,
   onFollowToggle,
   onFriendAction,
+  onBlockToggle,
   onTransferComplete,
   onNoteUpdate,
   onEdit,
@@ -619,6 +625,23 @@ export function ProfileCard({
               >
                 <Coins size={14} /> Send credits
               </button>
+              {onBlockToggle && (
+                <button
+                  class={`${s.actionBtn} ${isBlocked ? s.actionBtnSuccess : s.actionBtnDanger}`}
+                  onClick={onBlockToggle}
+                  title={isBlocked ? "Unblock this user" : "Block this user"}
+                >
+                  {isBlocked ? (
+                    <>
+                      <ShieldOff size={14} /> Unblock
+                    </>
+                  ) : (
+                    <>
+                      <Ban size={14} /> Block
+                    </>
+                  )}
+                </button>
+              )}
             </div>
 
             {sendOpen && (
@@ -732,7 +755,7 @@ export function ProfileCard({
                       if (noteSaving) return;
                       setNoteSaving(true);
                       try {
-                        onNoteUpdate?.(user.username, noteDraft.trim());
+                        await onNoteUpdate?.(user.username, noteDraft.trim());
                         setEditingNote(false);
                       } finally {
                         setNoteSaving(false);

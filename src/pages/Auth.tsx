@@ -18,13 +18,11 @@ import {
   AuthInput,
   AuthBtnPrimary,
   AuthBtnSecondary,
-  AuthNotice,
   AuthTosLinks,
   AuthTosLinkBtn,
 } from "../components/auth/Shell";
 import { UserAvatar } from "../components/UserAvatar";
 
-declare const CryptoJS: any;
 declare const hcaptcha: any;
 
 const API = "https://api.rotur.dev";
@@ -65,12 +63,30 @@ interface SubToken {
 
 const FORBIDDEN_PERMISSIONS = new Set(["tokens:manage", "account:delete"]);
 
+const AUTO_LOGIN_HOSTNAMES = new Set(["rotur.dev", "originchats.mistium.com"]);
+
+function isAutoLoginHost(url: string): boolean {
+  const host = getHostname(url);
+  if (!host) return false;
+  if (AUTO_LOGIN_HOSTNAMES.has(host)) return true;
+  return AUTO_LOGIN_HOSTNAMES.has(host.replace(/^www\./, ""));
+}
+
+function isRoturSubdomain(url: string): boolean {
+  const host = getHostname(url).replace(/^www\./, "");
+  return host === "rotur.dev" || host.endsWith(".rotur.dev");
+}
+
 function getHostname(url: string): string {
   try {
     return new URL(url).hostname.toLowerCase();
   } catch {
     return "";
   }
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function isTokenUsable(t: SubToken): boolean {
@@ -99,7 +115,15 @@ function findMatchingSubToken(
   );
 }
 
-type View = "welcome" | "signin" | "signup" | "verify" | "permissions";
+type View =
+  | "welcome"
+  | "signin"
+  | "signup"
+  | "verify"
+  | "tos"
+  | "permissions"
+  | "forgot"
+  | "reset";
 type BtnState = { text: string; disabled: boolean; color: string };
 
 const defaultBtn = (text: string): BtnState => ({
@@ -201,7 +225,10 @@ const sidebarForView: Record<View, { title: string; sub: string }> = {
   signin: { title: "Sign in", sub: "to continue to Rotur" },
   signup: { title: "Create account", sub: "Join Rotur today" },
   verify: { title: "Verify email", sub: "Check your inbox" },
+  tos: { title: "Terms of Service", sub: "Review and accept to continue" },
   permissions: { title: "Account Access", sub: "Choose account to continue" },
+  forgot: { title: "Reset password", sub: "We'll email you a link" },
+  reset: { title: "Set new password", sub: "Enter the code from your email" },
 };
 
 export function Auth() {
@@ -222,10 +249,32 @@ export function Auth() {
 
   const [verifyMsg, setVerifyMsg] = useState("");
 
+  const [tosBtn, setTosBtn] = useState<BtnState>(defaultBtn(""));
+  const [tosChecking, setTosChecking] = useState(false);
+  const tosWindowRef = useRef<Window | null>(null);
+  const pendingTosRef = useRef<{
+    token: string;
+    username: string;
+  } | null>(null);
+
   const [account, setAccount] = useState<AccountData | null>(null);
   const [quickLoginBusy, setQuickLoginBusy] = useState<string | null>(null);
   const [subTokens, setSubTokens] = useState<SubToken[]>([]);
   const [, setSubTokensLoading] = useState(false);
+
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotBtn, setForgotBtn] = useState<BtnState>(
+    defaultBtn("Send reset link"),
+  );
+  const [forgotMsg, setForgotMsg] = useState<string>("");
+
+  const [resetToken, setResetToken] = useState("");
+  const [resetNewPw, setResetNewPw] = useState("");
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [resetBtn, setResetBtn] = useState<BtnState>(
+    defaultBtn("Reset password"),
+  );
+  const [resetMsg, setResetMsg] = useState<string>("");
 
   // Scope-aware auth state
   const returnToRef = useRef<string>("https://rotur.dev/me");
@@ -233,8 +282,10 @@ export function Auth() {
   const pendingVerificationRef = useRef<{
     token: string;
     username: string;
+    email: string;
   } | null>(null);
   const requiredPermsRef = useRef<Set<string>>(new Set());
+  const defaultAllOnEntryRef = useRef(false);
 
   // Permission picker state
   const [permSchema, setPermSchema] = useState<PermissionSchema | null>(null);
@@ -282,6 +333,16 @@ export function Auth() {
     const tokenParam = params.get("token");
     if (tokenParam) {
       verifyTokenAndProceed(tokenParam);
+      return;
+    }
+
+    const resetTokenParam = params.get("reset_token");
+    if (resetTokenParam) {
+      showReset(resetTokenParam);
+      params.delete("reset_token");
+      const next = params.toString();
+      const url = location.pathname + (next ? `?${next}` : "") + location.hash;
+      history.replaceState({}, "", url);
       return;
     }
 
@@ -376,8 +437,29 @@ export function Auth() {
       if (!checkTOSAcceptance(data)) return;
       saveAccountToStorage(data);
       setSavedAccounts(loadSavedAccounts());
+      if (isAutoLoginHost(returnToRef.current)) {
+        if (window.opener)
+          window.opener.postMessage(
+            { type: "rotur-auth-token", token: data.key, scope: "full" },
+            "*",
+          );
+        if (window.parent !== window)
+          window.parent.postMessage(
+            { type: "rotur-auth-token", token: data.key, scope: "full" },
+            "*",
+          );
+        const ref = new URL(returnToRef.current);
+        ref.searchParams.set("token", data.key!);
+        location.href = ref.toString();
+        return;
+      }
       setAccount(data);
-      setSelectedPerms(new Set(requiredPermsRef.current));
+      defaultAllOnEntryRef.current = isRoturSubdomain(returnToRef.current);
+      if (defaultAllOnEntryRef.current) {
+        setSelectedPerms(new Set());
+      } else {
+        setSelectedPerms(new Set(requiredPermsRef.current));
+      }
       setPermSearch("");
       setScopeError("");
       setView("permissions");
@@ -468,6 +550,141 @@ export function Auth() {
   const showWelcome = useCallback(() => {
     setView("welcome");
   }, []);
+
+  const showForgot = useCallback(() => {
+    setView("forgot");
+    setForgotEmail(getCookie("username") || "");
+    setForgotMsg("");
+    setForgotBtn(defaultBtn("Send reset link"));
+  }, []);
+
+  const showReset = useCallback((prefillToken = "") => {
+    setView("reset");
+    setResetToken(prefillToken);
+    setResetNewPw("");
+    setResetConfirm("");
+    setResetMsg("");
+    setResetBtn(defaultBtn("Reset password"));
+  }, []);
+
+  const handleForgotSubmit = useCallback(
+    async (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!forgotEmail || !isValidEmail(forgotEmail)) {
+        flashBtn(
+          setForgotBtn,
+          "Send reset link",
+          errorBtn("A valid email address is required"),
+        );
+        return;
+      }
+      setForgotMsg("");
+      setForgotBtn(loadingBtn("Sending..."));
+      try {
+        const res = await fetch(`${API}/auth/request_reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: forgotEmail }),
+        });
+        const data = await res.json().catch(() => ({}) as any);
+        if (res.status === 429) {
+          flashBtn(
+            setForgotBtn,
+            "Send reset link",
+            errorBtn(
+              data.error || "Please wait before requesting another reset",
+            ),
+          );
+          return;
+        }
+        setForgotBtn(
+          successBtn("If an account exists, an email is on its way"),
+        );
+        setForgotMsg(
+          data.message ||
+            "If an account with that email exists, a reset link has been sent.",
+        );
+      } catch {
+        setForgotBtn(
+          successBtn("If an account exists, an email is on its way"),
+        );
+        setForgotMsg(
+          "If an account with that email exists, a reset link has been sent.",
+        );
+      }
+    },
+    [forgotEmail],
+  );
+
+  const handleResetSubmit = useCallback(
+    async (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!resetToken.trim()) {
+        flashBtn(
+          setResetBtn,
+          "Reset password",
+          errorBtn("Reset code is required"),
+        );
+        return;
+      }
+      if (resetNewPw.length < 8) {
+        flashBtn(
+          setResetBtn,
+          "Reset password",
+          errorBtn("Password must be 8+ characters"),
+        );
+        return;
+      }
+      if (resetNewPw !== resetConfirm) {
+        flashBtn(
+          setResetBtn,
+          "Reset password",
+          errorBtn("Passwords do not match"),
+        );
+        return;
+      }
+      setResetMsg("");
+      setResetBtn(loadingBtn("Resetting..."));
+      try {
+        const res = await fetch(`${API}/auth/reset_password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: resetToken.trim(),
+            new_password: resetNewPw,
+          }),
+        });
+        const data = await res.json().catch(() => ({}) as any);
+        if (!res.ok) {
+          flashBtn(
+            setResetBtn,
+            "Reset password",
+            errorBtn(data.error || "Failed to reset password"),
+          );
+          return;
+        }
+        setResetBtn(successBtn("Password reset!"));
+        setResetMsg(
+          data.message || "Your password has been reset. Please sign in.",
+        );
+        setTimeout(() => {
+          setSiUsername(getCookie("username") || "");
+          setSiPassword("");
+          setSiBtn(defaultBtn("Sign in"));
+          setView("signin");
+        }, 1500);
+      } catch {
+        flashBtn(
+          setResetBtn,
+          "Reset password",
+          errorBtn("Network error — try again"),
+        );
+      }
+    },
+    [resetToken, resetNewPw, resetConfirm],
+  );
 
   const selectSavedAccount = useCallback(
     (username: string) => {
@@ -567,24 +784,26 @@ export function Auth() {
     async (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      const hash = CryptoJS.MD5(siPassword).toString();
       setCookie("username", siUsername, 7);
       setSiBtn(loadingBtn("Signing in..."));
 
       try {
-        const data = await requestAccount(siUsername, hash);
+        const data = await requestAccount(siUsername, siPassword);
         if (!data.error) {
           handleAccountLogin(data);
         } else if ((data as any).requiresTOSAcceptance) {
-          const url = new URL("/terms-of-service", location.origin);
-          url.searchParams.set("token", (data as any).key);
-          if (returnToRef.current)
-            url.searchParams.set("return_to", returnToRef.current);
-          location.href = url.toString();
+          pendingTosRef.current = {
+            token: (data as any).key,
+            username: siUsername,
+          };
+          setTosBtn(defaultBtn(""));
+          setView("tos");
+          setSiBtn(defaultBtn("Sign in"));
         } else if ((data as any).requiresEmailVerification) {
           pendingVerificationRef.current = {
             token: (data as any).token,
             username: (data as any).username,
+            email: (data as any).email || "",
           };
           setView("verify");
           setVerifyMsg("");
@@ -634,7 +853,6 @@ export function Auth() {
       }
 
       setSuBtn(loadingBtn("Creating..."));
-      const hash = CryptoJS.MD5(suPassword).toString();
 
       try {
         const res = await fetch(`${API}/create_user`, {
@@ -643,7 +861,7 @@ export function Auth() {
           body: JSON.stringify({
             username: suUsername,
             email: suEmail,
-            password: hash,
+            password: suPassword,
             system: systemNameRef.current,
             captcha: htoken,
           }),
@@ -655,15 +873,17 @@ export function Auth() {
           flashBtn(setSuBtn, "Create Account", errorBtn(result.error));
         } else {
           setCookie("username", suUsername, 7);
-          const data = await requestAccount(suUsername, hash);
+          const data = await requestAccount(suUsername, suPassword);
           if (!data.error) {
             handleAccountLogin(data);
           } else if ((data as any).requiresTOSAcceptance) {
-            const url = new URL("/terms-of-service", location.origin);
-            url.searchParams.set("token", (data as any).key);
-            if (returnToRef.current)
-              url.searchParams.set("return_to", returnToRef.current);
-            location.href = url.toString();
+            pendingTosRef.current = {
+              token: (data as any).key,
+              username: suUsername,
+            };
+            setTosBtn(defaultBtn(""));
+            setView("tos");
+            setSuBtn(defaultBtn("Create Account"));
           } else {
             flashBtn(
               setSuBtn,
@@ -713,6 +933,57 @@ export function Auth() {
     }
   }, [handleAccountLogin]);
 
+  useEffect(() => {
+    if (view !== "verify") return;
+    const pending = pendingVerificationRef.current;
+    if (!pending) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `${API}/me?auth=${encodeURIComponent(pending.token)}`,
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.["sys.email_verified"]) {
+          clearInterval(interval);
+          pendingVerificationRef.current = null;
+          handleAccountLogin(data);
+        }
+      } catch {
+        /* ignore */
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [view, handleAccountLogin]);
+
+  useEffect(() => {
+    if (view !== "tos") return;
+    const pending = pendingTosRef.current;
+    if (!pending) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `${API}/me?auth=${encodeURIComponent(pending.token)}`,
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.["sys.tos_accepted"] === true) {
+          clearInterval(interval);
+          pendingTosRef.current = null;
+          const account: AccountData = {
+            ...data,
+            username: data.username || pending.username,
+            key: pending.token,
+          };
+          handleAccountLogin(account);
+        }
+      } catch {
+        /* ignore */
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [view, handleAccountLogin]);
+
   const handleVerifyResend = useCallback(async () => {
     const pending = pendingVerificationRef.current;
     if (!pending) return;
@@ -731,6 +1002,60 @@ export function Auth() {
 
   const handleVerifyCancel = useCallback(() => {
     pendingVerificationRef.current = null;
+    setView("signin");
+  }, []);
+
+  const handleTosOpen = useCallback(() => {
+    const pending = pendingTosRef.current;
+    if (!pending) return;
+    const url = new URL("/terms-of-service", location.origin);
+    url.searchParams.set("from", "auth");
+    url.searchParams.set("token", pending.token);
+    if (returnToRef.current)
+      url.searchParams.set("return_to", returnToRef.current);
+    try {
+      const win = window.open(url.toString(), "_blank", "noopener,noreferrer");
+      if (win) tosWindowRef.current = win;
+    } catch {
+      location.href = url.toString();
+    }
+  }, []);
+
+  const handleTosContinue = useCallback(async () => {
+    const pending = pendingTosRef.current;
+    if (!pending) return;
+    setTosChecking(true);
+    try {
+      const res = await fetch(
+        `${API}/me?auth=${encodeURIComponent(pending.token)}`,
+      );
+      const data = await res.json();
+      if (data?.["sys.tos_accepted"] === true) {
+        pendingTosRef.current = null;
+        const account: AccountData = {
+          ...data,
+          username: data.username || pending.username,
+          key: pending.token,
+        };
+        handleAccountLogin(account);
+      } else {
+        flashBtn(
+          setTosBtn,
+          "",
+          errorBtn(
+            "Terms not accepted yet — open the tab above and click Accept",
+          ),
+        );
+        setTosChecking(false);
+      }
+    } catch {
+      setTosChecking(false);
+      flashBtn(setTosBtn, "", errorBtn("Network error — try again"));
+    }
+  }, [handleAccountLogin]);
+
+  const handleTosBack = useCallback(() => {
+    pendingTosRef.current = null;
     setView("signin");
   }, []);
 
@@ -803,6 +1128,15 @@ export function Auth() {
     }
     return missing;
   }, [selectedPerms]);
+
+  const selectAllPerms = useCallback(() => {
+    if (!permSchema) return;
+    const all = new Set<string>();
+    for (const p of permSchema.permissions) {
+      if (!FORBIDDEN_PERMISSIONS.has(p)) all.add(p);
+    }
+    setSelectedPerms(all);
+  }, [permSchema]);
 
   const groupIcon = useCallback((name: string): string => {
     const icons: Record<string, string> = {
@@ -960,6 +1294,20 @@ export function Auth() {
     }
   }, [permSchema]);
 
+  // On subdomains of rotur.dev, default to selecting all non-forbidden
+  // permissions once the schema has loaded.
+  useEffect(() => {
+    if (view !== "permissions") return;
+    if (!defaultAllOnEntryRef.current) return;
+    if (!permSchema) return;
+    defaultAllOnEntryRef.current = false;
+    const all = new Set<string>();
+    for (const p of permSchema.permissions) {
+      if (!FORBIDDEN_PERMISSIONS.has(p)) all.add(p);
+    }
+    setSelectedPerms(all);
+  }, [view, permSchema]);
+
   useEffect(() => {
     if (view === "permissions" && account?.key) {
       fetchSubTokens(account.key);
@@ -1030,13 +1378,19 @@ export function Auth() {
                 ? handleLogout
                 : view === "welcome"
                   ? () => showSignInForm()
-                  : showWelcome
+                  : view === "forgot" || view === "reset"
+                    ? () => showSignInForm()
+                    : showWelcome
             }
           >
             <i
               class={`fas ${view === "permissions" ? "fa-user-plus" : addBtnIcon}`}
             />
-            {view === "permissions" ? "Use another account" : addBtnText}
+            {view === "permissions"
+              ? "Use another account"
+              : view === "forgot" || view === "reset"
+                ? "Back to sign in"
+                : addBtnText}
           </AuthSidebarAction>
         }
       >
@@ -1123,21 +1477,11 @@ export function Auth() {
             </AuthSubheading>
           </div>
 
-          <AuthNotice
-            variant="info"
-            icon="fas fa-shield-halved"
-            title="Two ways to grant access"
-          >
-            <strong>Full access</strong> gives the site everything your account
-            can do. <strong>Custom permissions</strong> creates a sub-token
-            limited to only the actions you allow.
-          </AuthNotice>
-
           {requiredPermsRef.current.size > 0 && (
             <div class={s.permRequiredNotice}>
               <div class={s.permRequiredHead}>
                 <i class="fas fa-circle-exclamation" />
-                <strong>{requestor} requests these permissions</strong>
+                <strong>Requested by {requestor}</strong>
               </div>
               <div class={s.permRequiredTags}>
                 {Array.from(requiredPermsRef.current).map((p) => (
@@ -1147,10 +1491,6 @@ export function Auth() {
                   </span>
                 ))}
               </div>
-              <p class={s.permRequiredSub}>
-                {requestor} may not work as expected if you decline any of
-                these. They're pre-selected below, but you can uncheck them.
-              </p>
             </div>
           )}
 
@@ -1173,10 +1513,24 @@ export function Auth() {
                   </button>
                 ))}
                 <div class={s.permActionDivider}>
-                  <span>or create a new token</span>
+                  <span>or grant new permissions</span>
                 </div>
               </>
             )}
+
+            <button
+              type="button"
+              class={s.permAllowAllBtn}
+              onClick={selectAllPerms}
+              disabled={!permSchema}
+            >
+              <i class="fas fa-check-double" />
+              <span class={s.permAllowAllTitle}>Allow all permissions</span>
+              <span class={s.permAllowAllSub}>
+                Grant every permission except managing tokens and deleting your
+                account.
+              </span>
+            </button>
 
             <div class={s.permGroupGrid}>
               {permSchema?.groups
@@ -1317,32 +1671,14 @@ export function Auth() {
               <div class={s.permDangerWarning}>
                 <div class={s.permDangerWarningHead}>
                   <i class="fas fa-triangle-exclamation" />
-                  <strong>This site will be able to:</strong>
+                  <strong>
+                    {requestor} will be able to do anything you can, including
+                    delete your account and manage your tokens.
+                  </strong>
                 </div>
-                <ul class={s.permDangerWarningList}>
-                  <li>
-                    <i class="fas fa-xmark" /> Delete your account permanently
-                  </li>
-                  <li>
-                    <i class="fas fa-xmark" /> Transfer all your credits away
-                  </li>
-                  <li>
-                    <i class="fas fa-xmark" /> Change your account settings and
-                    password
-                  </li>
-                  <li>
-                    <i class="fas fa-xmark" /> Create, revoke, and manage all
-                    your tokens
-                  </li>
-                  <li>
-                    <i class="fas fa-xmark" /> Post, delete, and manage all your
-                    content
-                  </li>
-                </ul>
                 <p class={s.permDangerWarningNote}>
-                  Only enable this if you fully trust{" "}
-                  <strong>{requestor}</strong>. A scoped sub-token above is
-                  almost always the safer choice.
+                  Only enable this if you fully trust {requestor}. A scoped
+                  sub-token is almost always the safer choice.
                 </p>
               </div>
             )}
@@ -1505,6 +1841,11 @@ export function Auth() {
           </form>
           <AuthTosLinks>
             <p>
+              <AuthTosLinkBtn onClick={showForgot}>
+                Forgot password?
+              </AuthTosLinkBtn>
+            </p>
+            <p>
               Don't have an account?{" "}
               <AuthTosLinkBtn onClick={showSignUpForm}>
                 Create one
@@ -1522,14 +1863,21 @@ export function Auth() {
           <AuthHeading>Verify your email</AuthHeading>
           <AuthSubheading>
             We've sent a verification link to{" "}
-            {pendingVerificationRef.current?.username || ""}.
+            <strong>
+              {pendingVerificationRef.current?.email ||
+                pendingVerificationRef.current?.username ||
+                "your email"}
+            </strong>
+            . You'll be signed in automatically once verified.
           </AuthSubheading>
           <p class={s.verifyInstruction}>
-            Please click the link in the email and then press{" "}
-            <strong>Done</strong> below.
+            Click the link in the email to continue. You can also press{" "}
+            <strong>Done</strong> once you've verified, or resend the email.
           </p>
           <div class={s.verifyBtns}>
-            <AuthBtnPrimary onClick={handleVerifyDone}>Done</AuthBtnPrimary>
+            <AuthBtnPrimary onClick={handleVerifyDone}>
+              I've verified — continue
+            </AuthBtnPrimary>
             <AuthBtnSecondary onClick={handleVerifyResend}>
               Resend email
             </AuthBtnSecondary>
@@ -1538,6 +1886,37 @@ export function Auth() {
             </AuthBtnSecondary>
           </div>
           {verifyMsg && <div class={s.verifyMsg}>{verifyMsg}</div>}
+        </AuthMain>
+      ) : view === "tos" ? (
+        <AuthMain>
+          <AuthLogo />
+          <AuthHeading>Accept the Terms of Service</AuthHeading>
+          <AuthSubheading>
+            One last step before you can use Rotur. Please read and accept our
+            terms to continue.
+          </AuthSubheading>
+          <p class={s.verifyInstruction}>
+            The terms will open in a new tab. After you accept them there, come
+            back to this tab and we'll continue automatically — or you can press
+            Continue below.
+          </p>
+          <div class={s.verifyBtns}>
+            <AuthBtnPrimary
+              onClick={handleTosOpen}
+              disabled={tosBtn.disabled}
+              style={tosBtn.color ? { background: tosBtn.color } : undefined}
+            >
+              {tosBtn.text || (
+                <>
+                  <i class="fas fa-external-link-alt" /> Open Terms of Service
+                </>
+              )}
+            </AuthBtnPrimary>
+            <AuthBtnPrimary onClick={handleTosContinue}>
+              {tosChecking ? "Checking…" : "I've accepted — continue"}
+            </AuthBtnPrimary>
+            <AuthBtnSecondary onClick={handleTosBack}>Back</AuthBtnSecondary>
+          </div>
         </AuthMain>
       ) : view === "signup" ? (
         <AuthMain>
@@ -1610,6 +1989,126 @@ export function Auth() {
             <p style={{ marginTop: "0.25rem" }}>
               <a href="/terms-of-service?from=auth">Terms of Service</a> •{" "}
               <a href="/privacy-policy?from=auth">Privacy Policy</a>
+            </p>
+          </AuthTosLinks>
+        </AuthMain>
+      ) : view === "forgot" ? (
+        <AuthMain>
+          <AuthLogo />
+          <AuthHeading>Forgot your password?</AuthHeading>
+          <AuthSubheading>
+            Enter the email address on your account and we'll send you a reset
+            link.
+          </AuthSubheading>
+          <form onSubmit={handleForgotSubmit} class={s.signinForm}>
+            <AuthFormGroup>
+              <AuthInput
+                type="email"
+                name="email"
+                placeholder="Email address"
+                required
+                value={forgotEmail}
+                onInput={(e: any) => setForgotEmail(e.target.value)}
+              />
+            </AuthFormGroup>
+            <AuthBtnPrimary
+              type="submit"
+              disabled={forgotBtn.disabled}
+              style={
+                forgotBtn.color ? { background: forgotBtn.color } : undefined
+              }
+            >
+              {forgotBtn.text}
+            </AuthBtnPrimary>
+          </form>
+          {forgotMsg && (
+            <div class={s.forgotMsg}>
+              <i class="fas fa-circle-info" />
+              <span>{forgotMsg}</span>
+            </div>
+          )}
+          <AuthTosLinks>
+            <p>
+              Remembered it?{" "}
+              <AuthTosLinkBtn onClick={() => showSignInForm()}>
+                Back to sign in
+              </AuthTosLinkBtn>
+            </p>
+            <p style={{ marginTop: "0.25rem" }}>
+              <a href="/terms-of-service?from=auth">Terms of Service</a> •{" "}
+              <a href="/privacy-policy?from=auth">Privacy Policy</a>
+            </p>
+          </AuthTosLinks>
+        </AuthMain>
+      ) : view === "reset" ? (
+        <AuthMain>
+          <AuthLogo />
+          <AuthHeading>Set a new password</AuthHeading>
+          <AuthSubheading>
+            Enter the reset code from your email and choose a new password.
+          </AuthSubheading>
+          <form onSubmit={handleResetSubmit} class={s.signinForm}>
+            <AuthFormGroup>
+              <AuthInput
+                type="text"
+                name="reset-token"
+                placeholder="Reset code"
+                required
+                value={resetToken}
+                onInput={(e: any) => setResetToken(e.target.value)}
+                autoComplete="one-time-code"
+              />
+            </AuthFormGroup>
+            <AuthFormGroup>
+              <AuthInput
+                type="password"
+                name="new-password"
+                placeholder="New password (8+ characters)"
+                required
+                minlength={8}
+                value={resetNewPw}
+                onInput={(e: any) => setResetNewPw(e.target.value)}
+                autoComplete="new-password"
+              />
+            </AuthFormGroup>
+            <AuthFormGroup>
+              <AuthInput
+                type="password"
+                name="confirm-password"
+                placeholder="Confirm new password"
+                required
+                minlength={8}
+                value={resetConfirm}
+                onInput={(e: any) => setResetConfirm(e.target.value)}
+                autoComplete="new-password"
+              />
+            </AuthFormGroup>
+            <AuthBtnPrimary
+              type="submit"
+              disabled={resetBtn.disabled}
+              style={
+                resetBtn.color ? { background: resetBtn.color } : undefined
+              }
+            >
+              {resetBtn.text}
+            </AuthBtnPrimary>
+          </form>
+          {resetMsg && (
+            <div class={s.forgotMsg}>
+              <i class="fas fa-circle-info" />
+              <span>{resetMsg}</span>
+            </div>
+          )}
+          <AuthTosLinks>
+            <p>
+              <AuthTosLinkBtn onClick={showForgot}>
+                Didn't get the email? Try again
+              </AuthTosLinkBtn>
+            </p>
+            <p>
+              <AuthTosLinkBtn onClick={() => showSignInForm()}>
+                Back to sign in
+              </AuthTosLinkBtn>
             </p>
           </AuthTosLinks>
         </AuthMain>
