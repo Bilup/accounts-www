@@ -1106,20 +1106,51 @@ export function Auth() {
     [selectedPerms],
   );
 
-  const toggleGroup = useCallback((perms: string[]) => {
+  const toggleGroup = useCallback((name: string, perms: string[]) => {
     setSelectedPerms((prev) => {
       const next = new Set(prev);
       const allActive = perms.every(
         (p) => next.has(p) || FORBIDDEN_PERMISSIONS.has(p),
       );
       if (allActive) {
-        for (const p of perms) next.delete(p);
+        const otherGroups =
+          permSchema?.groups.filter(
+            (g) => g.name !== "full" && g.name !== name,
+          ) ?? [];
+        const providedByOthers = new Set<string>();
+        for (const og of otherGroups) {
+          if (
+            og.permissions.every(
+              (p) => next.has(p) || FORBIDDEN_PERMISSIONS.has(p),
+            )
+          ) {
+            for (const p of og.permissions) providedByOthers.add(p);
+          }
+        }
+        for (const p of perms) {
+          if (FORBIDDEN_PERMISSIONS.has(p)) continue;
+          if (!providedByOthers.has(p)) next.delete(p);
+        }
       } else {
         for (const p of perms) if (!FORBIDDEN_PERMISSIONS.has(p)) next.add(p);
       }
       return next;
     });
-  }, []);
+  }, [permSchema]);
+
+  const isGroupPartial = useCallback(
+    (perms: string[]): boolean => {
+      let grantable = 0;
+      let selected = 0;
+      for (const p of perms) {
+        if (FORBIDDEN_PERMISSIONS.has(p)) continue;
+        grantable++;
+        if (selectedPerms.has(p)) selected++;
+      }
+      return grantable > 0 && selected > 0 && selected < grantable;
+    },
+    [selectedPerms],
+  );
 
   const missingRequired = useMemo(() => {
     const missing: string[] = [];
@@ -1160,6 +1191,28 @@ export function Auth() {
       setSelectedPerms(new Set());
     }
   }, []);
+
+  const addMissingRequired = useCallback(() => {
+    setSelectedPerms((prev) => {
+      const next = new Set(prev);
+      for (const r of requiredPermsRef.current) {
+        if (!FORBIDDEN_PERMISSIONS.has(r)) next.add(r);
+      }
+      return next;
+    });
+  }, []);
+
+  const selectedChipsList = useMemo(() => {
+    const all = Array.from(selectedPerms);
+    const req = requiredPermsRef.current;
+    all.sort((a, b) => {
+      const ar = req.has(a) ? 0 : 1;
+      const br = req.has(b) ? 0 : 1;
+      if (ar !== br) return ar - br;
+      return a.localeCompare(b);
+    });
+    return all;
+  }, [selectedPerms]);
 
   const [showMissingWarn, setShowMissingWarn] = useState(false);
 
@@ -1307,6 +1360,18 @@ export function Auth() {
     }
     setSelectedPerms(all);
   }, [view, permSchema]);
+
+  useEffect(() => {
+    if (showMissingWarn && missingRequired.length === 0) {
+      setShowMissingWarn(false);
+    }
+  }, [showMissingWarn, missingRequired]);
+
+  useEffect(() => {
+    if (selectedPerms.size > 0 && scopeError) {
+      setScopeError("");
+    }
+  }, [selectedPerms.size, scopeError]);
 
   useEffect(() => {
     if (view === "permissions" && account?.key) {
@@ -1477,7 +1542,7 @@ export function Auth() {
             </AuthSubheading>
           </div>
 
-          {requiredPermsRef.current.size > 0 && (
+          {requiredPermsRef.current.size > 0 && !useFullAccess && (
             <div class={s.permRequiredNotice}>
               <div class={s.permRequiredHead}>
                 <i class="fas fa-circle-exclamation" />
@@ -1485,12 +1550,37 @@ export function Auth() {
               </div>
               <div class={s.permRequiredTags}>
                 {Array.from(requiredPermsRef.current).map((p) => (
-                  <span key={p} class={s.permRequiredTag}>
-                    <i class="fas fa-asterisk" />
+                  <span
+                    key={p}
+                    class={`${s.permRequiredTag} ${
+                      !selectedPerms.has(p) ? s.permRequiredTagMissing : ""
+                    }`}
+                  >
+                    <i
+                      class={`fas ${selectedPerms.has(p) ? "fa-check" : "fa-xmark"}`}
+                    />
                     {p}
                   </span>
                 ))}
               </div>
+              {missingRequired.length > 0 && (
+                <div class={s.permRequiredMissing}>
+                  <i class="fas fa-triangle-exclamation" />
+                  <span>
+                    {missingRequired.length} of {requiredPermsRef.current.size}{" "}
+                    requested permission
+                    {requiredPermsRef.current.size !== 1 ? "s" : ""} not
+                    selected
+                  </span>
+                  <button
+                    type="button"
+                    class={s.permRequiredMissingBtn}
+                    onClick={addMissingRequired}
+                  >
+                    <i class="fas fa-plus" /> Add requested
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -1518,39 +1608,43 @@ export function Auth() {
               </>
             )}
 
-            <button
-              type="button"
-              class={s.permAllowAllBtn}
-              onClick={selectAllPerms}
-              disabled={!permSchema}
+            <div
+              class={`${s.permGroupGrid} ${useFullAccess ? s.permSuperseded : ""}`}
             >
-              <i class="fas fa-check-double" />
-              <span class={s.permAllowAllTitle}>Allow all permissions</span>
-              <span class={s.permAllowAllSub}>
-                Grant every permission except managing tokens and deleting your
-                account.
-              </span>
-            </button>
-
-            <div class={s.permGroupGrid}>
               {permSchema?.groups
                 ?.filter((g) => g.name !== "full")
                 .map((g) => {
                   const active = isGroupActive(g.permissions);
+                  const partial = !active && isGroupPartial(g.permissions);
+                  const hasReq = g.permissions.some((p) =>
+                    requiredPermsRef.current.has(p),
+                  );
                   return (
                     <button
                       type="button"
                       key={g.name}
-                      class={`${s.permGroupCard} ${active ? s.permGroupCardActive : ""}`}
-                      onClick={() => toggleGroup(g.permissions)}
+                      class={`${s.permGroupCard} ${active ? s.permGroupCardActive : ""} ${partial ? s.permGroupCardPartial : ""}`}
+                      onClick={() => toggleGroup(g.name, g.permissions)}
                     >
                       <div class={s.permGroupCardHead}>
-                        <i
-                          class={`fas ${groupIcon(g.name)} ${s.permGroupCardIcon}`}
-                        />
+                        <div class={s.permGroupCardHeadLeft}>
+                          <i
+                            class={`fas ${groupIcon(g.name)} ${s.permGroupCardIcon}`}
+                          />
+                          {hasReq && (
+                            <span
+                              class={s.permGroupCardReq}
+                              title="Contains requested permissions"
+                            >
+                              <i class="fas fa-asterisk" />
+                            </span>
+                          )}
+                        </div>
                         <div class={s.permGroupCardCheck}>
                           {active ? (
                             <i class="fas fa-check" />
+                          ) : partial ? (
+                            <i class="fas fa-minus" />
                           ) : (
                             <i class="fas fa-plus" />
                           )}
@@ -1563,11 +1657,90 @@ export function Auth() {
                       <div class={s.permGroupCardMeta}>
                         {g.permissions.length} permission
                         {g.permissions.length !== 1 ? "s" : ""}
+                        {hasReq && (
+                          <span
+                            class={s.permGroupCardMetaReq}
+                            title="Includes permissions requested by this site"
+                          >
+                            · requested
+                          </span>
+                        )}
                       </div>
                     </button>
                   );
                 })}
             </div>
+
+            {!useFullAccess && (
+              <div class={s.permChips}>
+                <div class={s.permChipsHeader}>
+                  <span class={s.permChipsTitle}>
+                    <i class="fas fa-list-check" />
+                    Selected permissions
+                    <span class={s.permChipsCount}>{selectedPerms.size}</span>
+                  </span>
+                  {selectedPerms.size > 0 && (
+                    <button
+                      type="button"
+                      class={s.permLinkBtn}
+                      onClick={clearAll}
+                      title={
+                        requiredPermsRef.current.size > 0
+                          ? "Remove all non-requested permissions"
+                          : "Clear all selected permissions"
+                      }
+                    >
+                      <i class="fas fa-xmark" />{" "}
+                      {requiredPermsRef.current.size > 0
+                        ? "Clear optional"
+                        : "Clear all"}
+                    </button>
+                  )}
+                </div>
+                {selectedPerms.size === 0 ? (
+                  <div class={s.permChipsEmpty}>
+                    No permissions selected — pick a group above or
+                    {showCustom ? " use the search below." : " open customize."}
+                  </div>
+                ) : (
+                  <div class={s.permChipsList}>
+                    {selectedChipsList.slice(0, 16).map((p) => {
+                      const isReq = requiredPermsRef.current.has(p);
+                      return (
+                        <span
+                          key={p}
+                          class={`${s.permChip} ${isReq ? s.permChipRequired : ""}`}
+                          title={isReq ? "Requested by this site" : p}
+                        >
+                          {isReq && (
+                            <i class={`fas fa-asterisk ${s.permChipReqIcon}`} />
+                          )}
+                          <span class={s.permChipLabel}>{p}</span>
+                          <button
+                            type="button"
+                            class={s.permChipRemove}
+                            onClick={() => togglePerm(p)}
+                            aria-label={`Remove ${p}`}
+                            title={`Remove ${p}`}
+                          >
+                            <i class="fas fa-xmark" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                    {selectedChipsList.length > 16 && (
+                      <button
+                        type="button"
+                        class={s.permChipsMore}
+                        onClick={() => setShowCustom(true)}
+                      >
+                        +{selectedChipsList.length - 16} more — open customize
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
               class={s.permCustomizeToggle}
@@ -1578,23 +1751,38 @@ export function Auth() {
             </button>
 
             {showCustom && (
-              <div class={s.permPickerInline}>
+              <div
+                class={`${s.permPickerInline} ${useFullAccess ? s.permSuperseded : ""}`}
+              >
                 <div class={s.permPickerControls}>
-                  <button
-                    type="button"
-                    class={s.permLinkBtn}
-                    onClick={clearAll}
-                  >
-                    <i class="fas fa-xmark" /> Clear
-                  </button>
+                  <div class={s.permSearchWrap}>
+                    <i class={`fas fa-magnifying-glass ${s.permSearchIcon}`} />
+                    <input
+                      type="text"
+                      class={s.permSearch}
+                      placeholder="Search permissions…"
+                      value={permSearch}
+                      onInput={(e: any) => setPermSearch(e.target.value)}
+                    />
+                    {permSearch && (
+                      <button
+                        type="button"
+                        class={s.permSearchClear}
+                        onClick={() => setPermSearch("")}
+                        aria-label="Clear search"
+                        title="Clear search"
+                      >
+                        <i class="fas fa-xmark" />
+                      </button>
+                    )}
+                  </div>
+                  {permSearch && (
+                    <span class={s.permSearchCount}>
+                      {visiblePerms.length} match
+                      {visiblePerms.length !== 1 ? "es" : ""}
+                    </span>
+                  )}
                 </div>
-                <input
-                  type="text"
-                  class={s.permSearch}
-                  placeholder="Search permissions…"
-                  value={permSearch}
-                  onInput={(e: any) => setPermSearch(e.target.value)}
-                />
                 <div class={s.permListScroll}>
                   {!permSchema ? (
                     <div class={s.permLoading}>Loading permissions…</div>
@@ -1651,7 +1839,12 @@ export function Auth() {
               <input
                 type="checkbox"
                 checked={useFullAccess}
-                onChange={(e: any) => setUseFullAccess(e.target.checked)}
+                onChange={(e: any) => {
+                  const next = e.target.checked;
+                  setUseFullAccess(next);
+                  setShowMissingWarn(false);
+                  if (next) setScopeError("");
+                }}
                 class={s.permFullAccessCheckbox}
               />
               <div class={s.permFullAccessCheck}>

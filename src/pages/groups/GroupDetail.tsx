@@ -28,6 +28,10 @@ import {
   Info,
   MapPin,
   Copy,
+  BookOpen,
+  ScrollText,
+  Image as ImageIcon,
+  ImagePlus,
 } from "lucide-preact";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
@@ -43,11 +47,14 @@ interface GroupPublic {
   tag: string;
   name: string;
   description: string;
+  readme: string;
+  rules: string;
   icon_url: string;
   banner_url: string;
   owner_user_id: string;
   public: boolean;
   join_policy: JoinPolicy;
+  entry_fee: number;
   created_at: number;
   credits_balance: number;
   member_count: number;
@@ -58,7 +65,8 @@ interface GroupAnnouncement {
   group_tag: string;
   title: string;
   body: string;
-  author_user_id: string;
+  author_username: string;
+  author_user_id?: string;
   created_at: number;
   ping_members: boolean;
 }
@@ -90,7 +98,8 @@ interface GroupEvent {
 interface GroupTip {
   id: string;
   group_tag: string;
-  from_user_id: string;
+  from_username: string;
+  from_user_id?: string;
   amount_credits: number;
   created_at: number;
 }
@@ -255,6 +264,24 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       )}`;
       return;
     }
+    if (group?.rules && group.rules.trim()) {
+      if (
+        !confirm(
+          `Before joining, please read the group rules:\n\n${group.rules}\n\nDo you agree to these rules?`,
+        )
+      ) {
+        return;
+      }
+    }
+    if (group && group.entry_fee > 0) {
+      if (
+        !confirm(
+          `Joining this group costs ${group.entry_fee} credits. Continue?`,
+        )
+      ) {
+        return;
+      }
+    }
     setActionMessage(null);
     try {
       const res = await fetch(
@@ -264,6 +291,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       const data = await res.json();
       if (res.ok) {
         setActionMessage({ text: "Joined group!", type: "success" });
+        if (reloadUser) await reloadUser();
         loadGroup();
         loadMyMembership();
       } else {
@@ -486,6 +514,12 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                     <span class={s.metaChip}>
                       <Calendar size={11} /> {formatDate(group.created_at)}
                     </span>
+                    {group.entry_fee > 0 && (
+                      <span class={s.metaChip}>
+                        <Coins size={11} />{" "}
+                        {group.entry_fee.toLocaleString()} to join
+                      </span>
+                    )}
                     {group.credits_balance > 0 && (
                       <span class={s.metaChip}>
                         <Coins size={11} />{" "}
@@ -526,7 +560,10 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
 
                 {isLoggedIn && !isMember && group.public && (
                   <button class={s.btnPrimary} onClick={joinGroup}>
-                    <UserPlus size={13} /> Join Group
+                    <UserPlus size={13} />{" "}
+                    {group.entry_fee > 0
+                      ? `Join (${group.entry_fee} credits)`
+                      : "Join Group"}
                   </button>
                 )}
 
@@ -679,13 +716,23 @@ function OverviewTab({
 }) {
   const [editing, setEditing] = useState(false);
   const [description, setDescription] = useState(group.description);
+  const [readme, setReadme] = useState(group.readme || "");
+  const [rules, setRules] = useState(group.rules || "");
+  const [entryFee, setEntryFee] = useState(String(group.entry_fee || 0));
   const [iconUrl, setIconUrl] = useState(group.icon_url);
   const [bannerUrl, setBannerUrl] = useState(group.banner_url);
   const [isPublic, setIsPublic] = useState(group.public);
   const [policy, setPolicy] = useState<JoinPolicy>(group.join_policy);
   const [busy, setBusy] = useState(false);
+  const [uploadingIcon, setUploadingIcon] = useState(false);
+  const [settingBanner, setSettingBanner] = useState(false);
 
   async function save() {
+    const fee = parseFloat(entryFee);
+    if (entryFee.trim() && (isNaN(fee) || fee < 0)) {
+      onMessage({ text: "Entry fee must be a non-negative number", type: "error" });
+      return;
+    }
     setBusy(true);
     onMessage(null);
     try {
@@ -696,6 +743,9 @@ function OverviewTab({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             description,
+            readme,
+            rules,
+            entry_fee: fee,
             icon: iconUrl,
             banner_url: bannerUrl,
             public: isPublic,
@@ -714,6 +764,74 @@ function OverviewTab({
       onMessage({ text: "Network error", type: "error" });
     }
     setBusy(false);
+  }
+
+  async function uploadIcon(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      onMessage({ text: "Image must be under 5MB", type: "error" });
+      return;
+    }
+    setUploadingIcon(true);
+    onMessage(null);
+    try {
+      const fd = new FormData();
+      fd.append("icon", file);
+      const res = await fetch(
+        `${API_BASE_URL}/groups/${encodeURIComponent(group.tag)}/icon?${authQs().slice(1)}`,
+        { method: "POST", body: fd },
+      );
+      const data = await res.json();
+      if (res.ok) {
+        onMessage({ text: "Icon uploaded.", type: "success" });
+        onUpdated();
+      } else {
+        onMessage({ text: data.error || "Icon upload failed", type: "error" });
+      }
+    } catch {
+      onMessage({ text: "Network error", type: "error" });
+    }
+    setUploadingIcon(false);
+  }
+
+  async function setBanner() {
+    if (!bannerUrl.trim()) {
+      onMessage({ text: "Enter a banner URL first", type: "error" });
+      return;
+    }
+    if (!/^https?:\/\//.test(bannerUrl.trim())) {
+      onMessage({
+        text: "Banner URL must start with http:// or https://",
+        type: "error",
+      });
+      return;
+    }
+    if (
+      !confirm(
+        "Setting a banner costs 10 credits. Continue?",
+      )
+    )
+      return;
+    setSettingBanner(true);
+    onMessage(null);
+    try {
+      const params = new URLSearchParams();
+      params.set("banner_url", bannerUrl.trim());
+      const res = await fetch(
+        `${API_BASE_URL}/groups/${encodeURIComponent(group.tag)}/banner?${params.toString()}&${authQs().slice(1)}`,
+        { method: "POST" },
+      );
+      const data = await res.json();
+      if (res.ok) {
+        onMessage({ text: "Banner set.", type: "success" });
+        onUpdated();
+      } else {
+        onMessage({ text: data.error || "Banner set failed", type: "error" });
+      }
+    } catch {
+      onMessage({ text: "Network error", type: "error" });
+    }
+    setSettingBanner(false);
   }
 
   async function deleteGroup() {
@@ -775,6 +893,15 @@ function OverviewTab({
                       ))}
                     </div>
                   )}
+                  {r.benefits && r.benefits.length > 0 && (
+                    <div class={s.rolePermissions}>
+                      {r.benefits.map((b) => (
+                        <span key={b} class={s.permTag}>
+                          <Sparkles size={10} /> {b}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -818,30 +945,133 @@ function OverviewTab({
                     setDescription((e.target as HTMLTextAreaElement).value)
                   }
                 />
+                <small class={s.formHint}>
+                  {description.length} / 500 characters.
+                </small>
               </div>
-              <div class={s.formRow}>
-                <div class={s.formGroup}>
-                  <label>Icon URL</label>
-                  <input
-                    type="url"
-                    class={s.formInput}
-                    value={iconUrl}
-                    onInput={(e) =>
-                      setIconUrl((e.target as HTMLInputElement).value)
-                    }
-                  />
+              <div class={s.formGroup}>
+                <label>Readme</label>
+                <textarea
+                  class={s.formInput}
+                  rows={6}
+                  maxlength={10000}
+                  placeholder="Long-form description. Supports markdown."
+                  value={readme}
+                  onInput={(e) =>
+                    setReadme((e.target as HTMLTextAreaElement).value)
+                  }
+                />
+                <small class={s.formHint}>
+                  {readme.length} / 10,000 characters.
+                </small>
+              </div>
+              <div class={s.formGroup}>
+                <label>Rules</label>
+                <textarea
+                  class={s.formInput}
+                  rows={4}
+                  maxlength={5000}
+                  placeholder="Shown before users join."
+                  value={rules}
+                  onInput={(e) =>
+                    setRules((e.target as HTMLTextAreaElement).value)
+                  }
+                />
+                <small class={s.formHint}>
+                  {rules.length} / 5,000 characters.
+                </small>
+              </div>
+              <div class={s.formGroup}>
+                <label>Entry Fee (credits)</label>
+                <input
+                  type="number"
+                  class={s.formInput}
+                  min={0}
+                  step="0.01"
+                  value={entryFee}
+                  onInput={(e) =>
+                    setEntryFee((e.target as HTMLInputElement).value)
+                  }
+                />
+                <small class={s.formHint}>
+                  Credits required to join. Set to 0 for free entry.
+                </small>
+              </div>
+              <div class={s.formGroup}>
+                <label>Group Icon</label>
+                <div class={s.iconEditRow}>
+                  {iconUrl ? (
+                    <img
+                      src={iconUrl}
+                      alt={group.name}
+                      class={s.iconEditPreview}
+                    />
+                  ) : (
+                    <div class={s.iconEditPlaceholder}>
+                      <ImageIcon size={20} />
+                    </div>
+                  )}
+                  <label class={s.fileDrop}>
+                    <ImagePlus size={14} />
+                    <span>
+                      {uploadingIcon
+                        ? "Uploading…"
+                        : iconUrl
+                          ? "Replace icon"
+                          : "Upload icon"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingIcon}
+                      onChange={(e) => {
+                        const f = (e.target as HTMLInputElement).files?.[0];
+                        if (f) uploadIcon(f);
+                      }}
+                    />
+                  </label>
                 </div>
-                <div class={s.formGroup}>
-                  <label>Banner URL</label>
-                  <input
-                    type="url"
-                    class={s.formInput}
-                    value={bannerUrl}
-                    onInput={(e) =>
-                      setBannerUrl((e.target as HTMLInputElement).value)
-                    }
-                  />
+                <small class={s.formHint}>
+                  Auto-resized to 256×256 JPEG. Max 5MB.
+                </small>
+              </div>
+              <div class={s.formGroup}>
+                <label>Banner</label>
+                <div class={s.bannerEditRow}>
+                  {bannerUrl ? (
+                    <div
+                      class={s.bannerEditPreview}
+                      style={{ backgroundImage: `url(${bannerUrl})` }}
+                    />
+                  ) : (
+                    <div class={s.bannerEditPlaceholder}>
+                      <ImageIcon size={20} />
+                    </div>
+                  )}
+                  <div class={s.bannerEditControls}>
+                    <input
+                      type="url"
+                      class={s.formInput}
+                      placeholder="https://…"
+                      value={bannerUrl}
+                      onInput={(e) =>
+                        setBannerUrl((e.target as HTMLInputElement).value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      class={s.btnSecondary}
+                      onClick={setBanner}
+                      disabled={settingBanner || !bannerUrl.trim()}
+                    >
+                      <Sparkles size={12} />{" "}
+                      {settingBanner ? "Setting…" : "Set Banner (10 credits)"}
+                    </button>
+                  </div>
                 </div>
+                <small class={s.formHint}>
+                  The banner endpoint takes an image URL and charges 10 credits.
+                </small>
               </div>
               <div class={s.formGroup}>
                 <div class={s.checkboxGroup}>
@@ -883,6 +1113,9 @@ function OverviewTab({
                   onClick={() => {
                     setEditing(false);
                     setDescription(group.description);
+                    setReadme(group.readme || "");
+                    setRules(group.rules || "");
+                    setEntryFee(String(group.entry_fee || 0));
                     setIconUrl(group.icon_url);
                     setBannerUrl(group.banner_url);
                     setIsPublic(group.public);
@@ -894,43 +1127,71 @@ function OverviewTab({
               </div>
             </div>
           ) : (
-            <div class={s.detailGrid}>
-              <div class={s.detailItem}>
-                <h4>Description</h4>
-                <div class={s.detailValue}>
-                  {group.description || "No description provided."}
+            <div>
+              <div class={s.detailGrid}>
+                <div class={s.detailItem}>
+                  <h4>Description</h4>
+                  <div class={s.detailValue}>
+                    {group.description || "No description provided."}
+                  </div>
+                </div>
+                <div class={s.detailItem}>
+                  <h4>Visibility</h4>
+                  <div class={s.detailValue}>
+                    {group.public ? "Public" : "Private"}
+                  </div>
+                </div>
+                <div class={s.detailItem}>
+                  <h4>Join Policy</h4>
+                  <div class={s.detailValue}>
+                    {JOIN_POLICY_OPTIONS.find(
+                      (o) => o.value === group.join_policy,
+                    )?.label || group.join_policy}
+                  </div>
+                </div>
+                <div class={s.detailItem}>
+                  <h4>Entry Fee</h4>
+                  <div class={s.detailValue}>
+                    {group.entry_fee > 0
+                      ? `${group.entry_fee.toLocaleString()} credits`
+                      : "Free"}
+                  </div>
+                </div>
+                <div class={s.detailItem}>
+                  <h4>Owner</h4>
+                  <div class={s.detailValue}>
+                    {escapeHtml(group.owner_user_id)}
+                  </div>
+                </div>
+                <div class={s.detailItem}>
+                  <h4>Members</h4>
+                  <div class={s.detailValue}>{group.member_count}</div>
+                </div>
+                <div class={s.detailItem}>
+                  <h4>Credit Balance</h4>
+                  <div class={s.detailValue}>
+                    {group.credits_balance.toLocaleString()}
+                  </div>
                 </div>
               </div>
-              <div class={s.detailItem}>
-                <h4>Visibility</h4>
-                <div class={s.detailValue}>
-                  {group.public ? "Public" : "Private"}
+
+              {group.readme && group.readme.trim() && (
+                <div class={s.readmeBlock}>
+                  <h3 class={s.readmeTitle}>
+                    <BookOpen size={14} /> Readme
+                  </h3>
+                  <pre class={s.readmeContent}>{group.readme}</pre>
                 </div>
-              </div>
-              <div class={s.detailItem}>
-                <h4>Join Policy</h4>
-                <div class={s.detailValue}>
-                  {JOIN_POLICY_OPTIONS.find(
-                    (o) => o.value === group.join_policy,
-                  )?.label || group.join_policy}
+              )}
+
+              {group.rules && group.rules.trim() && (
+                <div class={s.rulesBlock}>
+                  <h3 class={s.readmeTitle}>
+                    <ScrollText size={14} /> Group Rules
+                  </h3>
+                  <pre class={s.readmeContent}>{group.rules}</pre>
                 </div>
-              </div>
-              <div class={s.detailItem}>
-                <h4>Owner</h4>
-                <div class={s.detailValue}>
-                  {escapeHtml(group.owner_user_id)}
-                </div>
-              </div>
-              <div class={s.detailItem}>
-                <h4>Members</h4>
-                <div class={s.detailValue}>{group.member_count}</div>
-              </div>
-              <div class={s.detailItem}>
-                <h4>Credit Balance</h4>
-                <div class={s.detailValue}>
-                  {group.credits_balance.toLocaleString()}
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -960,7 +1221,23 @@ function AnnouncementsTab({
     text: string;
     type: "success" | "error";
   } | null>(null);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(`group_muted_${tag}`) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(`group_muted_${tag}`, muted ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [muted, tag]);
 
   async function load() {
     setLoading(true);
@@ -1040,7 +1317,7 @@ function AnnouncementsTab({
         { method: "POST" },
       );
       if (res.ok) {
-        setMuted(!muted);
+        setMuted((m) => !m);
         setMsg({
           text: muted ? "Unmuted announcements." : "Muted announcements.",
           type: "success",
@@ -1189,7 +1466,7 @@ function AnnouncementsTab({
                   <div class={s.announcementBody}>{escapeHtml(a.body)}</div>
                 )}
                 <div class={s.announcementMeta}>
-                  <span>by {escapeHtml(a.author_user_id)}</span>
+                  <span>by {escapeHtml(a.author_username || a.author_user_id || "")}</span>
                   <span>•</span>
                   <span title={formatDateTime(a.created_at)}>
                     {formatRelativeTime(a.created_at * 1000)}
@@ -1494,6 +1771,8 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
   const [editAssignOnJoin, setEditAssignOnJoin] = useState(false);
   const [editSelfAssignable, setEditSelfAssignable] = useState(false);
   const [editPerms, setEditPerms] = useState<Set<string>>(new Set());
+  const [editBenefits, setEditBenefits] = useState("");
+  const [newBenefits, setNewBenefits] = useState("");
 
   async function load() {
     setLoading(true);
@@ -1540,12 +1819,37 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
       );
       const data = await res.json();
       if (res.ok) {
+        const role = data;
+        if (newBenefits.trim() && role?.id) {
+          const benefits = newBenefits
+            .split(",")
+            .map((b) => b.trim())
+            .filter(Boolean);
+          if (benefits.length) {
+            const patchRes = await fetch(
+              `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/roles/${encodeURIComponent(role.id)}?${authQs().slice(1)}`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ benefits }),
+              },
+            );
+            if (!patchRes.ok) {
+              const patchData = await patchRes.json();
+              setMsg({
+                text: `Role created but benefits failed: ${patchData.error || "unknown"}`,
+                type: "error",
+              });
+            }
+          }
+        }
         setMsg({ text: "Role created.", type: "success" });
         setCreating(false);
         setNewName("");
         setNewDesc("");
         setNewAssignOnJoin(false);
         setNewSelfAssignable(false);
+        setNewBenefits("");
         load();
       } else {
         setMsg({ text: data.error || "Failed", type: "error" });
@@ -1562,10 +1866,15 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
     setEditAssignOnJoin(role.assign_on_join);
     setEditSelfAssignable(role.self_assignable);
     setEditPerms(new Set(role.permissions));
+    setEditBenefits((role.benefits || []).join(", "));
   }
 
   async function saveEdit(role: GroupRole) {
     setMsg(null);
+    const benefits = editBenefits
+      .split(",")
+      .map((b) => b.trim())
+      .filter(Boolean);
     try {
       const res = await fetch(
         `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/roles/${encodeURIComponent(role.id)}?${authQs().slice(1)}`,
@@ -1578,7 +1887,7 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
             assign_on_join: editAssignOnJoin,
             self_assignable: editSelfAssignable,
             permissions: Array.from(editPerms),
-            benefits: role.benefits,
+            benefits,
           }),
         },
       );
@@ -1692,6 +2001,21 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
                   </label>
                 </div>
               </div>
+              <div class={s.formGroup}>
+                <label>Benefits</label>
+                <input
+                  type="text"
+                  class={s.formInput}
+                  placeholder="custom_color, priority_access"
+                  value={newBenefits}
+                  onInput={(e) =>
+                    setNewBenefits((e.target as HTMLInputElement).value)
+                  }
+                />
+                <small class={s.formHint}>
+                  Comma-separated benefit identifiers.
+                </small>
+              </div>
               <div class={s.formActions}>
                 <button class={s.btnPrimary} onClick={create}>
                   <Save size={13} /> Create Role
@@ -1702,6 +2026,7 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
                     setCreating(false);
                     setNewName("");
                     setNewDesc("");
+                    setNewBenefits("");
                   }}
                 >
                   Cancel
@@ -1820,6 +2145,21 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
                           ))}
                         </div>
                       </div>
+                      <div class={s.formGroup}>
+                        <label>Benefits</label>
+                        <input
+                          type="text"
+                          class={s.formInput}
+                          placeholder="custom_color, priority_access"
+                          value={editBenefits}
+                          onInput={(e) =>
+                            setEditBenefits((e.target as HTMLInputElement).value)
+                          }
+                        />
+                        <small class={s.formHint}>
+                          Comma-separated benefit identifiers.
+                        </small>
+                      </div>
                       <div class={s.formActions}>
                         <button
                           class={s.btnPrimary}
@@ -1858,6 +2198,15 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
                           {r.permissions.map((p) => (
                             <span key={p} class={s.permTag}>
                               {PERMISSION_LABELS[p] || p}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {r.benefits && r.benefits.length > 0 && (
+                        <div class={s.rolePermissions}>
+                          {r.benefits.map((b) => (
+                            <span key={b} class={s.permTag}>
+                              <Sparkles size={10} /> {b}
                             </span>
                           ))}
                         </div>
@@ -2387,7 +2736,9 @@ function TipsTab({
             {tips.map((t) => (
               <div key={t.id} class={s.tipCard}>
                 <div class={s.tipLeft}>
-                  <div class={s.tipFrom}>{escapeHtml(t.from_user_id)}</div>
+                  <div class={s.tipFrom}>
+                    {escapeHtml(t.from_username || t.from_user_id || "")}
+                  </div>
                   <div class={s.tipDate}>
                     {formatRelativeTime(t.created_at * 1000)}
                   </div>

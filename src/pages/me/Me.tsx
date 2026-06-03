@@ -1033,9 +1033,7 @@ function CosmeticsSection({
               <div class={s.upsellTitle}>Unlock animated uploads & more</div>
               <div class={s.upsellText}>
                 Get animated profile pictures, animated banners, free banner
-                uploads, profile notes, and a{" "}
-                {benefits?.daily_credit_multiplier || 1}x daily credit
-                multiplier.
+                uploads, profile notes, and more daily credits.
               </div>
             </div>
             <a

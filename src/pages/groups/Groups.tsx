@@ -12,6 +12,16 @@ import {
   LogIn,
   Eye,
   Megaphone,
+  Trophy,
+  Sparkles,
+  Image as ImageIcon,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  ImagePlus,
+  PartyPopper,
+  Save,
+  XCircle,
 } from "lucide-preact";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
@@ -51,11 +61,12 @@ interface GroupPublic {
   member_count: number;
 }
 
-type HubTab = "my-groups" | "browse" | "create";
+type HubTab = "my-groups" | "browse" | "top" | "create";
 
 const HUB_TABS: { id: HubTab; label: string; icon: typeof Users }[] = [
   { id: "my-groups", label: "My Groups", icon: Users },
   { id: "browse", label: "Browse", icon: Search },
+  { id: "top", label: "Top", icon: Trophy },
   { id: "create", label: "Create Group", icon: PlusCircle },
 ];
 
@@ -102,7 +113,7 @@ function authQs(): string {
 }
 
 export function Groups() {
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, reload: reloadUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<HubTab>("my-groups");
 
@@ -116,8 +127,6 @@ export function Groups() {
   const [createTag, setCreateTag] = useState("");
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
-  const [createIcon, setCreateIcon] = useState("");
-  const [createBanner, setCreateBanner] = useState("");
   const [createPublic, setCreatePublic] = useState(true);
   const [createPolicy, setCreatePolicy] = useState<JoinPolicy>("OPEN");
   const [createMessage, setCreateMessage] = useState("");
@@ -125,6 +134,31 @@ export function Groups() {
     "success" | "error"
   >("success");
   const [createBusy, setCreateBusy] = useState(false);
+  const [tagStatus, setTagStatus] = useState<
+    "idle" | "checking" | "available" | "taken" | "invalid"
+  >("idle");
+
+  const [onboardingStep, setOnboardingStep] = useState<
+    1 | 2 | 3 | 4 | 5
+  >(1);
+  const [createdTag, setCreatedTag] = useState<string | null>(null);
+  const [createdName, setCreatedName] = useState<string>("");
+  const [iconUploading, setIconUploading] = useState(false);
+  const [iconUploaded, setIconUploaded] = useState(false);
+  const [iconUrl, setIconUrl] = useState<string>("");
+  const [bannerUrl, setBannerUrl] = useState<string>("");
+  const [bannerSetting, setBannerSetting] = useState(false);
+  const [bannerSet, setBannerSet] = useState(false);
+  const [entryFee, setEntryFee] = useState("0");
+  const [entryFeeBusy, setEntryFeeBusy] = useState(false);
+  const [entryFeeSet, setEntryFeeSet] = useState(false);
+  const [wizardMessage, setWizardMessage] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  const [topGroups, setTopGroups] = useState<GroupPublic[]>([]);
+  const [topLoading, setTopLoading] = useState(false);
 
   const [joinBusy, setJoinBusy] = useState<string | null>(null);
   const [joinMessage, setJoinMessage] = useState<{
@@ -139,6 +173,47 @@ export function Groups() {
   useEffect(() => {
     if (activeTab === "browse") loadBrowse();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "top") loadTop();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const tag = createTag.trim();
+    if (!tag) {
+      setTagStatus("idle");
+      return;
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(tag)) {
+      setTagStatus("invalid");
+      return;
+    }
+    setTagStatus("checking");
+    const ctrl = new AbortController();
+    const handle = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/groups/${encodeURIComponent(tag)}`,
+          { signal: ctrl.signal },
+        );
+        if (res.status === 404) {
+          setTagStatus("available");
+        } else if (res.ok) {
+          setTagStatus("taken");
+        } else {
+          setTagStatus("idle");
+        }
+      } catch (e) {
+        if ((e as { name?: string })?.name !== "AbortError") {
+          setTagStatus("idle");
+        }
+      }
+    }, 500);
+    return () => {
+      ctrl.abort();
+      clearTimeout(handle);
+    };
+  }, [createTag]);
 
   async function loadMyGroups() {
     setMyGroupsLoading(true);
@@ -183,15 +258,78 @@ export function Groups() {
     loadBrowse();
   }
 
-  function resetCreateForm() {
+  async function loadTop() {
+    setTopLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/groups/top`);
+      const data = await res.json();
+      if (res.ok) {
+        setTopGroups(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      /* ignore */
+    }
+    setTopLoading(false);
+  }
+
+  function resetOnboarding() {
     setCreateTag("");
     setCreateName("");
     setCreateDescription("");
-    setCreateIcon("");
-    setCreateBanner("");
     setCreatePublic(true);
     setCreatePolicy("OPEN");
     setCreateMessage("");
+    setOnboardingStep(1);
+    setCreatedTag(null);
+    setCreatedName("");
+    setIconUploaded(false);
+    setIconUrl("");
+    setBannerSet(false);
+    setBannerUrl("");
+    setEntryFee("0");
+    setEntryFeeSet(false);
+    setWizardMessage(null);
+    setTagStatus("idle");
+  }
+
+  async function setOnboardingEntryFee() {
+    if (!createdTag) return;
+    const fee = parseFloat(entryFee);
+    if (entryFee.trim() && (isNaN(fee) || fee < 0)) {
+      setWizardMessage({
+        text: "Entry fee must be a non-negative number.",
+        type: "error",
+      });
+      return;
+    }
+    setEntryFeeBusy(true);
+    setWizardMessage(null);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/groups/${encodeURIComponent(createdTag)}?${authQs().slice(1)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entry_fee: fee, join_policy: createPolicy }),
+        },
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setEntryFeeSet(true);
+        setWizardMessage({
+          text: "Join policy and entry fee saved.",
+          type: "success",
+        });
+      } else {
+        setWizardMessage({
+          text: data.error || "Failed to save",
+          type: "error",
+        });
+      }
+    } catch {
+      setWizardMessage({ text: "Network error", type: "error" });
+    }
+    setEntryFeeBusy(false);
   }
 
   async function createGroup() {
@@ -210,6 +348,14 @@ export function Groups() {
       setCreateMessageType("error");
       return;
     }
+    const balance = (user?.["sys.currency"] ?? 0) as number;
+    if (balance < 50) {
+      setCreateMessage(
+        `Insufficient credits. Creating a group costs 50 credits (you have ${balance.toLocaleString()}).`,
+      );
+      setCreateMessageType("error");
+      return;
+    }
     setCreateBusy(true);
     setCreateMessage("");
     try {
@@ -218,10 +364,7 @@ export function Groups() {
       params.set("name", createName.trim());
       if (createDescription.trim())
         params.set("description", createDescription.trim());
-      if (createIcon.trim()) params.set("icon_url", createIcon.trim());
-      if (createBanner.trim()) params.set("banner_url", createBanner.trim());
       params.set("public", String(createPublic));
-      params.set("join_policy", createPolicy);
 
       const res = await fetch(
         `${API_BASE_URL}/groups/create?${params.toString()}&${authQs().slice(1)}`,
@@ -229,14 +372,15 @@ export function Groups() {
       );
       const data = await res.json();
       if (res.ok) {
-        setCreateMessage(`Group "${createName.trim()}" created!`);
+        setCreateMessage("Group created!");
         setCreateMessageType("success");
-        resetCreateForm();
-        setTimeout(() => {
-          window.location.href = `/groups/${encodeURIComponent(
-            data.tag || createTag.trim(),
-          )}`;
-        }, 800);
+        setCreatedTag(data.tag || createTag.trim());
+        setCreatedName(data.name || createName.trim());
+        setIconUrl(data.icon_url || "");
+        setEntryFee(String(data.entry_fee || 0));
+        setOnboardingStep(3);
+        loadMyGroups();
+        if (reloadUser) await reloadUser();
       } else {
         setCreateMessage(data.error || "Failed to create group");
         setCreateMessageType("error");
@@ -246,6 +390,78 @@ export function Groups() {
       setCreateMessageType("error");
     }
     setCreateBusy(false);
+  }
+
+  async function uploadOnboardingIcon(file: File) {
+    if (!createdTag) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setWizardMessage({ text: "Image must be under 5MB", type: "error" });
+      return;
+    }
+    setIconUploading(true);
+    setWizardMessage(null);
+    try {
+      const fd = new FormData();
+      fd.append("icon", file);
+      const res = await fetch(
+        `${API_BASE_URL}/groups/${encodeURIComponent(createdTag)}/icon?${authQs().slice(1)}`,
+        { method: "POST", body: fd },
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setIconUploaded(true);
+        setIconUrl(data.icon_url || iconUrl);
+        setWizardMessage({ text: "Icon uploaded.", type: "success" });
+      } else {
+        setWizardMessage({
+          text: data.error || "Icon upload failed",
+          type: "error",
+        });
+      }
+    } catch {
+      setWizardMessage({ text: "Network error", type: "error" });
+    }
+    setIconUploading(false);
+  }
+
+  async function setOnboardingBanner() {
+    if (!createdTag) return;
+    if (!bannerUrl.trim()) {
+      setWizardMessage({ text: "Enter a banner URL", type: "error" });
+      return;
+    }
+    if (!/^https?:\/\//.test(bannerUrl.trim())) {
+      setWizardMessage({
+        text: "Banner URL must start with http:// or https://",
+        type: "error",
+      });
+      return;
+    }
+    if (!confirm("Setting a banner costs 10 credits. Continue?")) return;
+    setBannerSetting(true);
+    setWizardMessage(null);
+    try {
+      const params = new URLSearchParams();
+      params.set("banner_url", bannerUrl.trim());
+      const res = await fetch(
+        `${API_BASE_URL}/groups/${encodeURIComponent(createdTag)}/banner?${params.toString()}&${authQs().slice(1)}`,
+        { method: "POST" },
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setBannerSet(true);
+        setWizardMessage({ text: "Banner set.", type: "success" });
+        if (reloadUser) await reloadUser();
+      } else {
+        setWizardMessage({
+          text: data.error || "Banner set failed",
+          type: "error",
+        });
+      }
+    } catch {
+      setWizardMessage({ text: "Network error", type: "error" });
+    }
+    setBannerSetting(false);
   }
 
   async function joinGroup(tag: string) {
@@ -473,183 +689,850 @@ export function Groups() {
               </div>
             )}
 
-            {activeTab === "create" && (
+            {activeTab === "top" && (
               <div class={s.section}>
                 <div class={s.sectionHeader}>
                   <div class={s.sectionTitleGroup}>
                     <div class={s.sectionIcon}>
-                      <PlusCircle size={18} />
+                      <Trophy size={18} />
                     </div>
                     <div>
-                      <h2 class={s.sectionTitle}>Create a New Group</h2>
+                      <h2 class={s.sectionTitle}>Top Public Groups</h2>
                       <p class={s.sectionSubtitle}>
-                        Set up your community and invite members
+                        {topGroups.length} group
+                        {topGroups.length === 1 ? "" : "s"} ranked by members
                       </p>
                     </div>
                   </div>
                 </div>
                 <div class={s.sectionBody}>
-                  <div class={s.formGroup}>
-                    <label for="group-tag">Tag</label>
-                    <input
-                      id="group-tag"
-                      type="text"
-                      class={s.formInput}
-                      placeholder="mygroup"
-                      maxlength={20}
-                      value={createTag}
-                      onInput={(e) =>
-                        setCreateTag(
-                          (e.target as HTMLInputElement).value.toLowerCase(),
-                        )
-                      }
-                    />
-                    <small class={s.formHint}>
-                      Alphanumeric only. Used in your group URL (max 20
-                      characters).
-                    </small>
-                  </div>
-
-                  <div class={s.formGroup}>
-                    <label for="group-name">Name</label>
-                    <input
-                      id="group-name"
-                      type="text"
-                      class={s.formInput}
-                      placeholder="My Awesome Group"
-                      maxlength={50}
-                      value={createName}
-                      onInput={(e) =>
-                        setCreateName((e.target as HTMLInputElement).value)
-                      }
-                    />
-                    <small class={s.formHint}>
-                      The display name (max 50 characters).
-                    </small>
-                  </div>
-
-                  <div class={s.formGroup}>
-                    <label for="group-description">Description</label>
-                    <textarea
-                      id="group-description"
-                      class={s.formInput}
-                      placeholder="What is this group about?"
-                      maxlength={500}
-                      rows={4}
-                      value={createDescription}
-                      onInput={(e) =>
-                        setCreateDescription(
-                          (e.target as HTMLTextAreaElement).value,
-                        )
-                      }
-                    />
-                    <small class={s.formHint}>
-                      Brief description (max 500 characters).
-                    </small>
-                  </div>
-
-                  <div class={s.formRow}>
-                    <div class={s.formGroup}>
-                      <label for="group-icon">Icon URL</label>
-                      <input
-                        id="group-icon"
-                        type="url"
-                        class={s.formInput}
-                        placeholder="https://…"
-                        value={createIcon}
-                        onInput={(e) =>
-                          setCreateIcon((e.target as HTMLInputElement).value)
-                        }
-                      />
-                    </div>
-                    <div class={s.formGroup}>
-                      <label for="group-banner">Banner URL</label>
-                      <input
-                        id="group-banner"
-                        type="url"
-                        class={s.formInput}
-                        placeholder="https://…"
-                        value={createBanner}
-                        onInput={(e) =>
-                          setCreateBanner((e.target as HTMLInputElement).value)
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div class={s.formGroup}>
-                    <div class={s.checkboxGroup}>
-                      <input
-                        type="checkbox"
-                        id="group-public"
-                        checked={createPublic}
-                        onChange={(e) =>
-                          setCreatePublic(
-                            (e.target as HTMLInputElement).checked,
-                          )
-                        }
-                      />
-                      <label for="group-public">Public group</label>
-                    </div>
-                    <small class={s.formHint}>
-                      Public groups appear in search and can be joined by anyone
-                      (subject to join policy).
-                    </small>
-                  </div>
-
-                  <div class={s.formGroup}>
-                    <label>Join Policy</label>
-                    <div class={s.policyGrid}>
-                      {JOIN_POLICY_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          class={`${s.policyCard} ${
-                            createPolicy === opt.value ? s.policyCardActive : ""
-                          }`}
-                          onClick={() => setCreatePolicy(opt.value)}
-                        >
-                          <div class={s.policyCardName}>{opt.label}</div>
-                          <div class={s.policyCardDesc}>{opt.description}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div class={s.formActions}>
-                    <button
-                      class={s.btnPrimary}
-                      onClick={createGroup}
-                      disabled={createBusy}
-                    >
-                      <PlusCircle size={14} />
-                      {createBusy ? "Creating…" : "Create Group"}
-                    </button>
-                    <button
-                      class={s.btnSecondary}
-                      onClick={resetCreateForm}
-                      type="button"
-                    >
-                      Clear Form
-                    </button>
-                  </div>
-
-                  {createMessage && (
-                    <div
-                      class={
-                        createMessageType === "success" ? s.success : s.error
-                      }
-                    >
-                      {createMessage}
+                  {topLoading && (
+                    <div class={s.loading}>Loading top groups…</div>
+                  )}
+                  {!topLoading && topGroups.length === 0 && (
+                    <div class={s.empty}>
+                      <div class={s.emptyIcon}>
+                        <Trophy size={24} />
+                      </div>
+                      <div class={s.emptyTitle}>No top groups yet</div>
+                      <div class={s.emptyText}>
+                        Public groups will appear here once they have members.
+                      </div>
                     </div>
                   )}
+                  <div class={s.groupGrid}>
+                    {topGroups.map((g, i) => (
+                      <a
+                        class={s.groupCard}
+                        href={`/groups/${encodeURIComponent(g.tag)}`}
+                        key={g.tag}
+                      >
+                        {i < 3 && (
+                          <div class={s.rankBadge}>
+                            <Sparkles size={10} /> #{i + 1}
+                          </div>
+                        )}
+                        {g.banner_url ? (
+                          <div
+                            class={s.groupBanner}
+                            style={{ backgroundImage: `url(${g.banner_url})` }}
+                          />
+                        ) : (
+                          <div class={s.groupBannerPlaceholder}>
+                            <Megaphone size={28} />
+                          </div>
+                        )}
+                        <div class={s.groupCardBody}>
+                          <div class={s.groupCardHeader}>
+                            {g.icon_url ? (
+                              <img
+                                src={g.icon_url}
+                                alt={g.name}
+                                class={s.groupCardIcon}
+                              />
+                            ) : (
+                              <div class={s.groupCardIconPlaceholder}>
+                                <Users size={18} />
+                              </div>
+                            )}
+                            <div class={s.groupCardTitles}>
+                              <div class={s.groupCardName}>
+                                {escapeHtml(g.name)}
+                              </div>
+                              <div class={s.groupCardTag}>
+                                @{escapeHtml(g.tag)}
+                              </div>
+                            </div>
+                          </div>
+                          {g.description && (
+                            <div class={s.groupCardDescription}>
+                              {escapeHtml(g.description)}
+                            </div>
+                          )}
+                          <div class={s.groupCardMeta}>
+                            <span class={s.metaChip}>
+                              <Users size={11} /> {g.member_count}
+                            </span>
+                            {g.public ? (
+                              <span class={s.metaChip}>
+                                <Globe size={11} /> Public
+                              </span>
+                            ) : (
+                              <span class={s.metaChip}>
+                                <Lock size={11} /> Private
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
+            )}
+
+            {activeTab === "create" && (
+              <OnboardingWizard
+                step={onboardingStep}
+                setStep={setOnboardingStep}
+                createdTag={createdTag}
+                createdName={createdName}
+                iconUrl={iconUrl}
+                iconUploaded={iconUploaded}
+                iconUploading={iconUploading}
+                bannerSet={bannerSet}
+                bannerSetting={bannerSetting}
+                bannerUrl={bannerUrl}
+                setBannerUrl={setBannerUrl}
+                entryFee={entryFee}
+                setEntryFee={setEntryFee}
+                entryFeeBusy={entryFeeBusy}
+                entryFeeSet={entryFeeSet}
+                wizardMessage={wizardMessage}
+                setWizardMessage={setWizardMessage}
+                createTag={createTag}
+                setCreateTag={setCreateTag}
+                createName={createName}
+                setCreateName={setCreateName}
+                createDescription={createDescription}
+                setCreateDescription={setCreateDescription}
+                createPublic={createPublic}
+                setCreatePublic={setCreatePublic}
+                createPolicy={createPolicy}
+                setCreatePolicy={setCreatePolicy}
+                createMessage={createMessage}
+                createMessageType={createMessageType}
+                createBusy={createBusy}
+                tagStatus={tagStatus}
+                onCreate={createGroup}
+                onUploadIcon={uploadOnboardingIcon}
+                onSetBanner={setOnboardingBanner}
+                onSetEntryFee={setOnboardingEntryFee}
+                onReset={resetOnboarding}
+                balance={(user?.["sys.currency"] ?? 0) as number}
+              />
             )}
           </div>
         </div>
       </div>
       <Footer />
+    </div>
+  );
+}
+
+const ONBOARDING_STEPS = [
+  { id: 1, label: "Basics" },
+  { id: 2, label: "Create" },
+  { id: 3, label: "Branding" },
+  { id: 4, label: "Joining" },
+  { id: 5, label: "Done" },
+] as const;
+
+function OnboardingWizard({
+  step,
+  setStep,
+  createdTag,
+  createdName,
+  iconUrl,
+  iconUploaded,
+  iconUploading,
+  bannerSet,
+  bannerSetting,
+  bannerUrl,
+  setBannerUrl,
+  entryFee,
+  setEntryFee,
+  entryFeeBusy,
+  entryFeeSet,
+  wizardMessage,
+  setWizardMessage,
+  createTag,
+  setCreateTag,
+  createName,
+  setCreateName,
+  createDescription,
+  setCreateDescription,
+  createPublic,
+  setCreatePublic,
+  createPolicy,
+  setCreatePolicy,
+  createMessage,
+  createMessageType,
+  createBusy,
+  tagStatus,
+  onCreate,
+  onUploadIcon,
+  onSetBanner,
+  onSetEntryFee,
+  onReset,
+  balance,
+}: {
+  step: 1 | 2 | 3 | 4 | 5;
+  setStep: (s: 1 | 2 | 3 | 4 | 5) => void;
+  createdTag: string | null;
+  createdName: string;
+  iconUrl: string;
+  iconUploaded: boolean;
+  iconUploading: boolean;
+  bannerSet: boolean;
+  bannerSetting: boolean;
+  bannerUrl: string;
+  setBannerUrl: (v: string) => void;
+  entryFee: string;
+  setEntryFee: (v: string) => void;
+  entryFeeBusy: boolean;
+  entryFeeSet: boolean;
+  wizardMessage: { text: string; type: "success" | "error" } | null;
+  setWizardMessage: (m: { text: string; type: "success" | "error" } | null) => void;
+  createTag: string;
+  setCreateTag: (v: string) => void;
+  createName: string;
+  setCreateName: (v: string) => void;
+  createDescription: string;
+  setCreateDescription: (v: string) => void;
+  createPublic: boolean;
+  setCreatePublic: (v: boolean) => void;
+  createPolicy: JoinPolicy;
+  setCreatePolicy: (v: JoinPolicy) => void;
+  createMessage: string;
+  createMessageType: "success" | "error";
+  createBusy: boolean;
+  tagStatus: "idle" | "checking" | "available" | "taken" | "invalid";
+  onCreate: () => void;
+  onUploadIcon: (f: File) => void;
+  onSetBanner: () => void;
+  onSetEntryFee: () => void;
+  onReset: () => void;
+  balance: number;
+}) {
+  const totalSteps = ONBOARDING_STEPS.length;
+  const currentStep = ONBOARDING_STEPS.find((st) => st.id === step)!;
+  const progress = ((step - 1) / (totalSteps - 1)) * 100;
+
+  return (
+    <div class={s.section}>
+      <div class={s.sectionHeader}>
+        <div class={s.sectionTitleGroup}>
+          <div class={s.sectionIcon}>
+            <PlusCircle size={18} />
+          </div>
+          <div>
+            <h2 class={s.sectionTitle}>Create a new group</h2>
+            <p class={s.sectionSubtitle}>
+              Step {step} of {totalSteps} — {currentStep.label}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class={s.sectionBody}>
+        <div class={s.stepper}>
+          <div class={s.stepperProgress}>
+            <div
+              class={s.stepperProgressBar}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div class={s.stepperDots}>
+            {ONBOARDING_STEPS.map((st) => (
+              <button
+                key={st.id}
+                type="button"
+                class={`${s.stepDot} ${
+                  step >= st.id ? s.stepDotActive : ""
+                } ${step === st.id ? s.stepDotCurrent : ""}`}
+                onClick={() => {
+                  if (st.id < step) setStep(st.id as 1 | 2 | 3 | 4 | 5);
+                }}
+                disabled={st.id >= step}
+              >
+                <span class={s.stepDotNum}>
+                  {step > st.id ? <Check size={11} /> : st.id}
+                </span>
+                <span class={s.stepDotLabel}>{st.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {step === 1 && (
+          <div class={s.wizardStep}>
+            <div class={s.wizardHeader}>
+              <h3 class={s.wizardTitle}>Tell us about your group</h3>
+              <p class={s.wizardLead}>
+                The essentials. You can add a readme, rules, banner, and more
+                from the group page after creation.
+              </p>
+            </div>
+
+            <div class={s.wizardCard}>
+              <div class={s.formGroup}>
+                <label for="group-tag">Group tag</label>
+                <div class={s.tagField}>
+                  <input
+                    id="group-tag"
+                    type="text"
+                    class={`${s.formInput} ${s.tagInput} ${
+                      tagStatus === "available"
+                        ? s.tagInputOk
+                        : tagStatus === "taken" || tagStatus === "invalid"
+                          ? s.tagInputBad
+                          : ""
+                    }`}
+                    placeholder="mygroup"
+                    maxlength={20}
+                    value={createTag}
+                    onInput={(e) =>
+                      setCreateTag(
+                        (e.target as HTMLInputElement).value.toLowerCase(),
+                      )
+                    }
+                  />
+                  {tagStatus === "checking" && (
+                    <span class={s.tagStatus} title="Checking…">
+                      <span class={s.tagSpinner} />
+                    </span>
+                  )}
+                  {tagStatus === "available" && (
+                    <span
+                      class={`${s.tagStatus} ${s.tagStatusOk}`}
+                      title="Tag is available"
+                    >
+                      <Check size={13} />
+                    </span>
+                  )}
+                  {(tagStatus === "taken" || tagStatus === "invalid") && (
+                    <span
+                      class={`${s.tagStatus} ${s.tagStatusBad}`}
+                      title={
+                        tagStatus === "taken"
+                          ? "Tag already in use"
+                          : "Invalid characters"
+                      }
+                    >
+                      <XCircle size={13} />
+                    </span>
+                  )}
+                </div>
+                <small
+                  class={`${s.formHint} ${
+                    tagStatus === "available"
+                      ? s.formHintOk
+                      : tagStatus === "taken" || tagStatus === "invalid"
+                        ? s.formHintBad
+                        : ""
+                  }`}
+                >
+                  {tagStatus === "available" && "Tag not used · "}
+                  {tagStatus === "taken" && "Tag is already taken · "}
+                  {tagStatus === "invalid" && "Letters and numbers only · "}
+                  URL: <code>rotur.dev/groups/{createTag || "tag"}</code>
+                </small>
+              </div>
+
+              <div class={s.formGroup}>
+                <label for="group-name">Display name</label>
+                <input
+                  id="group-name"
+                  type="text"
+                  class={s.formInput}
+                  placeholder="My Awesome Group"
+                  maxlength={50}
+                  value={createName}
+                  onInput={(e) =>
+                    setCreateName((e.target as HTMLInputElement).value)
+                  }
+                />
+              </div>
+
+              <div class={s.formGroup}>
+                <label for="group-description">Description (optional)</label>
+                <textarea
+                  id="group-description"
+                  class={s.formInput}
+                  placeholder="What is this group about?"
+                  maxlength={500}
+                  rows={3}
+                  value={createDescription}
+                  onInput={(e) =>
+                    setCreateDescription(
+                      (e.target as HTMLTextAreaElement).value,
+                    )
+                  }
+                />
+                <small class={s.formHint}>
+                  {createDescription.length} / 500 characters
+                </small>
+              </div>
+
+              <div class={s.formGroup}>
+                <div class={s.toggleRow}>
+                  <div>
+                    <div class={s.toggleLabel}>Public group</div>
+                    <div class={s.toggleDesc}>
+                      Public groups appear in search. You can still choose
+                      how members join in the next steps.
+                    </div>
+                  </div>
+                  <label class={s.toggleSwitch}>
+                    <input
+                      type="checkbox"
+                      checked={createPublic}
+                      onChange={(e) =>
+                        setCreatePublic(
+                          (e.target as HTMLInputElement).checked,
+                        )
+                      }
+                    />
+                    <span class={s.toggleTrack}>
+                      <span class={s.toggleThumb} />
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class={s.wizardFooter}>
+              {wizardMessage && (
+                <div
+                  class={
+                    wizardMessage.type === "success" ? s.success : s.error
+                  }
+                >
+                  {wizardMessage.text}
+                </div>
+              )}
+              <div class={s.wizardFooterActions}>
+                <button
+                  class={s.btnPrimary}
+                  type="button"
+                  onClick={() => {
+                    if (
+                      !createTag.trim() ||
+                      !/^[a-zA-Z0-9]+$/.test(createTag.trim())
+                    ) {
+                      setWizardMessage({
+                        text: "Tag is required and must be alphanumeric.",
+                        type: "error",
+                      });
+                      return;
+                    }
+                    if (tagStatus === "taken") {
+                      setWizardMessage({
+                        text: "That tag is already in use.",
+                        type: "error",
+                      });
+                      return;
+                    }
+                    if (!createName.trim()) {
+                      setWizardMessage({
+                        text: "Name is required.",
+                        type: "error",
+                      });
+                      return;
+                    }
+                    setWizardMessage(null);
+                    setStep(2);
+                  }}
+                  disabled={tagStatus === "taken" || tagStatus === "checking"}
+                >
+                  Continue <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div class={s.wizardStep}>
+            <div class={s.wizardHeader}>
+              <h3 class={s.wizardTitle}>Review and create</h3>
+              <p class={s.wizardLead}>
+                Creating the group will charge{" "}
+                <strong>50 credits</strong> from your balance.
+              </p>
+            </div>
+
+            <div class={s.reviewCard}>
+              <div class={s.reviewHeader}>
+                <div class={s.reviewAvatar}>
+                  <Users size={20} />
+                </div>
+                <div>
+                  <div class={s.reviewName}>
+                    {escapeHtml(createName.trim())}
+                  </div>
+                  <div class={s.reviewTag}>
+                    @{escapeHtml(createTag.trim())}
+                  </div>
+                </div>
+              </div>
+              {createDescription.trim() && (
+                <div class={s.reviewDescription}>
+                  {escapeHtml(createDescription.trim())}
+                </div>
+              )}
+              <div class={s.reviewMeta}>
+                <span class={s.metaChip}>
+                  {createPublic ? <Globe size={11} /> : <Lock size={11} />}{" "}
+                  {createPublic ? "Public" : "Private"}
+                </span>
+              </div>
+            </div>
+
+            <div class={s.costBanner}>
+              <Coins size={16} />
+              <div>
+                <div>
+                  <strong>50 credits</strong> will be deducted from your
+                  balance
+                </div>
+                <small>
+                  Current balance: <strong>{balance.toLocaleString()}</strong>{" "}
+                  · After: <strong>{(balance - 50).toLocaleString()}</strong>
+                </small>
+              </div>
+            </div>
+
+            <div class={s.wizardFooter}>
+              {createMessage && (
+                <div
+                  class={
+                    createMessageType === "success" ? s.success : s.error
+                  }
+                >
+                  {createMessage}
+                </div>
+              )}
+              <div class={s.wizardFooterActions}>
+                <button
+                  class={s.btnSecondary}
+                  type="button"
+                  onClick={() => setStep(1)}
+                  disabled={createBusy}
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+                <button
+                  class={s.btnPrimary}
+                  type="button"
+                  onClick={onCreate}
+                  disabled={createBusy || balance < 50}
+                >
+                  <Coins size={14} />
+                  {createBusy ? "Creating…" : "Create group"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && createdTag && (
+          <div class={s.wizardStep}>
+            <div class={s.wizardHeader}>
+              <h3 class={s.wizardTitle}>Add some personality</h3>
+              <p class={s.wizardLead}>
+                Both are optional. You can always update them from the group
+                page later.
+              </p>
+            </div>
+
+            <div class={s.brandingGrid}>
+              <div class={s.brandCard}>
+                <div class={s.brandCardHeader}>
+                  <div class={s.brandCardTitle}>
+                    <ImagePlus size={15} /> Icon
+                  </div>
+                  {iconUploaded && (
+                    <span class={s.brandCardDone}>
+                      <Check size={10} /> Done
+                    </span>
+                  )}
+                </div>
+                <div class={s.brandCardBody}>
+                  <div class={s.iconPreview}>
+                    {iconUrl ? (
+                      <img
+                        src={iconUrl}
+                        alt={createdName}
+                        class={s.iconPreviewImg}
+                      />
+                    ) : (
+                      <div class={s.iconPreviewPlaceholder}>
+                        <ImageIcon size={24} />
+                      </div>
+                    )}
+                  </div>
+                  <label class={s.fileDrop}>
+                    <ImagePlus size={14} />
+                    <span>
+                      {iconUploading
+                        ? "Uploading…"
+                        : iconUploaded
+                          ? "Replace"
+                          : "Upload image"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={iconUploading}
+                      onChange={(e) => {
+                        const f = (e.target as HTMLInputElement).files?.[0];
+                        if (f) onUploadIcon(f);
+                      }}
+                    />
+                  </label>
+                  <small class={s.formHint}>
+                    Resized to 256×256 JPEG · max 5MB
+                  </small>
+                </div>
+              </div>
+
+              <div class={s.brandCard}>
+                <div class={s.brandCardHeader}>
+                  <div class={s.brandCardTitle}>
+                    <ImageIcon size={15} /> Banner
+                  </div>
+                  {bannerSet && (
+                    <span class={s.brandCardDone}>
+                      <Check size={10} /> Done
+                    </span>
+                  )}
+                  {bannerSet && (
+                    <span class={s.brandCardCost}>
+                      <Coins size={10} /> 10 cr
+                    </span>
+                  )}
+                </div>
+                <div class={s.brandCardBody}>
+                  <div class={s.bannerPreview}>
+                    {bannerSet ? (
+                      <div
+                        class={s.bannerPreviewImg}
+                        style={{
+                          backgroundImage: `url(${bannerUrl})`,
+                        }}
+                      />
+                    ) : (
+                      <div class={s.bannerPreviewPlaceholder}>
+                        <ImageIcon size={20} />
+                      </div>
+                    )}
+                  </div>
+                  <div class={s.formGroup}>
+                    <input
+                      type="url"
+                      class={s.formInput}
+                      placeholder="https://example.com/banner.png"
+                      value={bannerUrl}
+                      onInput={(e) =>
+                        setBannerUrl((e.target as HTMLInputElement).value)
+                      }
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class={s.btnSecondary}
+                    onClick={onSetBanner}
+                    disabled={bannerSetting || !bannerUrl.trim()}
+                  >
+                    <Coins size={12} />
+                    {bannerSetting ? "Setting…" : "Set banner (10 credits)"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {wizardMessage && (
+              <div
+                class={wizardMessage.type === "success" ? s.success : s.error}
+              >
+                {wizardMessage.text}
+              </div>
+            )}
+
+            <div class={s.wizardFooter}>
+              <div class={s.wizardFooterActions}>
+                <button
+                  class={s.btnSecondary}
+                  type="button"
+                  onClick={() => setStep(2)}
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+                <button
+                  class={s.btnPrimary}
+                  type="button"
+                  onClick={() => setStep(4)}
+                >
+                  Continue <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && createdTag && (
+          <div class={s.wizardStep}>
+            <div class={s.wizardHeader}>
+              <h3 class={s.wizardTitle}>How can people join?</h3>
+              <p class={s.wizardLead}>
+                Choose a join policy and an optional entry fee.
+              </p>
+            </div>
+
+            <div class={s.wizardCard}>
+              <div class={s.formGroup}>
+                <label>Join policy</label>
+                <div class={s.policyGrid}>
+                  {JOIN_POLICY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      class={`${s.policyCard} ${
+                        createPolicy === opt.value ? s.policyCardActive : ""
+                      }`}
+                      onClick={() => setCreatePolicy(opt.value)}
+                    >
+                      <div class={s.policyCardName}>{opt.label}</div>
+                      <div class={s.policyCardDesc}>{opt.description}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div class={s.formGroup}>
+                <label for="group-onboard-fee">Entry fee (credits)</label>
+                <input
+                  id="group-onboard-fee"
+                  type="number"
+                  class={s.formInput}
+                  placeholder="0"
+                  min={0}
+                  step="0.01"
+                  value={entryFee}
+                  onInput={(e) =>
+                    setEntryFee((e.target as HTMLInputElement).value)
+                  }
+                />
+                <small class={s.formHint}>
+                  0 = free entry. The fee is deducted from the member's
+                  balance and added to the group's balance.
+                </small>
+              </div>
+
+              {wizardMessage && (
+                <div
+                  class={
+                    wizardMessage.type === "success" ? s.success : s.error
+                  }
+                >
+                  {wizardMessage.text}
+                </div>
+              )}
+            </div>
+
+            <div class={s.wizardFooter}>
+              <div class={s.wizardFooterActions}>
+                <button
+                  class={s.btnSecondary}
+                  type="button"
+                  onClick={() => setStep(3)}
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+                <button
+                  class={s.btnSecondary}
+                  type="button"
+                  onClick={onSetEntryFee}
+                  disabled={entryFeeBusy}
+                >
+                  <Save size={14} />
+                  {entryFeeBusy ? "Saving…" : "Save"}
+                </button>
+                <button
+                  class={s.btnPrimary}
+                  type="button"
+                  onClick={() => setStep(5)}
+                >
+                  Finish <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 5 && createdTag && (
+          <div class={s.wizardStep}>
+            <div class={s.donePanel}>
+              <div class={s.doneIcon}>
+                <PartyPopper size={36} />
+              </div>
+              <h3 class={s.doneTitle}>@{escapeHtml(createdTag)} is live</h3>
+              <p class={s.doneText}>
+                Your group has been created. You can add a readme, rules,
+                roles, and members from the group page.
+              </p>
+              <div class={s.doneSummary}>
+                {iconUploaded && (
+                  <span class={s.metaChip}>
+                    <Check size={10} /> Icon
+                  </span>
+                )}
+                {bannerSet && (
+                  <span class={s.metaChip}>
+                    <Check size={10} /> Banner
+                  </span>
+                )}
+                {entryFeeSet && parseFloat(entryFee) > 0 && (
+                  <span class={s.metaChip}>
+                    <Coins size={10} /> {entryFee} cr fee
+                  </span>
+                )}
+                {createPolicy && (
+                  <span class={s.metaChip}>
+                    <Check size={10} /> {createPolicy}
+                  </span>
+                )}
+              </div>
+              <div class={s.wizardFooterActions}>
+                <a
+                  class={s.btnPrimary}
+                  href={`/groups/${encodeURIComponent(createdTag)}`}
+                >
+                  Open your group <ArrowRight size={14} />
+                </a>
+                <button
+                  class={s.btnSecondary}
+                  type="button"
+                  onClick={onReset}
+                >
+                  Create another
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

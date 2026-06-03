@@ -894,6 +894,142 @@
   background-color: var(--surface-3);
 }
 
+.readmeBlock {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.rulesBlock {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.readmeTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.readmeContent {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.iconEditRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.iconEditPreview {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.iconEditPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.5rem;
+  background-color: var(--surface-2);
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fileDrop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.85rem;
+  background-color: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.fileDrop:hover {
+  background-color: var(--surface-3);
+  border-color: var(--accent, #6366f1);
+  color: var(--text);
+}
+
+.fileDrop input[type="file"] {
+  display: none;
+}
+
+.bannerEditRow {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.bannerEditPreview {
+  width: 9rem;
+  border-radius: 0.5rem;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  min-height: 3.5rem;
+  border: 1px solid var(--border);
+}
+
+.bannerEditPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 9rem;
+  border-radius: 0.5rem;
+  background-color: var(--surface-2);
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  min-height: 3.5rem;
+}
+
+.bannerEditControls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.bannerEditControls .formInput {
+  margin: 0;
+}
+
+.bannerEditControls button {
+  align-self: flex-start;
+}
+
 @media (max-width: 48rem) {
   .detailGrid {
     grid-template-columns: 1fr;
