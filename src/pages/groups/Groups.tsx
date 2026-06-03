@@ -840,7 +840,6 @@ function OnboardingWizard({
   bannerSet,
   bannerSetting,
   bannerUrl,
-  setBannerUrl,
   entryFee,
   setEntryFee,
   entryFeeBusy,
