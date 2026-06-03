@@ -1280,7 +1280,7 @@ function OnboardingWizard({
                   </small>
                 </div>
               </div>
-
+            </div>
           <div class={s.brandCard}>
             <div class={s.brandCardHeader}>
               <div class={s.brandCardTitle}>

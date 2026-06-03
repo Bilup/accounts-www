@@ -123,7 +123,8 @@ type View =
   | "tos"
   | "permissions"
   | "forgot"
-  | "reset";
+  | "reset"
+  | "full_warning";
 type BtnState = { text: string; disabled: boolean; color: string };
 
 const defaultBtn = (text: string): BtnState => ({
@@ -229,6 +230,7 @@ const sidebarForView: Record<View, { title: string; sub: string }> = {
   permissions: { title: "Account Access", sub: "Choose account to continue" },
   forgot: { title: "Reset password", sub: "We'll email you a link" },
   reset: { title: "Set new password", sub: "Enter the code from your email" },
+  full_warning: { title: "Full Access Request", sub: "Review before continuing" },
 };
 
 export function Auth() {
@@ -285,6 +287,7 @@ export function Auth() {
     email: string;
   } | null>(null);
   const requiredPermsRef = useRef<Set<string>>(new Set());
+  const requiresFullRef = useRef(false);
   const defaultAllOnEntryRef = useRef(false);
 
   // Permission picker state
@@ -328,6 +331,9 @@ export function Auth() {
           .filter(Boolean),
       );
       if (parsed.size > 0) requiredPermsRef.current = parsed;
+      if (parsed.has("full")) {
+        requiresFullRef.current = true;
+      }
     }
 
     const tokenParam = params.get("token");
@@ -351,6 +357,11 @@ export function Auth() {
     link.rel = "stylesheet";
     link.href = stylesUrl;
     document.head.appendChild(link);
+
+    if (requiresFullRef.current) {
+      setView("full_warning");
+      return;
+    }
 
     const username = getCookie("username");
     if (username) {
@@ -1084,6 +1095,22 @@ export function Auth() {
 
   const handleCancelAccess = useCallback(() => {
     history.back();
+  }, []);
+
+  const handleFullWarningProceed = useCallback(() => {
+    const username = getCookie("username");
+    if (username) {
+      setSiUsername(username);
+      setView("signin");
+      requestAnimationFrame(() => {
+        const pw = document.querySelector<HTMLInputElement>(
+          'input[name="password"]',
+        );
+        pw?.focus();
+      });
+    } else {
+      setView("welcome");
+    }
   }, []);
 
   // Permission toggle helpers
@@ -1962,6 +1989,45 @@ export function Auth() {
             <p>
               <a href="/privacy-policy?from=auth">Privacy Policy</a> •{" "}
               <a href="/terms-of-service?from=auth">Terms of Service</a>
+            </p>
+          </AuthTosLinks>
+        </div>
+      ) : view === "full_warning" ? (
+        <div class={s.welcomeArea}>
+          <div class={s.welcomeLogo}>
+            <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
+          </div>
+          <div class={s.welcomeContent}>
+            <h1>Full Account Access Requested</h1>
+            <p>
+              The site <strong>{requestor}</strong> is requesting{" "}
+              <strong>full access</strong> to your Rotur account. This means it
+              will be able to perform any action on your behalf, including
+              deleting your account and managing your tokens.
+            </p>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-subtle)" }}>
+              Only proceed if you fully trust {requestor}. You will be asked to
+              sign in and confirm on the next screen.
+            </p>
+          </div>
+          <div class={s.welcomeButtons}>
+            <button
+              class={s.btnWelcomePrimary}
+              onClick={handleFullWarningProceed}
+            >
+              <i class="fas fa-arrow-right" /> Continue to sign in
+            </button>
+            <button
+              class={s.btnWelcomeSecondary}
+              onClick={handleCancelAccess}
+            >
+              <i class="fas fa-arrow-left" /> Go back
+            </button>
+          </div>
+          <AuthTosLinks>
+            <p>
+              <a href="/terms-of-service?from=auth">Terms of Service</a> •{" "}
+              <a href="/privacy-policy?from=auth">Privacy Policy</a>
             </p>
           </AuthTosLinks>
         </div>

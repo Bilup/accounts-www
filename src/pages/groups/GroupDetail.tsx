@@ -356,13 +356,13 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       if (res.ok) {
         setRepresenting(true);
         setActionMessage({
-          text: "Now representing this group.",
+          text: "Now showing on profile.",
           type: "success",
         });
         if (reloadUser) await reloadUser();
       } else {
         setActionMessage({
-          text: data.error || "Failed to represent group",
+          text: data.error || "Failed to show on profile",
           type: "error",
         });
       }
@@ -574,7 +574,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                       </button>
                     ) : (
                       <button class={s.btnPrimary} onClick={representGroup}>
-                        <Sparkles size={13} /> Represent Group
+                        <Sparkles size={13} /> Show on profile
                       </button>
                     )}
                   </>
