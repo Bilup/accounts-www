@@ -49,16 +49,6 @@ function normalizeUsers(
   return [];
 }
 
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
 
 export function KeyManager() {
   const { user } = useAuth();
@@ -300,7 +290,7 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, `Added ${escapeHtml(username)}`, "success");
+        setKeyMsg(keyId, `Added $username`, "success");
         if (input) input.value = "";
         fetchUserKeys();
       } else {
@@ -319,7 +309,7 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, `Removed ${escapeHtml(username)}`, "success");
+        setKeyMsg(keyId, `Removed $username`, "success");
         fetchUserKeys();
       } else {
         setKeyMsg(keyId, data.error || "Failed to remove user", "error");

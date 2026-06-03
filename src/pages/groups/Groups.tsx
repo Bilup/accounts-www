@@ -92,16 +92,6 @@ const JOIN_POLICY_OPTIONS: {
   },
 ];
 
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
 
 function formatDate(epoch: number): string {
   return new Date(epoch * 1000).toLocaleDateString();
@@ -422,37 +412,30 @@ export function Groups() {
     setIconUploading(false);
   }
 
-  async function setOnboardingBanner() {
+  async function uploadOnboardingBanner(file: File) {
     if (!createdTag) return;
-    if (!bannerUrl.trim()) {
-      setWizardMessage({ text: "Enter a banner URL", type: "error" });
+    if (file.size > 5 * 1024 * 1024) {
+      setWizardMessage({ text: "Image must be under 5MB", type: "error" });
       return;
     }
-    if (!/^https?:\/\//.test(bannerUrl.trim())) {
-      setWizardMessage({
-        text: "Banner URL must start with http:// or https://",
-        type: "error",
-      });
-      return;
-    }
-    if (!confirm("Setting a banner costs 10 credits. Continue?")) return;
     setBannerSetting(true);
     setWizardMessage(null);
     try {
-      const params = new URLSearchParams();
-      params.set("banner_url", bannerUrl.trim());
+      const fd = new FormData();
+      fd.append("banner", file);
       const res = await fetch(
-        `${API_BASE_URL}/groups/${encodeURIComponent(createdTag)}/banner?${params.toString()}&${authQs().slice(1)}`,
-        { method: "POST" },
+        `${API_BASE_URL}/groups/${encodeURIComponent(createdTag)}/banner?${authQs().slice(1)}`,
+        { method: "POST", body: fd },
       );
       const data = await res.json();
       if (res.ok) {
         setBannerSet(true);
-        setWizardMessage({ text: "Banner set.", type: "success" });
+        setBannerUrl(data.banner_url || bannerUrl);
+        setWizardMessage({ text: "Banner uploaded.", type: "success" });
         if (reloadUser) await reloadUser();
       } else {
         setWizardMessage({
-          text: data.error || "Banner set failed",
+          text: data.error || "Banner upload failed",
           type: "error",
         });
       }
@@ -755,16 +738,16 @@ export function Groups() {
                             )}
                             <div class={s.groupCardTitles}>
                               <div class={s.groupCardName}>
-                                {escapeHtml(g.name)}
+                                {g.name}
                               </div>
                               <div class={s.groupCardTag}>
-                                @{escapeHtml(g.tag)}
+                                @{g.tag}
                               </div>
                             </div>
                           </div>
                           {g.description && (
                             <div class={s.groupCardDescription}>
-                              {escapeHtml(g.description)}
+                              {g.description}
                             </div>
                           )}
                           <div class={s.groupCardMeta}>
@@ -824,7 +807,7 @@ export function Groups() {
                 tagStatus={tagStatus}
                 onCreate={createGroup}
                 onUploadIcon={uploadOnboardingIcon}
-                onSetBanner={setOnboardingBanner}
+                onUploadBanner={uploadOnboardingBanner}
                 onSetEntryFee={setOnboardingEntryFee}
                 onReset={resetOnboarding}
                 balance={(user?.["sys.currency"] ?? 0) as number}
@@ -880,7 +863,7 @@ function OnboardingWizard({
   tagStatus,
   onCreate,
   onUploadIcon,
-  onSetBanner,
+  onUploadBanner,
   onSetEntryFee,
   onReset,
   balance,
@@ -920,7 +903,7 @@ function OnboardingWizard({
   tagStatus: "idle" | "checking" | "available" | "taken" | "invalid";
   onCreate: () => void;
   onUploadIcon: (f: File) => void;
-  onSetBanner: () => void;
+  onUploadBanner: (f: File) => void;
   onSetEntryFee: () => void;
   onReset: () => void;
   balance: number;
@@ -1175,14 +1158,14 @@ function OnboardingWizard({
                 </div>
                 <div>
                   <div class={s.reviewName}>
-                    {escapeHtml(createName.trim())}
+                    {createName.trim()}
                   </div>
-                  <div class={s.reviewTag}>@{escapeHtml(createTag.trim())}</div>
+                  <div class={s.reviewTag}>@{createTag.trim()}</div>
                 </div>
               </div>
               {createDescription.trim() && (
                 <div class={s.reviewDescription}>
-                  {escapeHtml(createDescription.trim())}
+                  {createDescription.trim()}
                 </div>
               )}
               <div class={s.reviewMeta}>
@@ -1298,60 +1281,56 @@ function OnboardingWizard({
                 </div>
               </div>
 
-              <div class={s.brandCard}>
-                <div class={s.brandCardHeader}>
-                  <div class={s.brandCardTitle}>
-                    <ImageIcon size={15} /> Banner
-                  </div>
-                  {bannerSet && (
-                    <span class={s.brandCardDone}>
-                      <Check size={10} /> Done
-                    </span>
-                  )}
-                  {bannerSet && (
-                    <span class={s.brandCardCost}>
-                      <Coins size={10} /> 10 cr
-                    </span>
-                  )}
-                </div>
-                <div class={s.brandCardBody}>
-                  <div class={s.bannerPreview}>
-                    {bannerSet ? (
-                      <div
-                        class={s.bannerPreviewImg}
-                        style={{
-                          backgroundImage: `url(${bannerUrl})`,
-                        }}
-                      />
-                    ) : (
-                      <div class={s.bannerPreviewPlaceholder}>
-                        <ImageIcon size={20} />
-                      </div>
-                    )}
-                  </div>
-                  <div class={s.formGroup}>
-                    <input
-                      type="url"
-                      class={s.formInput}
-                      placeholder="https://example.com/banner.png"
-                      value={bannerUrl}
-                      onInput={(e) =>
-                        setBannerUrl((e.target as HTMLInputElement).value)
-                      }
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    class={s.btnSecondary}
-                    onClick={onSetBanner}
-                    disabled={bannerSetting || !bannerUrl.trim()}
-                  >
-                    <Coins size={12} />
-                    {bannerSetting ? "Setting…" : "Set banner (10 credits)"}
-                  </button>
-                </div>
+          <div class={s.brandCard}>
+            <div class={s.brandCardHeader}>
+              <div class={s.brandCardTitle}>
+                <ImageIcon size={15} /> Banner
               </div>
+              {bannerSet && (
+                <span class={s.brandCardDone}>
+                  <Check size={10} /> Done
+                </span>
+              )}
             </div>
+            <div class={s.brandCardBody}>
+              <div class={s.bannerPreview}>
+                {bannerSet ? (
+                  <div
+                    class={s.bannerPreviewImg}
+                    style={{
+                      backgroundImage: `url(${bannerUrl})`,
+                    }}
+                  />
+                ) : (
+                  <div class={s.bannerPreviewPlaceholder}>
+                    <ImageIcon size={20} />
+                  </div>
+                )}
+              </div>
+              <label class={s.fileDrop}>
+                <ImagePlus size={14} />
+                <span>
+                  {bannerSetting
+                    ? "Uploading…"
+                    : bannerSet
+                      ? "Replace banner"
+                      : "Upload banner"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={bannerSetting}
+                  onChange={(e) => {
+                    const f = (e.target as HTMLInputElement).files?.[0];
+                    if (f) onUploadBanner(f);
+                  }}
+                />
+              </label>
+              <small class={s.formHint}>
+                Auto-resized to banner dimensions. Max 5MB.
+              </small>
+            </div>
+          </div>
 
             {wizardMessage && (
               <div
@@ -1476,7 +1455,7 @@ function OnboardingWizard({
               <div class={s.doneIcon}>
                 <PartyPopper size={36} />
               </div>
-              <h3 class={s.doneTitle}>@{escapeHtml(createdTag)} is live</h3>
+              <h3 class={s.doneTitle}>@{createdTag} is live</h3>
               <p class={s.doneText}>
                 Your group has been created. You can add a readme, rules, roles,
                 and members from the group page.
@@ -1559,13 +1538,13 @@ function GroupCard({
             </div>
           )}
           <div class={s.groupCardTitles}>
-            <div class={s.groupCardName}>{escapeHtml(group.name)}</div>
-            <div class={s.groupCardTag}>@{escapeHtml(group.tag)}</div>
+            <div class={s.groupCardName}>{group.name}</div>
+            <div class={s.groupCardTag}>@{group.tag}</div>
           </div>
         </div>
         {group.description && (
           <div class={s.groupCardDescription}>
-            {escapeHtml(group.description)}
+            {group.description}
           </div>
         )}
         <div class={s.groupCardMeta}>
@@ -1577,7 +1556,7 @@ function GroupCard({
             {group.public ? "Public" : "Private"}
           </span>
           <span class={s.metaChip}>
-            <Crown size={11} /> {escapeHtml(group.owner_user_id)}
+            <Crown size={11} /> {group.owner_user_id}
           </span>
           <span class={s.metaChip}>
             <Calendar size={11} /> {formatDate(group.created_at)}

@@ -73,16 +73,6 @@ const PERM_CATEGORIES: { label: string; match: (p: string) => boolean }[] = [
   { label: "Other", match: matchesOther },
 ];
 
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
 
 function categorizePermissions(perms: string[]) {
   const groups: Record<string, string[]> = {};
@@ -565,7 +555,7 @@ export function TokenManager() {
             <div class={s.tokenReveal}>
               <div class={s.tokenRevealHeader}>
                 <Shield size={16} /> Token created:{" "}
-                {escapeHtml(createdToken.name)}
+                {createdToken.name}
               </div>
               <p class={s.tokenRevealText}>
                 Copy this token now.{" "}
@@ -655,7 +645,7 @@ export function TokenManager() {
                         >
                           <div class={s.tokenHeader}>
                             <h3 class={s.tokenName}>
-                              {escapeHtml(token.name)}
+                              {token.name}
                             </h3>
                             <span class={`${s.tokenTag} ${s[st.cls]}`}>
                               {st.label}
@@ -678,7 +668,7 @@ export function TokenManager() {
                               <div class={s.tokenInfoRow}>
                                 <span class={s.tokenInfoLabel}>Origin:</span>
                                 <span class={s.tokenInfoValue}>
-                                  {escapeHtml(token.origin)}
+                                  {token.origin}
                                 </span>
                               </div>
                             )}
@@ -1066,7 +1056,7 @@ function TokenDetailModal({
         <div class={s.modalContent}>
           <div class={s.modalHeader}>
             <span class={s.modalType}>{st.label} Sub-Token</span>
-            <h2 class={s.modalName}>{escapeHtml(token.name)}</h2>
+            <h2 class={s.modalName}>{token.name}</h2>
           </div>
 
           {message && (
@@ -1115,21 +1105,21 @@ function TokenDetailModal({
             {token.origin && (
               <div class={s.modalStatItem}>
                 <Globe size={16} />
-                <span>{escapeHtml(token.origin)}</span>
+                <span>{token.origin}</span>
               </div>
             )}
             {token.websites && token.websites.length > 0 && (
               <div class={s.modalStatItem}>
                 <Globe size={16} />
                 <span>
-                  {token.websites.map((w) => escapeHtml(w)).join(", ")}
+                  {token.websites.map((w) => w).join(", ")}
                 </span>
               </div>
             )}
             {token.description && (
               <div class={s.modalStatItem}>
                 <FileText size={16} />
-                <span>{escapeHtml(token.description)}</span>
+                <span>{token.description}</span>
               </div>
             )}
           </div>

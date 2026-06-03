@@ -144,16 +144,6 @@ const JOIN_POLICY_OPTIONS: { value: JoinPolicy; label: string }[] = [
   { value: "INVITE", label: "Invite Only" },
 ];
 
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
 
 function formatDate(epoch: number): string {
   return new Date(epoch * 1000).toLocaleDateString();
@@ -308,7 +298,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   async function leaveGroup() {
     if (
       !confirm(
-        `Are you sure you want to leave ${escapeHtml(group?.name || tag)}?`,
+        `Are you sure you want to leave ${group?.name || tag}?`,
       )
     )
       return;
@@ -498,8 +488,8 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                   </div>
                 )}
                 <div class={s.headerTitles}>
-                  <h1 class={s.groupName}>{escapeHtml(group.name)}</h1>
-                  <div class={s.groupTag}>@{escapeHtml(group.tag)}</div>
+                  <h1 class={s.groupName}>{group.name}</h1>
+                  <div class={s.groupTag}>@{group.tag}</div>
                   <div class={s.headerMeta}>
                     <span class={s.metaChip}>
                       {group.public ? <Globe size={11} /> : <Lock size={11} />}{" "}
@@ -509,7 +499,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                       <Users size={11} /> {group.member_count} members
                     </span>
                     <span class={s.metaChip}>
-                      <Crown size={11} /> {escapeHtml(group.owner_user_id)}
+                      <Crown size={11} /> {group.owner_user_id}
                     </span>
                     <span class={s.metaChip}>
                       <Calendar size={11} /> {formatDate(group.created_at)}
@@ -531,7 +521,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
               </div>
 
               {group.description && (
-                <div class={s.description}>{escapeHtml(group.description)}</div>
+                <div class={s.description}>{group.description}</div>
               )}
 
               {actionMessage && (
@@ -725,7 +715,7 @@ function OverviewTab({
   const [policy, setPolicy] = useState<JoinPolicy>(group.join_policy);
   const [busy, setBusy] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
-  const [settingBanner, setSettingBanner] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   async function save() {
     const fee = parseFloat(entryFee);
@@ -797,39 +787,32 @@ function OverviewTab({
     setUploadingIcon(false);
   }
 
-  async function setBanner() {
-    if (!bannerUrl.trim()) {
-      onMessage({ text: "Enter a banner URL first", type: "error" });
+  async function uploadBanner(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      onMessage({ text: "Image must be under 5MB", type: "error" });
       return;
     }
-    if (!/^https?:\/\//.test(bannerUrl.trim())) {
-      onMessage({
-        text: "Banner URL must start with http:// or https://",
-        type: "error",
-      });
-      return;
-    }
-    if (!confirm("Setting a banner costs 10 credits. Continue?")) return;
-    setSettingBanner(true);
+    setUploadingBanner(true);
     onMessage(null);
     try {
-      const params = new URLSearchParams();
-      params.set("banner_url", bannerUrl.trim());
+      const fd = new FormData();
+      fd.append("banner", file);
       const res = await fetch(
-        `${API_BASE_URL}/groups/${encodeURIComponent(group.tag)}/banner?${params.toString()}&${authQs().slice(1)}`,
-        { method: "POST" },
+        `${API_BASE_URL}/groups/${encodeURIComponent(group.tag)}/banner?${authQs().slice(1)}`,
+        { method: "POST", body: fd },
       );
       const data = await res.json();
       if (res.ok) {
-        onMessage({ text: "Banner set.", type: "success" });
+        onMessage({ text: "Banner uploaded.", type: "success" });
         onUpdated();
       } else {
-        onMessage({ text: data.error || "Banner set failed", type: "error" });
+        onMessage({ text: data.error || "Banner upload failed", type: "error" });
       }
     } catch {
       onMessage({ text: "Network error", type: "error" });
     }
-    setSettingBanner(false);
+    setUploadingBanner(false);
   }
 
   async function deleteGroup() {
@@ -876,10 +859,10 @@ function OverviewTab({
             <div class={s.rolesList}>
               {myRoles.map((r) => (
                 <div key={r.id} class={s.roleCard}>
-                  <div class={s.roleName}>{escapeHtml(r.name)}</div>
+                  <div class={s.roleName}>{r.name}</div>
                   {r.description && (
                     <div class={s.roleDescription}>
-                      {escapeHtml(r.description)}
+                      {r.description}
                     </div>
                   )}
                   {r.permissions.length > 0 && (
@@ -1033,44 +1016,43 @@ function OverviewTab({
                   Auto-resized to 256×256 JPEG. Max 5MB.
                 </small>
               </div>
-              <div class={s.formGroup}>
-                <label>Banner</label>
-                <div class={s.bannerEditRow}>
-                  {bannerUrl ? (
-                    <div
-                      class={s.bannerEditPreview}
-                      style={{ backgroundImage: `url(${bannerUrl})` }}
-                    />
-                  ) : (
-                    <div class={s.bannerEditPlaceholder}>
-                      <ImageIcon size={20} />
-                    </div>
-                  )}
-                  <div class={s.bannerEditControls}>
-                    <input
-                      type="url"
-                      class={s.formInput}
-                      placeholder="https://…"
-                      value={bannerUrl}
-                      onInput={(e) =>
-                        setBannerUrl((e.target as HTMLInputElement).value)
-                      }
-                    />
-                    <button
-                      type="button"
-                      class={s.btnSecondary}
-                      onClick={setBanner}
-                      disabled={settingBanner || !bannerUrl.trim()}
-                    >
-                      <Sparkles size={12} />{" "}
-                      {settingBanner ? "Setting…" : "Set Banner (10 credits)"}
-                    </button>
+                <div class={s.formGroup}>
+                  <label>Banner</label>
+                  <div class={s.iconEditRow}>
+                    {bannerUrl ? (
+                      <div
+                        class={s.bannerEditPreview}
+                        style={{ backgroundImage: `url(${bannerUrl})` }}
+                      />
+                    ) : (
+                      <div class={s.bannerEditPlaceholder}>
+                        <ImageIcon size={20} />
+                      </div>
+                    )}
+                    <label class={s.fileDrop}>
+                      <ImagePlus size={14} />
+                      <span>
+                        {uploadingBanner
+                          ? "Uploading…"
+                          : bannerUrl
+                            ? "Replace banner"
+                            : "Upload banner"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingBanner}
+                        onChange={(e) => {
+                          const f = (e.target as HTMLInputElement).files?.[0];
+                          if (f) uploadBanner(f);
+                        }}
+                      />
+                    </label>
                   </div>
+                  <small class={s.formHint}>
+                    Auto-resized to banner dimensions. Max 5MB.
+                  </small>
                 </div>
-                <small class={s.formHint}>
-                  The banner endpoint takes an image URL and charges 10 credits.
-                </small>
-              </div>
               <div class={s.formGroup}>
                 <div class={s.checkboxGroup}>
                   <input
@@ -1158,7 +1140,7 @@ function OverviewTab({
                 <div class={s.detailItem}>
                   <h4>Owner</h4>
                   <div class={s.detailValue}>
-                    {escapeHtml(group.owner_user_id)}
+                    {group.owner_user_id}
                   </div>
                 </div>
                 <div class={s.detailItem}>
@@ -1453,7 +1435,7 @@ function AnnouncementsTab({
             {items.map((a) => (
               <div key={a.id} class={s.announcementCard}>
                 <div class={s.announcementHeader}>
-                  <h3 class={s.announcementTitle}>{escapeHtml(a.title)}</h3>
+                  <h3 class={s.announcementTitle}>{a.title}</h3>
                   {a.ping_members && (
                     <span class={s.pingBadge}>
                       <Bell size={10} /> Ping
@@ -1461,11 +1443,11 @@ function AnnouncementsTab({
                   )}
                 </div>
                 {a.body && (
-                  <div class={s.announcementBody}>{escapeHtml(a.body)}</div>
+                  <div class={s.announcementBody}>{a.body}</div>
                 )}
                 <div class={s.announcementMeta}>
                   <span>
-                    by {escapeHtml(a.author_username || a.author_user_id || "")}
+                    by {a.author_username || a.author_user_id || ""}
                   </span>
                   <span>•</span>
                   <span title={formatDateTime(a.created_at)}>
@@ -1638,10 +1620,10 @@ function MembersTab({
             <div class={s.rolesList}>
               {myRoles.map((r) => (
                 <div key={r.id} class={s.roleCard}>
-                  <div class={s.roleName}>{escapeHtml(r.name)}</div>
+                  <div class={s.roleName}>{r.name}</div>
                   {r.description && (
                     <div class={s.roleDescription}>
-                      {escapeHtml(r.description)}
+                      {r.description}
                     </div>
                   )}
                 </div>
@@ -1694,15 +1676,15 @@ function MembersTab({
             {targetUser && targetRoles.length > 0 && (
               <div class={s.manageList}>
                 <h4 class={s.manageListTitle}>
-                  Roles for {escapeHtml(targetUser)}
+                  Roles for {targetUser}
                 </h4>
                 {targetRoles.map((r) => (
                   <div key={r.id} class={s.manageRow}>
                     <div>
-                      <div class={s.roleName}>{escapeHtml(r.name)}</div>
+                      <div class={s.roleName}>{r.name}</div>
                       {r.description && (
                         <div class={s.roleDescription}>
-                          {escapeHtml(r.description)}
+                          {r.description}
                         </div>
                       )}
                     </div>
@@ -1725,10 +1707,10 @@ function MembersTab({
                 {availableToAssign.map((r) => (
                   <div key={r.id} class={s.manageRow}>
                     <div>
-                      <div class={s.roleName}>{escapeHtml(r.name)}</div>
+                      <div class={s.roleName}>{r.name}</div>
                       {r.description && (
                         <div class={s.roleDescription}>
-                          {escapeHtml(r.description)}
+                          {r.description}
                         </div>
                       )}
                     </div>
@@ -2180,7 +2162,7 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
                   ) : (
                     <div>
                       <div class={s.roleCardHeader}>
-                        <div class={s.roleName}>{escapeHtml(r.name)}</div>
+                        <div class={s.roleName}>{r.name}</div>
                         <div class={s.roleBadges}>
                           {r.assign_on_join && (
                             <span class={s.miniTag}>on join</span>
@@ -2192,7 +2174,7 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
                       </div>
                       {r.description && (
                         <div class={s.roleDescription}>
-                          {escapeHtml(r.description)}
+                          {r.description}
                         </div>
                       )}
                       {r.permissions.length > 0 && (
@@ -2520,7 +2502,7 @@ function EventsTab({
             {visible.map((e) => (
               <div key={e.id} class={s.eventCard}>
                 <div class={s.eventHeader}>
-                  <h3 class={s.eventTitle}>{escapeHtml(e.title)}</h3>
+                  <h3 class={s.eventTitle}>{e.title}</h3>
                   <div class={s.eventBadges}>
                     {!e.published && <span class={s.miniTag}>draft</span>}
                     <span class={s.miniTag}>
@@ -2530,7 +2512,7 @@ function EventsTab({
                 </div>
                 {e.description && (
                   <div class={s.eventDescription}>
-                    {escapeHtml(e.description)}
+                    {e.description}
                   </div>
                 )}
                 <div class={s.eventMeta}>
@@ -2543,7 +2525,7 @@ function EventsTab({
                     <>
                       <span>•</span>
                       <span>
-                        <MapPin size={11} /> {escapeHtml(e.location)}
+                        <MapPin size={11} /> {e.location}
                       </span>
                     </>
                   )}
@@ -2739,7 +2721,7 @@ function TipsTab({
               <div key={t.id} class={s.tipCard}>
                 <div class={s.tipLeft}>
                   <div class={s.tipFrom}>
-                    {escapeHtml(t.from_username || t.from_user_id || "")}
+                    {t.from_username || t.from_user_id || ""}
                   </div>
                   <div class={s.tipDate}>
                     {formatRelativeTime(t.created_at * 1000)}

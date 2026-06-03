@@ -46,16 +46,6 @@ const TABS: { id: TabName; label: string; icon: typeof Package }[] = [
   { id: "create-item", label: "Create Item", icon: PlusCircle },
 ];
 
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
 
 function createSafeId(name: string): string {
   return btoa(encodeURIComponent(name)).replace(/[^a-zA-Z0-9]/g, "");
@@ -318,7 +308,7 @@ export function InventoryManager() {
       if (res.ok) {
         setItemMessage(
           safeId,
-          `Transferred to ${escapeHtml(targetUser)}!`,
+          `Transferred to ${targetUser}!`,
           "success",
         );
         loadMyItems();
@@ -514,7 +504,7 @@ export function InventoryManager() {
 
             <div class={s.singleItemCard}>
               <h2 class={s.singleItemName}>
-                {escapeHtml(item.name)}
+                {item.name}
                 <button
                   class={s.copyBtn}
                   onClick={() => copyItemLink(item.name)}
@@ -524,7 +514,7 @@ export function InventoryManager() {
                 </button>
               </h2>
               <div class={s.singleItemDescription}>
-                {escapeHtml(item.description || "No description available")}
+                {item.description || "No description available"}
               </div>
               <div class={s.singleItemPrice}>
                 {formatPrice(item.price)} credits
@@ -537,10 +527,10 @@ export function InventoryManager() {
               <div class={s.singleItemMeta}>
                 <div>
                   <strong>Owner:</strong>{" "}
-                  {escapeHtml(item.owner || item.author)}
+                  {item.owner || item.author}
                 </div>
                 <div>
-                  <strong>Author:</strong> {escapeHtml(item.author)}
+                  <strong>Author:</strong> {item.author}
                 </div>
                 <div>
                   <strong>Created:</strong> {formatDate(item.created)}
@@ -647,7 +637,7 @@ export function InventoryManager() {
                       return (
                         <div key={item.name} class={s.itemCard}>
                           <div class={s.itemHeader}>
-                            <h3 class={s.itemName}>{escapeHtml(item.name)}</h3>
+                            <h3 class={s.itemName}>{item.name}</h3>
                             {item.selling ? (
                               <span class={`${s.itemTag} ${s.forSale}`}>
                                 For Sale
@@ -659,7 +649,7 @@ export function InventoryManager() {
                             )}
                           </div>
                           <div class={s.itemDescription}>
-                            {escapeHtml(item.description || "No description")}
+                            {item.description || "No description"}
                           </div>
                           <div class={s.itemPrice}>
                             {formatPrice(item.price)} credits
@@ -702,9 +692,9 @@ export function InventoryManager() {
                                         {t.type === "creation"
                                           ? "Created"
                                           : t.type === "transfer"
-                                            ? `Transferred from ${escapeHtml(t.from || "")} to ${escapeHtml(t.to || "")}`
+                                            ? `Transferred from ${t.from || ""} to ${t.to || ""}`
                                             : t.type === "purchase"
-                                              ? `Purchased by ${escapeHtml(t.to || "")} for ${formatPrice(t.price)} credits`
+                                              ? `Purchased by ${t.to || ""} for ${formatPrice(t.price)} credits`
                                               : "Unknown"}
                                         {" - "}
                                         {formatDate(t.timestamp)}
@@ -858,7 +848,7 @@ export function InventoryManager() {
                       return (
                         <div key={item.name} class={s.itemCard}>
                           <div class={s.itemHeader}>
-                            <h3 class={s.itemName}>{escapeHtml(item.name)}</h3>
+                            <h3 class={s.itemName}>{item.name}</h3>
                             <button
                               class={s.copyBtn}
                               onClick={() => copyItemLink(item.name)}
@@ -868,7 +858,7 @@ export function InventoryManager() {
                             </button>
                           </div>
                           <div class={s.itemDescription}>
-                            {escapeHtml(item.description || "No description")}
+                            {item.description || "No description"}
                           </div>
                           <div class={s.itemPrice}>
                             {formatPrice(item.price)} credits
@@ -877,13 +867,13 @@ export function InventoryManager() {
                             <div class={s.itemInfoRow}>
                               <span class={s.itemInfoLabel}>Owner:</span>
                               <span class={s.itemInfoValue}>
-                                {escapeHtml(item.owner || "")}
+                                {item.owner || ""}
                               </span>
                             </div>
                             <div class={s.itemInfoRow}>
                               <span class={s.itemInfoLabel}>Author:</span>
                               <span class={s.itemInfoValue}>
-                                {escapeHtml(item.author)}
+                                {item.author}
                               </span>
                             </div>
                             <div class={s.itemInfoRow}>

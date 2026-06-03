@@ -987,12 +987,6 @@
   display: none;
 }
 
-.bannerEditRow {
-  display: flex;
-  align-items: stretch;
-  gap: 0.75rem;
-}
-
 .bannerEditPreview {
   width: 9rem;
   border-radius: 0.5rem;
@@ -1014,22 +1008,6 @@
   color: var(--text-muted);
   flex-shrink: 0;
   min-height: 3.5rem;
-}
-
-.bannerEditControls {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.bannerEditControls .formInput {
-  margin: 0;
-}
-
-.bannerEditControls button {
-  align-self: flex-start;
 }
 
 @media (max-width: 48rem) {

@@ -40,16 +40,6 @@ interface NotifyLogItem {
   at: number;
 }
 
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
 
 function truncate(text: string, len: number): string {
   if (text.length <= len) return text;
@@ -285,7 +275,7 @@ export function Notifications() {
             <div class={s.userInfo}>
               <div>
                 <div class={s.welcomeText}>
-                  Welcome, <strong>{escapeHtml(currentUser)}</strong>
+                  Welcome, <strong>{currentUser}</strong>
                 </div>
                 <p class={s.welcomeSub}>
                   {endpoints.length} device{endpoints.length !== 1 ? "s" : ""} ·{" "}
@@ -504,7 +494,7 @@ export function Notifications() {
                         >
                           <div class={s.senderInfo}>
                             <div class={s.senderName}>
-                              {escapeHtml(snd.username)}
+                              {snd.username}
                             </div>
                             <div class={s.senderCount}>
                               {snd.count} notification
@@ -553,18 +543,18 @@ export function Notifications() {
                 {log.map((entry, i) => (
                   <div key={`${entry.at}-${i}`} class={s.logItem}>
                     <div class={s.logHeader}>
-                      <div class={s.logTitle}>{escapeHtml(entry.title)}</div>
+                      <div class={s.logTitle}>{entry.title}</div>
                       <div class={s.logTime} title={formatDateTime(entry.at)}>
                         {formatRelativeTime(entry.at)}
                       </div>
                     </div>
                     {entry.body && (
-                      <div class={s.logBody}>{escapeHtml(entry.body)}</div>
+                      <div class={s.logBody}>{entry.body}</div>
                     )}
                     <div class={s.logMeta}>
                       <span class={s.sourceTag}>{entry.source}</span>
                       <span>
-                        from <strong>@{escapeHtml(entry.from)}</strong>
+                        from <strong>@{entry.from}</strong>
                       </span>
                     </div>
                   </div>
