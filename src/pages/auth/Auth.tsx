@@ -20,8 +20,8 @@ import {
   AuthBtnSecondary,
   AuthTosLinks,
   AuthTosLinkBtn,
-} from "../components/auth/Shell";
-import { UserAvatar } from "../components/UserAvatar";
+} from "./Shell";
+import { UserAvatar } from "../../components/UserAvatar";
 
 declare const hcaptcha: any;
 

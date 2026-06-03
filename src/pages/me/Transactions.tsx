@@ -472,7 +472,7 @@ export function Transactions() {
                 Sign in to see your full transaction history and analytics.
               </p>
               <a
-                href={`/auth?return_to=${encodeURIComponent("/me/transactions")}`}
+                href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/me/transactions")}`}
                 class={s.btnPrimary}
               >
                 Sign in

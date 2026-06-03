@@ -305,7 +305,7 @@ export function Shop() {
   const handlePurchase = async (item: Cosmetic) => {
     if (!user) {
       window.location.href = `${AUTH_REDIRECT_BASE}${encodeURIComponent(
-        window.location.pathname + window.location.search,
+        window.location.origin + window.location.pathname + window.location.search,
       )}`;
       return;
     }
@@ -887,7 +887,7 @@ function OwnedTab({
           variant="primary"
           onClick={() => {
             window.location.href = `/auth?return_to=${encodeURIComponent(
-              window.location.pathname + window.location.search,
+              window.location.origin + window.location.pathname + window.location.search,
             )}`;
           }}
         >

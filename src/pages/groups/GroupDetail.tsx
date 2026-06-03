@@ -181,6 +181,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   const [myRoles, setMyRoles] = useState<GroupRole[]>([]);
   const [myPermissions, setMyPermissions] = useState<Set<string>>(new Set());
   const [representing, setRepresenting] = useState(false);
+  const [groupRoles, setGroupRoles] = useState<GroupRole[]>([]);
 
   const [activeTab, setActiveTab] = useState<DetailTab>("overview");
   const [actionMessage, setActionMessage] = useState<{
@@ -191,6 +192,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   useEffect(() => {
     if (!tag) return;
     loadGroup();
+    loadGroupRoles();
   }, [tag]);
 
   useEffect(() => {
@@ -200,6 +202,20 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       setRepresenting(true);
     }
   }, [user, tag]);
+
+  async function loadGroupRoles() {
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/roles?${authQs().slice(1)}`,
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setGroupRoles(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 
   async function loadGroup() {
     setLoading(true);
@@ -255,13 +271,13 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   }
 
   function hasPerm(perm: string): boolean {
-    return myPermissions.has(perm);
+    return isOwner || myPermissions.has(perm);
   }
 
   async function joinGroup() {
     if (!isLoggedIn) {
       window.location.href = `/auth?return_to=${encodeURIComponent(
-        window.location.pathname,
+        window.location.origin + window.location.pathname,
       )}`;
       return;
     }
@@ -548,7 +564,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                   <a
                     class={s.btnPrimary}
                     href={`/auth?return_to=${encodeURIComponent(
-                      window.location.pathname,
+                      window.location.origin + window.location.pathname,
                     )}`}
                   >
                     <UserPlus size={13} /> Sign in to Join
@@ -617,9 +633,9 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
             {activeTab === "overview" && (
               <OverviewTab
                 group={group}
-                isOwner={isOwner}
                 isMember={isMember}
                 myRoles={myRoles}
+                hasPerm={hasPerm}
                 onUpdated={() => {
                   loadGroup();
                   setActionMessage({
@@ -642,6 +658,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
             {activeTab === "members" && (
               <MembersTab
                 tag={tag}
+                groupRoles={groupRoles}
                 myRoles={myRoles}
                 myPermissions={myPermissions}
                 isOwner={isOwner}
@@ -650,7 +667,12 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
             )}
 
             {activeTab === "roles" && (
-              <RolesTab tag={tag} canManage={hasPerm("groups.roles.manage")} />
+              <RolesTab
+                tag={tag}
+                groupRoles={groupRoles}
+                onRolesChanged={loadGroupRoles}
+                canManage={hasPerm("groups.roles.manage")}
+              />
             )}
 
             {activeTab === "events" && (
@@ -698,16 +720,16 @@ function getTagFromUrl(): string {
 
 function OverviewTab({
   group,
-  isOwner,
   isMember,
   myRoles,
+  hasPerm,
   onUpdated,
   onMessage,
 }: {
   group: GroupPublic;
-  isOwner: boolean;
   isMember: boolean;
   myRoles: GroupRole[];
+  hasPerm: (perm: string) => boolean;
   onUpdated: () => void;
   onMessage: (m: { text: string; type: "success" | "error" } | null) => void;
 }) {
@@ -909,16 +931,24 @@ function OverviewTab({
               <p class={s.sectionSubtitle}>Group information and settings</p>
             </div>
           </div>
-          {isOwner && !editing && (
-            <div class={s.sectionActions}>
-              <button class={s.btnSecondary} onClick={() => setEditing(true)}>
-                <Edit3 size={13} /> Edit
-              </button>
-              <button class={s.btnDanger} onClick={deleteGroup}>
-                <Trash2 size={13} /> Delete
-              </button>
-            </div>
-          )}
+          {(hasPerm("groups.group.edit") || hasPerm("groups.manage")) &&
+            !editing && (
+              <div class={s.sectionActions}>
+                {hasPerm("groups.group.edit") && (
+                  <button
+                    class={s.btnSecondary}
+                    onClick={() => setEditing(true)}
+                  >
+                    <Edit3 size={13} /> Edit
+                  </button>
+                )}
+                {hasPerm("groups.manage") && (
+                  <button class={s.btnDanger} onClick={deleteGroup}>
+                    <Trash2 size={13} /> Delete
+                  </button>
+                )}
+              </div>
+            )}
         </div>
         <div class={s.sectionBody}>
           {editing ? (
@@ -1476,18 +1506,19 @@ function AnnouncementsTab({
 
 function MembersTab({
   tag,
+  groupRoles,
   myRoles,
   myPermissions,
   isOwner,
   isMember,
 }: {
   tag: string;
+  groupRoles: GroupRole[];
   myRoles: GroupRole[];
   myPermissions: Set<string>;
   isOwner: boolean;
   isMember: boolean;
 }) {
-  const [roles, setRoles] = useState<GroupRole[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [membersPage, setMembersPage] = useState(1);
   const [membersTotal, setMembersTotal] = useState(0);
@@ -1502,21 +1533,8 @@ function MembersTab({
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const canAssign = isOwner || myPermissions.has("groups.roles.assign");
+  const canRemove = isOwner || myPermissions.has("groups.members.remove");
   const canViewMembers = isOwner || myPermissions.has("groups.members.view");
-
-  async function loadRoles() {
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/roles?${authQs().slice(1)}`,
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setRoles(Array.isArray(data) ? data : []);
-      }
-    } catch {
-      /* ignore */
-    }
-  }
 
   async function loadMembers(page: number) {
     setMembersLoading(true);
@@ -1542,10 +1560,6 @@ function MembersTab({
     }
     setMembersLoading(false);
   }
-
-  useEffect(() => {
-    loadRoles();
-  }, [tag]);
 
   useEffect(() => {
     if (canViewMembers) {
@@ -1628,12 +1642,12 @@ function MembersTab({
 
   const targetHasRole = (roleId: string) =>
     targetRoles.some((r) => r.id === roleId);
-  const availableToAssign = roles.filter(
+  const availableToAssign = groupRoles.filter(
     (r) => r.name !== "Owner" && !targetHasRole(r.id),
   );
 
   function getRoleName(roleId: string): string {
-    const role = roles.find((r) => r.id === roleId);
+    const role = groupRoles.find((r) => r.id === roleId);
     return role?.name || roleId;
   }
 
@@ -1749,7 +1763,7 @@ function MembersTab({
                         )}
                       </div>
                       <span class={s.memberJoined}>
-                        {formatRelativeTime(m.joined_at)}
+                        {formatRelativeTime(m.joined_at * 1000)}
                       </span>
                     </a>
                   ))}
@@ -1832,7 +1846,7 @@ function MembersTab({
                         <div class={s.roleDescription}>{r.description}</div>
                       )}
                     </div>
-                    {r.name !== "Owner" && (
+                    {canRemove && r.name !== "Owner" && (
                       <button
                         class={s.btnDanger}
                         onClick={() => removeRole(targetUser, r.id)}
@@ -1875,9 +1889,17 @@ function MembersTab({
 
 // ── Roles tab ──
 
-function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
-  const [roles, setRoles] = useState<GroupRole[]>([]);
-  const [loading, setLoading] = useState(false);
+function RolesTab({
+  tag,
+  groupRoles,
+  onRolesChanged,
+  canManage,
+}: {
+  tag: string;
+  groupRoles: GroupRole[];
+  onRolesChanged: () => void;
+  canManage: boolean;
+}) {
   const [msg, setMsg] = useState<{
     text: string;
     type: "success" | "error";
@@ -1897,26 +1919,6 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
   const [editPerms, setEditPerms] = useState<Set<string>>(new Set());
   const [editBenefits, setEditBenefits] = useState("");
   const [newBenefits, setNewBenefits] = useState("");
-
-  async function load() {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/roles?${authQs().slice(1)}`,
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setRoles(Array.isArray(data) ? data : []);
-      }
-    } catch {
-      /* ignore */
-    }
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    load();
-  }, [tag]);
 
   function togglePerm(set: Set<string>, perm: string): Set<string> {
     const next = new Set(set);
@@ -1974,7 +1976,7 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
         setNewAssignOnJoin(false);
         setNewSelfAssignable(false);
         setNewBenefits("");
-        load();
+        onRolesChanged();
       } else {
         setMsg({ text: data.error || "Failed", type: "error" });
       }
@@ -2019,7 +2021,7 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
       if (res.ok) {
         setMsg({ text: "Role updated.", type: "success" });
         setEditingId(null);
-        load();
+        onRolesChanged();
       } else {
         setMsg({ text: data.error || "Failed", type: "error" });
       }
@@ -2038,7 +2040,7 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
       const data = await res.json();
       if (res.ok) {
         setMsg({ text: "Role deleted.", type: "success" });
-        load();
+        onRolesChanged();
       } else {
         setMsg({ text: data.error || "Failed", type: "error" });
       }
@@ -2175,19 +2177,18 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
             </div>
             <div>
               <h2 class={s.sectionTitle}>All Roles</h2>
-              <p class={s.sectionSubtitle}>{roles.length} role(s)</p>
+              <p class={s.sectionSubtitle}>{groupRoles.length} role(s)</p>
             </div>
           </div>
         </div>
         <div class={s.sectionBody}>
-          {loading && <div class={s.loading}>Loading…</div>}
-          {!loading && roles.length === 0 && (
+          {groupRoles.length === 0 && (
             <div class={s.empty}>
               <div class={s.emptyText}>No roles defined yet.</div>
             </div>
           )}
           <div class={s.rolesList}>
-            {roles.map((r) => {
+            {groupRoles.map((r) => {
               const isProtected = r.name === "Owner";
               const isEditing = editingId === r.id;
               return (

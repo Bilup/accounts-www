@@ -521,7 +521,7 @@ export function TokenManager() {
                 the apps you use.
               </p>
               <a
-                href={`/auth?return_to=${encodeURIComponent("/tokens")}`}
+                href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/tokens")}`}
                 class={s.btnPrimary}
               >
                 Sign in

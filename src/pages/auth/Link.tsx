@@ -12,26 +12,23 @@ import {
   AuthBtnSecondary,
   AuthNotice,
   AuthTosLinks,
-} from "../components/auth/Shell";
-import { setToken } from "../lib/auth";
+} from "./Shell";
+import { setToken, getToken } from "../../lib/auth";
 
 const API_BASE = "https://api.rotur.dev/link";
 
-type StatusState = "" | "waiting" | "success" | "error";
+type Phase = "input" | "verifying" | "redirecting" | "linking" | "done";
 type ResultType = "" | "success" | "error";
 
 export function Link() {
   const [code, setCode] = useState<string[]>(Array(6).fill(""));
+  const [phase, setPhase] = useState<Phase>("input");
   const [errorMsg, setErrorMsg] = useState("");
-  const [statusState, setStatusState] = useState<StatusState>("");
-  const [statusText, setStatusText] = useState("");
   const [resultType, setResultType] = useState<ResultType>("");
   const [resultMsg, setResultMsg] = useState("");
   const [subtitle, setSubtitle] = useState(
     "Enter the 6-character code to begin",
   );
-  const [signInDisabled, setSignInDisabled] = useState(false);
-  const [pasteDisabled, setPasteDisabled] = useState(false);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -40,44 +37,99 @@ export function Link() {
     [code],
   );
 
-  const clearResult = () => {
-    setResultType("");
-    setResultMsg("");
-  };
-  const setStatus = (state: StatusState, text: string) => {
-    setStatusState(state);
-    setStatusText(text);
-  };
   const showResult = (type: ResultType, message: string) => {
     setResultType(type);
     setResultMsg(message);
   };
 
+  const sendLinkRequest = useCallback(
+    async (linkCode: string, token: string) => {
+      setPhase("linking");
+      setSubtitle("Linking device...");
+      try {
+        const postUrl =
+          API_BASE +
+          "/code?code=" +
+          encodeURIComponent(linkCode) +
+          "&auth=" +
+          encodeURIComponent(token);
+        const res = await fetch(postUrl, { method: "POST" });
+        let data: any = null;
+        let rawText = "";
+        try {
+          rawText = await res.text();
+        } catch {}
+        try {
+          data = rawText ? JSON.parse(rawText) : null;
+        } catch {
+          data = rawText;
+        }
+
+        if (res.ok) {
+          const msg =
+            typeof data === "string" ? data : "Device linked successfully";
+          showResult(
+            "success",
+            msg +
+              " Your session token has been applied. You may close this window.",
+          );
+          setSubtitle("Device linked");
+          setToken(token);
+          setPhase("done");
+        } else {
+          const errMsg =
+            data && data.error
+              ? data.error
+              : "Link failed (HTTP " + res.status + ").";
+          const expired =
+            typeof errMsg === "string" &&
+            errMsg.toLowerCase().includes("no auth code found");
+          showResult("error", errMsg || "Invalid code or token. Try again.");
+          setSubtitle("Link failed");
+          setPhase("input");
+          if (expired) {
+            setPhase("done");
+          }
+        }
+      } catch (err: any) {
+        showResult("error", "Link failed: " + err.message);
+        setSubtitle("Link failed");
+        setPhase("input");
+      }
+    },
+    [],
+  );
+
   const beginAuth = useCallback(() => {
-    clearResult();
+    setErrorMsg("");
+    setResultType("");
     const fullCode = getFullCode();
     if (fullCode.length !== 6) {
       setErrorMsg("Enter the full 6-character code");
       return;
     }
-    setErrorMsg("");
+    setPhase("verifying");
+    setSubtitle("Verifying code...");
     sessionStorage.setItem("rotur_link_code", fullCode);
-    const returnTo = window.location.href.split("?")[0];
-    window.location.href = "/auth?return_to=" + encodeURIComponent(returnTo);
+    window.location.href =
+      "/auth?return_to=" +
+      encodeURIComponent(window.location.href.split("?")[0]);
   }, [getFullCode]);
 
   const beginSignup = useCallback(() => {
-    clearResult();
+    setErrorMsg("");
+    setResultType("");
     const fullCode = getFullCode();
     if (fullCode.length !== 6) {
       setErrorMsg("Enter the full 6-character code");
       return;
     }
-    setErrorMsg("");
+    setPhase("verifying");
+    setSubtitle("Verifying code...");
     sessionStorage.setItem("rotur_link_code", fullCode);
-    const returnTo = window.location.href.split("?")[0];
     window.location.href =
-      "/auth?signup=1&return_to=" + encodeURIComponent(returnTo);
+      "/auth?signup=1&return_to=" +
+      encodeURIComponent(window.location.href.split("?")[0]);
   }, [getFullCode]);
 
   const handlePaste = async () => {
@@ -115,91 +167,67 @@ export function Link() {
     if (e.key === "Enter") beginAuth();
   };
 
-  // Handle return from auth (token param)
+  // On mount: prefill from ?code=, and if token is available (returning from auth) send link request
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
+    const codeFromUrl = params.get("code");
+    const tokenFromUrl = params.get("token");
     const storedCode = sessionStorage.getItem("rotur_link_code");
 
-    if (token) {
+    // Clean URL params
+    if (tokenFromUrl || codeFromUrl) {
       const url = new URL(window.location.href);
       url.searchParams.delete("token");
+      url.searchParams.delete("code");
       window.history.replaceState({}, document.title, url.toString());
     }
 
-    if (!storedCode) return;
+    // Determine which code to use (URL ?code= takes priority)
+    const rawCode = (codeFromUrl || storedCode || "").toUpperCase();
 
-    const codeChars = storedCode.split("");
+    if (!rawCode) return;
+
+    // Pre-fill the code inputs
+    const codeChars = rawCode.split("");
     const newCode = Array(6).fill("");
     codeChars.forEach((c, i) => {
       if (i < 6) newCode[i] = c;
     });
     setCode(newCode);
 
+    // Determine the auth token to use
+    const token = tokenFromUrl || getToken();
+
     if (!token) {
-      setErrorMsg("Please sign in to complete device linking.");
+      // No token — user needs to sign in first. Redirect to auth.
+      sessionStorage.setItem("rotur_link_code", rawCode);
+      window.location.href =
+        "/auth?return_to=" +
+        encodeURIComponent(window.location.href.split("?")[0]);
       return;
     }
 
-    setSubtitle("Linking device...");
-    setSignInDisabled(true);
-    setPasteDisabled(true);
-    setStatus("waiting", "Sending link request");
-    (async () => {
-      try {
-        const postUrl =
-          API_BASE +
-          "/code?code=" +
-          encodeURIComponent(storedCode) +
-          "&auth=" +
-          encodeURIComponent(token);
-        const res = await fetch(postUrl, { method: "POST" });
-        let data: any = null;
-        let rawText = "";
-        try {
-          rawText = await res.text();
-        } catch {}
-        try {
-          data = rawText ? JSON.parse(rawText) : null;
-        } catch {
-          data = rawText;
-        }
-
-        if (res.ok) {
-          setStatus("success", "Linked successfully");
-          const msg =
-            typeof data === "string" ? data : "Device linked successfully";
-          showResult(
-            "success",
-            msg +
-              " Your session token has been applied. You may close this window.",
-          );
-          setSubtitle("Device linked");
-          setToken(token);
-        } else {
-          const errMsg =
-            data && data.error
-              ? data.error
-              : "Link failed (HTTP " + res.status + ").";
-          setStatus("error", "Link failed");
-          showResult("error", errMsg || "Invalid code or token. Try again.");
-          setSignInDisabled(false);
-          setPasteDisabled(false);
-          setSubtitle("Enter the 6-character code");
-        }
-      } catch (err: any) {
-        setStatus("error", "Error");
-        showResult("error", "Link failed: " + err.message);
-        setSignInDisabled(false);
-        setPasteDisabled(false);
-        setSubtitle("Enter the 6-character code");
-      }
-    })();
+    // We have both code and token — send link request
+    sendLinkRequest(rawCode, token);
   }, []);
 
-  const statusCls = statusState
-    ? `${s.statusLine} ${s[statusState]}`
-    : s.statusLine;
+  const isBusy = phase === "verifying" || phase === "linking";
+
+  const statusCls =
+    phase === "verifying" || phase === "linking"
+      ? `${s.statusLine} ${s.waiting}`
+      : phase === "done" && resultType === "success"
+        ? `${s.statusLine} ${s.success}`
+        : phase === "done" && resultType === "error"
+          ? `${s.statusLine} ${s.error}`
+          : s.statusLine;
+
+  const statusText =
+    phase === "verifying"
+      ? "Verifying code..."
+      : phase === "linking"
+        ? "Linking device..."
+        : "";
 
   const resultCls =
     resultType === "success"
@@ -216,7 +244,7 @@ export function Link() {
         title="Device Linking"
         subtitle="Connect a console or another device"
         footer={
-          <AuthSidebarAction onClick={beginAuth} disabled={signInDisabled}>
+          <AuthSidebarAction onClick={beginAuth} disabled={isBusy}>
             <i class="fas fa-link" /> Link Device
           </AuthSidebarAction>
         }
@@ -272,6 +300,7 @@ export function Link() {
                 value={code[i]}
                 onInput={(e: any) => handleInput(i, e.target.value)}
                 onKeyDown={(e: KeyboardEvent) => handleKeyDown(i, e)}
+                disabled={isBusy}
               />
             ))}
           </div>
@@ -283,14 +312,18 @@ export function Link() {
           <div class={s.linkActions}>
             <AuthBtnPrimary
               type="button"
-              disabled={signInDisabled}
+              disabled={isBusy}
               onClick={beginAuth}
             >
-              Sign in & Link
+              {phase === "verifying"
+                ? "Verifying..."
+                : phase === "linking"
+                  ? "Linking..."
+                  : "Sign in & Link"}
             </AuthBtnPrimary>
             <AuthBtnSecondary
               type="button"
-              disabled={pasteDisabled}
+              disabled={isBusy}
               onClick={handlePaste}
             >
               Paste Code
@@ -303,13 +336,14 @@ export function Link() {
               type="button"
               class={s.createAccountLink}
               onClick={beginSignup}
+              disabled={isBusy}
             >
               Create one
             </button>
           </div>
         </form>
 
-        {statusState && (
+        {(phase === "verifying" || phase === "linking") && (
           <div class={statusCls}>
             <span class={s.statusDot} />
             <span>{statusText}</span>
