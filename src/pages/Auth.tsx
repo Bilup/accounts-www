@@ -1163,15 +1163,6 @@ export function Auth() {
     return missing;
   }, [selectedPerms]);
 
-  const selectAllPerms = useCallback(() => {
-    if (!permSchema) return;
-    const all = new Set<string>();
-    for (const p of permSchema.permissions) {
-      if (!FORBIDDEN_PERMISSIONS.has(p)) all.add(p);
-    }
-    setSelectedPerms(all);
-  }, [permSchema]);
-
   const groupIcon = useCallback((name: string): string => {
     const icons: Record<string, string> = {
       read_only: "fa-eye",
