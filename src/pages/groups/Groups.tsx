@@ -138,9 +138,7 @@ export function Groups() {
     "idle" | "checking" | "available" | "taken" | "invalid"
   >("idle");
 
-  const [onboardingStep, setOnboardingStep] = useState<
-    1 | 2 | 3 | 4 | 5
-  >(1);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [createdTag, setCreatedTag] = useState<string | null>(null);
   const [createdName, setCreatedName] = useState<string>("");
   const [iconUploading, setIconUploading] = useState(false);
@@ -903,7 +901,9 @@ function OnboardingWizard({
   entryFeeBusy: boolean;
   entryFeeSet: boolean;
   wizardMessage: { text: string; type: "success" | "error" } | null;
-  setWizardMessage: (m: { text: string; type: "success" | "error" } | null) => void;
+  setWizardMessage: (
+    m: { text: string; type: "success" | "error" } | null,
+  ) => void;
   createTag: string;
   setCreateTag: (v: string) => void;
   createName: string;
@@ -1089,8 +1089,8 @@ function OnboardingWizard({
                   <div>
                     <div class={s.toggleLabel}>Public group</div>
                     <div class={s.toggleDesc}>
-                      Public groups appear in search. You can still choose
-                      how members join in the next steps.
+                      Public groups appear in search. You can still choose how
+                      members join in the next steps.
                     </div>
                   </div>
                   <label class={s.toggleSwitch}>
@@ -1098,9 +1098,7 @@ function OnboardingWizard({
                       type="checkbox"
                       checked={createPublic}
                       onChange={(e) =>
-                        setCreatePublic(
-                          (e.target as HTMLInputElement).checked,
-                        )
+                        setCreatePublic((e.target as HTMLInputElement).checked)
                       }
                     />
                     <span class={s.toggleTrack}>
@@ -1114,9 +1112,7 @@ function OnboardingWizard({
             <div class={s.wizardFooter}>
               {wizardMessage && (
                 <div
-                  class={
-                    wizardMessage.type === "success" ? s.success : s.error
-                  }
+                  class={wizardMessage.type === "success" ? s.success : s.error}
                 >
                   {wizardMessage.text}
                 </div>
@@ -1167,8 +1163,8 @@ function OnboardingWizard({
             <div class={s.wizardHeader}>
               <h3 class={s.wizardTitle}>Review and create</h3>
               <p class={s.wizardLead}>
-                Creating the group will charge{" "}
-                <strong>50 credits</strong> from your balance.
+                Creating the group will charge <strong>50 credits</strong> from
+                your balance.
               </p>
             </div>
 
@@ -1181,9 +1177,7 @@ function OnboardingWizard({
                   <div class={s.reviewName}>
                     {escapeHtml(createName.trim())}
                   </div>
-                  <div class={s.reviewTag}>
-                    @{escapeHtml(createTag.trim())}
-                  </div>
+                  <div class={s.reviewTag}>@{escapeHtml(createTag.trim())}</div>
                 </div>
               </div>
               {createDescription.trim() && (
@@ -1203,12 +1197,11 @@ function OnboardingWizard({
               <Coins size={16} />
               <div>
                 <div>
-                  <strong>50 credits</strong> will be deducted from your
-                  balance
+                  <strong>50 credits</strong> will be deducted from your balance
                 </div>
                 <small>
-                  Current balance: <strong>{balance.toLocaleString()}</strong>{" "}
-                  · After: <strong>{(balance - 50).toLocaleString()}</strong>
+                  Current balance: <strong>{balance.toLocaleString()}</strong> ·
+                  After: <strong>{(balance - 50).toLocaleString()}</strong>
                 </small>
               </div>
             </div>
@@ -1216,9 +1209,7 @@ function OnboardingWizard({
             <div class={s.wizardFooter}>
               {createMessage && (
                 <div
-                  class={
-                    createMessageType === "success" ? s.success : s.error
-                  }
+                  class={createMessageType === "success" ? s.success : s.error}
                 >
                   {createMessage}
                 </div>
@@ -1435,16 +1426,14 @@ function OnboardingWizard({
                   }
                 />
                 <small class={s.formHint}>
-                  0 = free entry. The fee is deducted from the member's
-                  balance and added to the group's balance.
+                  0 = free entry. The fee is deducted from the member's balance
+                  and added to the group's balance.
                 </small>
               </div>
 
               {wizardMessage && (
                 <div
-                  class={
-                    wizardMessage.type === "success" ? s.success : s.error
-                  }
+                  class={wizardMessage.type === "success" ? s.success : s.error}
                 >
                   {wizardMessage.text}
                 </div>
@@ -1489,8 +1478,8 @@ function OnboardingWizard({
               </div>
               <h3 class={s.doneTitle}>@{escapeHtml(createdTag)} is live</h3>
               <p class={s.doneText}>
-                Your group has been created. You can add a readme, rules,
-                roles, and members from the group page.
+                Your group has been created. You can add a readme, rules, roles,
+                and members from the group page.
               </p>
               <div class={s.doneSummary}>
                 {iconUploaded && (
@@ -1521,11 +1510,7 @@ function OnboardingWizard({
                 >
                   Open your group <ArrowRight size={14} />
                 </a>
-                <button
-                  class={s.btnSecondary}
-                  type="button"
-                  onClick={onReset}
-                >
+                <button class={s.btnSecondary} type="button" onClick={onReset}>
                   Create another
                 </button>
               </div>

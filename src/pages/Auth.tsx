@@ -1106,37 +1106,40 @@ export function Auth() {
     [selectedPerms],
   );
 
-  const toggleGroup = useCallback((name: string, perms: string[]) => {
-    setSelectedPerms((prev) => {
-      const next = new Set(prev);
-      const allActive = perms.every(
-        (p) => next.has(p) || FORBIDDEN_PERMISSIONS.has(p),
-      );
-      if (allActive) {
-        const otherGroups =
-          permSchema?.groups.filter(
-            (g) => g.name !== "full" && g.name !== name,
-          ) ?? [];
-        const providedByOthers = new Set<string>();
-        for (const og of otherGroups) {
-          if (
-            og.permissions.every(
-              (p) => next.has(p) || FORBIDDEN_PERMISSIONS.has(p),
-            )
-          ) {
-            for (const p of og.permissions) providedByOthers.add(p);
+  const toggleGroup = useCallback(
+    (name: string, perms: string[]) => {
+      setSelectedPerms((prev) => {
+        const next = new Set(prev);
+        const allActive = perms.every(
+          (p) => next.has(p) || FORBIDDEN_PERMISSIONS.has(p),
+        );
+        if (allActive) {
+          const otherGroups =
+            permSchema?.groups.filter(
+              (g) => g.name !== "full" && g.name !== name,
+            ) ?? [];
+          const providedByOthers = new Set<string>();
+          for (const og of otherGroups) {
+            if (
+              og.permissions.every(
+                (p) => next.has(p) || FORBIDDEN_PERMISSIONS.has(p),
+              )
+            ) {
+              for (const p of og.permissions) providedByOthers.add(p);
+            }
           }
+          for (const p of perms) {
+            if (FORBIDDEN_PERMISSIONS.has(p)) continue;
+            if (!providedByOthers.has(p)) next.delete(p);
+          }
+        } else {
+          for (const p of perms) if (!FORBIDDEN_PERMISSIONS.has(p)) next.add(p);
         }
-        for (const p of perms) {
-          if (FORBIDDEN_PERMISSIONS.has(p)) continue;
-          if (!providedByOthers.has(p)) next.delete(p);
-        }
-      } else {
-        for (const p of perms) if (!FORBIDDEN_PERMISSIONS.has(p)) next.add(p);
-      }
-      return next;
-    });
-  }, [permSchema]);
+        return next;
+      });
+    },
+    [permSchema],
+  );
 
   const isGroupPartial = useCallback(
     (perms: string[]): boolean => {

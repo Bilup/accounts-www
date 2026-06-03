@@ -516,8 +516,8 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                     </span>
                     {group.entry_fee > 0 && (
                       <span class={s.metaChip}>
-                        <Coins size={11} />{" "}
-                        {group.entry_fee.toLocaleString()} to join
+                        <Coins size={11} /> {group.entry_fee.toLocaleString()}{" "}
+                        to join
                       </span>
                     )}
                     {group.credits_balance > 0 && (
@@ -730,7 +730,10 @@ function OverviewTab({
   async function save() {
     const fee = parseFloat(entryFee);
     if (entryFee.trim() && (isNaN(fee) || fee < 0)) {
-      onMessage({ text: "Entry fee must be a non-negative number", type: "error" });
+      onMessage({
+        text: "Entry fee must be a non-negative number",
+        type: "error",
+      });
       return;
     }
     setBusy(true);
@@ -806,12 +809,7 @@ function OverviewTab({
       });
       return;
     }
-    if (
-      !confirm(
-        "Setting a banner costs 10 credits. Continue?",
-      )
-    )
-      return;
+    if (!confirm("Setting a banner costs 10 credits. Continue?")) return;
     setSettingBanner(true);
     onMessage(null);
     try {
@@ -1466,7 +1464,9 @@ function AnnouncementsTab({
                   <div class={s.announcementBody}>{escapeHtml(a.body)}</div>
                 )}
                 <div class={s.announcementMeta}>
-                  <span>by {escapeHtml(a.author_username || a.author_user_id || "")}</span>
+                  <span>
+                    by {escapeHtml(a.author_username || a.author_user_id || "")}
+                  </span>
                   <span>•</span>
                   <span title={formatDateTime(a.created_at)}>
                     {formatRelativeTime(a.created_at * 1000)}
@@ -2153,7 +2153,9 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
                           placeholder="custom_color, priority_access"
                           value={editBenefits}
                           onInput={(e) =>
-                            setEditBenefits((e.target as HTMLInputElement).value)
+                            setEditBenefits(
+                              (e.target as HTMLInputElement).value,
+                            )
                           }
                         />
                         <small class={s.formHint}>

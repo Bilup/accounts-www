@@ -51,7 +51,6 @@ export type TransactionType =
   | "escrow_out"
   | "group_entry_fee";
 
-
 export type Transaction = {
   type: TransactionType;
   user: string;
