@@ -35,6 +35,7 @@ import {
 } from "lucide-preact";
 import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
+import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, getToken, formatRelativeTime } from "../../lib/auth";
 import s from "./GroupDetail.module.css";
 
@@ -82,6 +83,15 @@ interface GroupRole {
   permissions: string[];
 }
 
+interface GroupMember {
+  id: string;
+  group_tag: string;
+  username: string;
+  role_ids: string[];
+  joined_at: number;
+  muted_announcements: boolean;
+}
+
 interface GroupEvent {
   id: string;
   group_tag: string;
@@ -116,6 +126,7 @@ const ALL_PERMISSIONS = [
   "groups.manage",
   "groups.members.invite",
   "groups.members.remove",
+  "groups.members.view",
   "groups.roles.manage",
   "groups.roles.assign",
   "groups.announcements.send",
@@ -129,6 +140,7 @@ const PERMISSION_LABELS: Record<string, string> = {
   "groups.manage": "Manage Group",
   "groups.members.invite": "Invite Members",
   "groups.members.remove": "Remove Members",
+  "groups.members.view": "View Members",
   "groups.roles.manage": "Manage Roles",
   "groups.roles.assign": "Assign Roles",
   "groups.announcements.send": "Send Announcements",
@@ -143,7 +155,6 @@ const JOIN_POLICY_OPTIONS: { value: JoinPolicy; label: string }[] = [
   { value: "REQUEST", label: "Request" },
   { value: "INVITE", label: "Invite Only" },
 ];
-
 
 function formatDate(epoch: number): string {
   return new Date(epoch * 1000).toLocaleDateString();
@@ -296,11 +307,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   }
 
   async function leaveGroup() {
-    if (
-      !confirm(
-        `Are you sure you want to leave ${group?.name || tag}?`,
-      )
-    )
+    if (!confirm(`Are you sure you want to leave ${group?.name || tag}?`))
       return;
     setActionMessage(null);
     try {
@@ -807,7 +814,10 @@ function OverviewTab({
         onMessage({ text: "Banner uploaded.", type: "success" });
         onUpdated();
       } else {
-        onMessage({ text: data.error || "Banner upload failed", type: "error" });
+        onMessage({
+          text: data.error || "Banner upload failed",
+          type: "error",
+        });
       }
     } catch {
       onMessage({ text: "Network error", type: "error" });
@@ -861,9 +871,7 @@ function OverviewTab({
                 <div key={r.id} class={s.roleCard}>
                   <div class={s.roleName}>{r.name}</div>
                   {r.description && (
-                    <div class={s.roleDescription}>
-                      {r.description}
-                    </div>
+                    <div class={s.roleDescription}>{r.description}</div>
                   )}
                   {r.permissions.length > 0 && (
                     <div class={s.rolePermissions}>
@@ -1016,43 +1024,43 @@ function OverviewTab({
                   Auto-resized to 256×256 JPEG. Max 5MB.
                 </small>
               </div>
-                <div class={s.formGroup}>
-                  <label>Banner</label>
-                  <div class={s.iconEditRow}>
-                    {bannerUrl ? (
-                      <div
-                        class={s.bannerEditPreview}
-                        style={{ backgroundImage: `url(${bannerUrl})` }}
-                      />
-                    ) : (
-                      <div class={s.bannerEditPlaceholder}>
-                        <ImageIcon size={20} />
-                      </div>
-                    )}
-                    <label class={s.fileDrop}>
-                      <ImagePlus size={14} />
-                      <span>
-                        {uploadingBanner
-                          ? "Uploading…"
-                          : bannerUrl
-                            ? "Replace banner"
-                            : "Upload banner"}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={uploadingBanner}
-                        onChange={(e) => {
-                          const f = (e.target as HTMLInputElement).files?.[0];
-                          if (f) uploadBanner(f);
-                        }}
-                      />
-                    </label>
-                  </div>
-                  <small class={s.formHint}>
-                    Auto-resized to banner dimensions. Max 5MB.
-                  </small>
+              <div class={s.formGroup}>
+                <label>Banner</label>
+                <div class={s.iconEditRow}>
+                  {bannerUrl ? (
+                    <div
+                      class={s.bannerEditPreview}
+                      style={{ backgroundImage: `url(${bannerUrl})` }}
+                    />
+                  ) : (
+                    <div class={s.bannerEditPlaceholder}>
+                      <ImageIcon size={20} />
+                    </div>
+                  )}
+                  <label class={s.fileDrop}>
+                    <ImagePlus size={14} />
+                    <span>
+                      {uploadingBanner
+                        ? "Uploading…"
+                        : bannerUrl
+                          ? "Replace banner"
+                          : "Upload banner"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingBanner}
+                      onChange={(e) => {
+                        const f = (e.target as HTMLInputElement).files?.[0];
+                        if (f) uploadBanner(f);
+                      }}
+                    />
+                  </label>
                 </div>
+                <small class={s.formHint}>
+                  Auto-resized to banner dimensions. Max 5MB.
+                </small>
+              </div>
               <div class={s.formGroup}>
                 <div class={s.checkboxGroup}>
                   <input
@@ -1139,9 +1147,7 @@ function OverviewTab({
                 </div>
                 <div class={s.detailItem}>
                   <h4>Owner</h4>
-                  <div class={s.detailValue}>
-                    {group.owner_user_id}
-                  </div>
+                  <div class={s.detailValue}>{group.owner_user_id}</div>
                 </div>
                 <div class={s.detailItem}>
                   <h4>Members</h4>
@@ -1442,13 +1448,9 @@ function AnnouncementsTab({
                     </span>
                   )}
                 </div>
-                {a.body && (
-                  <div class={s.announcementBody}>{a.body}</div>
-                )}
+                {a.body && <div class={s.announcementBody}>{a.body}</div>}
                 <div class={s.announcementMeta}>
-                  <span>
-                    by {a.author_username || a.author_user_id || ""}
-                  </span>
+                  <span>by {a.author_username || a.author_user_id || ""}</span>
                   <span>•</span>
                   <span title={formatDateTime(a.created_at)}>
                     {formatRelativeTime(a.created_at * 1000)}
@@ -1486,6 +1488,12 @@ function MembersTab({
   isMember: boolean;
 }) {
   const [roles, setRoles] = useState<GroupRole[]>([]);
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [membersPage, setMembersPage] = useState(1);
+  const [membersTotal, setMembersTotal] = useState(0);
+  const [membersPages, setMembersPages] = useState(1);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
   const [targetUser, setTargetUser] = useState("");
   const [targetRoles, setTargetRoles] = useState<GroupRole[]>([]);
   const [lookupMsg, setLookupMsg] = useState<{
@@ -1494,6 +1502,7 @@ function MembersTab({
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const canAssign = isOwner || myPermissions.has("groups.roles.assign");
+  const canViewMembers = isOwner || myPermissions.has("groups.members.view");
 
   async function loadRoles() {
     try {
@@ -1509,9 +1518,45 @@ function MembersTab({
     }
   }
 
+  async function loadMembers(page: number) {
+    setMembersLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        per_page: "20",
+      });
+      if (memberSearch.trim()) {
+        params.set("search", memberSearch.trim());
+      }
+      const res = await fetch(
+        `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/members?${params}&${authQs().slice(1)}`,
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setMembers(data.members || []);
+        setMembersTotal(data.total || 0);
+        setMembersPages(data.pages || 1);
+      }
+    } catch {
+      /* ignore */
+    }
+    setMembersLoading(false);
+  }
+
   useEffect(() => {
     loadRoles();
   }, [tag]);
+
+  useEffect(() => {
+    if (canViewMembers) {
+      loadMembers(membersPage);
+    }
+  }, [tag, membersPage, canViewMembers]);
+
+  function searchMembers() {
+    setMembersPage(1);
+    loadMembers(1);
+  }
 
   async function lookup() {
     if (!targetUser.trim()) return;
@@ -1587,6 +1632,11 @@ function MembersTab({
     (r) => r.name !== "Owner" && !targetHasRole(r.id),
   );
 
+  function getRoleName(roleId: string): string {
+    const role = roles.find((r) => r.id === roleId);
+    return role?.name || roleId;
+  }
+
   return (
     <div class={s.tabColumn}>
       <div class={s.section}>
@@ -1622,9 +1672,7 @@ function MembersTab({
                 <div key={r.id} class={s.roleCard}>
                   <div class={s.roleName}>{r.name}</div>
                   {r.description && (
-                    <div class={s.roleDescription}>
-                      {r.description}
-                    </div>
+                    <div class={s.roleDescription}>{r.description}</div>
                   )}
                 </div>
               ))}
@@ -1632,6 +1680,106 @@ function MembersTab({
           )}
         </div>
       </div>
+
+      {canViewMembers && (
+        <div class={s.section}>
+          <div class={s.sectionHeader}>
+            <div class={s.sectionTitleGroup}>
+              <div class={s.sectionIcon}>
+                <Users size={18} />
+              </div>
+              <div>
+                <h2 class={s.sectionTitle}>Members</h2>
+                <p class={s.sectionSubtitle}>
+                  {membersTotal} member{membersTotal === 1 ? "" : "s"}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class={s.sectionBody}>
+            <div class={s.actionRow}>
+              <input
+                type="text"
+                class={s.formInput}
+                placeholder="Search members…"
+                value={memberSearch}
+                onInput={(e) =>
+                  setMemberSearch((e.target as HTMLInputElement).value)
+                }
+                onKeyDown={(e) => {
+                  if ((e as KeyboardEvent).key === "Enter") searchMembers();
+                }}
+              />
+              <button class={s.btnSecondary} onClick={searchMembers}>
+                <Search size={13} /> Search
+              </button>
+            </div>
+            {membersLoading ? (
+              <div class={s.empty}>
+                <div class={s.emptyText}>Loading members…</div>
+              </div>
+            ) : members.length === 0 ? (
+              <div class={s.empty}>
+                <div class={s.emptyText}>No members found.</div>
+              </div>
+            ) : (
+              <>
+                <div class={s.memberList}>
+                  {members.map((m) => (
+                    <a
+                      key={m.id}
+                      class={s.memberRow}
+                      href={`/profile/${encodeURIComponent(m.username)}`}
+                    >
+                      <UserAvatar
+                        username={m.username}
+                        size={32}
+                        showOverlay={false}
+                      />
+                      <div class={s.memberInfo}>
+                        <div class={s.memberName}>{m.username}</div>
+                        {m.role_ids.length > 0 && (
+                          <div class={s.memberRoles}>
+                            {m.role_ids.map((rid) => (
+                              <span key={rid} class={s.miniTag}>
+                                {getRoleName(rid)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <span class={s.memberJoined}>
+                        {formatRelativeTime(m.joined_at)}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+                {membersPages > 1 && (
+                  <div class={s.pagination}>
+                    <button
+                      class={s.btnSecondary}
+                      disabled={membersPage <= 1}
+                      onClick={() => setMembersPage((p) => p - 1)}
+                    >
+                      Prev
+                    </button>
+                    <span class={s.pageIndicator}>
+                      Page {membersPage} of {membersPages}
+                    </span>
+                    <button
+                      class={s.btnSecondary}
+                      disabled={membersPage >= membersPages}
+                      onClick={() => setMembersPage((p) => p + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {canAssign && (
         <div class={s.section}>
@@ -1675,17 +1823,13 @@ function MembersTab({
 
             {targetUser && targetRoles.length > 0 && (
               <div class={s.manageList}>
-                <h4 class={s.manageListTitle}>
-                  Roles for {targetUser}
-                </h4>
+                <h4 class={s.manageListTitle}>Roles for {targetUser}</h4>
                 {targetRoles.map((r) => (
                   <div key={r.id} class={s.manageRow}>
                     <div>
                       <div class={s.roleName}>{r.name}</div>
                       {r.description && (
-                        <div class={s.roleDescription}>
-                          {r.description}
-                        </div>
+                        <div class={s.roleDescription}>{r.description}</div>
                       )}
                     </div>
                     {r.name !== "Owner" && (
@@ -1709,9 +1853,7 @@ function MembersTab({
                     <div>
                       <div class={s.roleName}>{r.name}</div>
                       {r.description && (
-                        <div class={s.roleDescription}>
-                          {r.description}
-                        </div>
+                        <div class={s.roleDescription}>{r.description}</div>
                       )}
                     </div>
                     <button
@@ -2173,9 +2315,7 @@ function RolesTab({ tag, canManage }: { tag: string; canManage: boolean }) {
                         </div>
                       </div>
                       {r.description && (
-                        <div class={s.roleDescription}>
-                          {r.description}
-                        </div>
+                        <div class={s.roleDescription}>{r.description}</div>
                       )}
                       {r.permissions.length > 0 && (
                         <div class={s.rolePermissions}>
@@ -2511,9 +2651,7 @@ function EventsTab({
                   </div>
                 </div>
                 {e.description && (
-                  <div class={s.eventDescription}>
-                    {e.description}
-                  </div>
+                  <div class={s.eventDescription}>{e.description}</div>
                 )}
                 <div class={s.eventMeta}>
                   <span>

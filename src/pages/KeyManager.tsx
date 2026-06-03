@@ -49,7 +49,6 @@ function normalizeUsers(
   return [];
 }
 
-
 export function KeyManager() {
   const { user } = useAuth();
   const currentUser = user?.username || "";

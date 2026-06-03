@@ -92,7 +92,6 @@ const JOIN_POLICY_OPTIONS: {
   },
 ];
 
-
 function formatDate(epoch: number): string {
   return new Date(epoch * 1000).toLocaleDateString();
 }
@@ -737,12 +736,8 @@ export function Groups() {
                               </div>
                             )}
                             <div class={s.groupCardTitles}>
-                              <div class={s.groupCardName}>
-                                {g.name}
-                              </div>
-                              <div class={s.groupCardTag}>
-                                @{g.tag}
-                              </div>
+                              <div class={s.groupCardName}>{g.name}</div>
+                              <div class={s.groupCardTag}>@{g.tag}</div>
                             </div>
                           </div>
                           {g.description && (
@@ -1156,9 +1151,7 @@ function OnboardingWizard({
                   <Users size={20} />
                 </div>
                 <div>
-                  <div class={s.reviewName}>
-                    {createName.trim()}
-                  </div>
+                  <div class={s.reviewName}>{createName.trim()}</div>
                   <div class={s.reviewTag}>@{createTag.trim()}</div>
                 </div>
               </div>
@@ -1280,56 +1273,56 @@ function OnboardingWizard({
                 </div>
               </div>
             </div>
-          <div class={s.brandCard}>
-            <div class={s.brandCardHeader}>
-              <div class={s.brandCardTitle}>
-                <ImageIcon size={15} /> Banner
-              </div>
-              {bannerSet && (
-                <span class={s.brandCardDone}>
-                  <Check size={10} /> Done
-                </span>
-              )}
-            </div>
-            <div class={s.brandCardBody}>
-              <div class={s.bannerPreview}>
-                {bannerSet ? (
-                  <div
-                    class={s.bannerPreviewImg}
-                    style={{
-                      backgroundImage: `url(${bannerUrl})`,
-                    }}
-                  />
-                ) : (
-                  <div class={s.bannerPreviewPlaceholder}>
-                    <ImageIcon size={20} />
-                  </div>
+            <div class={s.brandCard}>
+              <div class={s.brandCardHeader}>
+                <div class={s.brandCardTitle}>
+                  <ImageIcon size={15} /> Banner
+                </div>
+                {bannerSet && (
+                  <span class={s.brandCardDone}>
+                    <Check size={10} /> Done
+                  </span>
                 )}
               </div>
-              <label class={s.fileDrop}>
-                <ImagePlus size={14} />
-                <span>
-                  {bannerSetting
-                    ? "Uploading…"
-                    : bannerSet
-                      ? "Replace banner"
-                      : "Upload banner"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  disabled={bannerSetting}
-                  onChange={(e) => {
-                    const f = (e.target as HTMLInputElement).files?.[0];
-                    if (f) onUploadBanner(f);
-                  }}
-                />
-              </label>
-              <small class={s.formHint}>
-                Auto-resized to banner dimensions. Max 5MB.
-              </small>
+              <div class={s.brandCardBody}>
+                <div class={s.bannerPreview}>
+                  {bannerSet ? (
+                    <div
+                      class={s.bannerPreviewImg}
+                      style={{
+                        backgroundImage: `url(${bannerUrl})`,
+                      }}
+                    />
+                  ) : (
+                    <div class={s.bannerPreviewPlaceholder}>
+                      <ImageIcon size={20} />
+                    </div>
+                  )}
+                </div>
+                <label class={s.fileDrop}>
+                  <ImagePlus size={14} />
+                  <span>
+                    {bannerSetting
+                      ? "Uploading…"
+                      : bannerSet
+                        ? "Replace banner"
+                        : "Upload banner"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={bannerSetting}
+                    onChange={(e) => {
+                      const f = (e.target as HTMLInputElement).files?.[0];
+                      if (f) onUploadBanner(f);
+                    }}
+                  />
+                </label>
+                <small class={s.formHint}>
+                  Auto-resized to banner dimensions. Max 5MB.
+                </small>
+              </div>
             </div>
-          </div>
 
             {wizardMessage && (
               <div
@@ -1542,9 +1535,7 @@ function GroupCard({
           </div>
         </div>
         {group.description && (
-          <div class={s.groupCardDescription}>
-            {group.description}
-          </div>
+          <div class={s.groupCardDescription}>{group.description}</div>
         )}
         <div class={s.groupCardMeta}>
           <span class={s.metaChip}>

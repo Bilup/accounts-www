@@ -73,7 +73,6 @@ const PERM_CATEGORIES: { label: string; match: (p: string) => boolean }[] = [
   { label: "Other", match: matchesOther },
 ];
 
-
 function categorizePermissions(perms: string[]) {
   const groups: Record<string, string[]> = {};
   for (const p of perms) {
@@ -554,8 +553,7 @@ export function TokenManager() {
           {createdToken && (
             <div class={s.tokenReveal}>
               <div class={s.tokenRevealHeader}>
-                <Shield size={16} /> Token created:{" "}
-                {createdToken.name}
+                <Shield size={16} /> Token created: {createdToken.name}
               </div>
               <p class={s.tokenRevealText}>
                 Copy this token now.{" "}
@@ -644,9 +642,7 @@ export function TokenManager() {
                           onClick={() => setSelectedToken(token)}
                         >
                           <div class={s.tokenHeader}>
-                            <h3 class={s.tokenName}>
-                              {token.name}
-                            </h3>
+                            <h3 class={s.tokenName}>{token.name}</h3>
                             <span class={`${s.tokenTag} ${s[st.cls]}`}>
                               {st.label}
                             </span>
@@ -1111,9 +1107,7 @@ function TokenDetailModal({
             {token.websites && token.websites.length > 0 && (
               <div class={s.modalStatItem}>
                 <Globe size={16} />
-                <span>
-                  {token.websites.map((w) => w).join(", ")}
-                </span>
+                <span>{token.websites.map((w) => w).join(", ")}</span>
               </div>
             )}
             {token.description && (

@@ -230,7 +230,10 @@ const sidebarForView: Record<View, { title: string; sub: string }> = {
   permissions: { title: "Account Access", sub: "Choose account to continue" },
   forgot: { title: "Reset password", sub: "We'll email you a link" },
   reset: { title: "Set new password", sub: "Enter the code from your email" },
-  full_warning: { title: "Full Access Request", sub: "Review before continuing" },
+  full_warning: {
+    title: "Full Access Request",
+    sub: "Review before continuing",
+  },
 };
 
 export function Auth() {
@@ -2017,10 +2020,7 @@ export function Auth() {
             >
               <i class="fas fa-arrow-right" /> Continue to sign in
             </button>
-            <button
-              class={s.btnWelcomeSecondary}
-              onClick={handleCancelAccess}
-            >
+            <button class={s.btnWelcomeSecondary} onClick={handleCancelAccess}>
               <i class="fas fa-arrow-left" /> Go back
             </button>
           </div>

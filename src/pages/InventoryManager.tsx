@@ -46,7 +46,6 @@ const TABS: { id: TabName; label: string; icon: typeof Package }[] = [
   { id: "create-item", label: "Create Item", icon: PlusCircle },
 ];
 
-
 function createSafeId(name: string): string {
   return btoa(encodeURIComponent(name)).replace(/[^a-zA-Z0-9]/g, "");
 }
@@ -306,11 +305,7 @@ export function InventoryManager() {
       );
       const result = await res.json();
       if (res.ok) {
-        setItemMessage(
-          safeId,
-          `Transferred to ${targetUser}!`,
-          "success",
-        );
+        setItemMessage(safeId, `Transferred to ${targetUser}!`, "success");
         loadMyItems();
         if (input) input.value = "";
       } else {
@@ -526,8 +521,7 @@ export function InventoryManager() {
               </div>
               <div class={s.singleItemMeta}>
                 <div>
-                  <strong>Owner:</strong>{" "}
-                  {item.owner || item.author}
+                  <strong>Owner:</strong> {item.owner || item.author}
                 </div>
                 <div>
                   <strong>Author:</strong> {item.author}
@@ -872,9 +866,7 @@ export function InventoryManager() {
                             </div>
                             <div class={s.itemInfoRow}>
                               <span class={s.itemInfoLabel}>Author:</span>
-                              <span class={s.itemInfoValue}>
-                                {item.author}
-                              </span>
+                              <span class={s.itemInfoValue}>{item.author}</span>
                             </div>
                             <div class={s.itemInfoRow}>
                               <span class={s.itemInfoLabel}>Created:</span>

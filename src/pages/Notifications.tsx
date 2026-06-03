@@ -40,7 +40,6 @@ interface NotifyLogItem {
   at: number;
 }
 
-
 function truncate(text: string, len: number): string {
   if (text.length <= len) return text;
   return text.slice(0, len) + "…";
@@ -493,9 +492,7 @@ export function Notifications() {
                           class={s.senderItem}
                         >
                           <div class={s.senderInfo}>
-                            <div class={s.senderName}>
-                              {snd.username}
-                            </div>
+                            <div class={s.senderName}>{snd.username}</div>
                             <div class={s.senderCount}>
                               {snd.count} notification
                               {snd.count !== 1 ? "s" : ""} sent
@@ -548,9 +545,7 @@ export function Notifications() {
                         {formatRelativeTime(entry.at)}
                       </div>
                     </div>
-                    {entry.body && (
-                      <div class={s.logBody}>{entry.body}</div>
-                    )}
+                    {entry.body && <div class={s.logBody}>{entry.body}</div>}
                     <div class={s.logMeta}>
                       <span class={s.sourceTag}>{entry.source}</span>
                       <span>
