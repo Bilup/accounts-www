@@ -199,7 +199,7 @@ export function Link() {
     const token = tokenFromUrl || getToken();
 
     if (!token) {
-      // No token — user needs to sign in first. Redirect to auth.
+      // No token - user needs to sign in first. Redirect to auth.
       sessionStorage.setItem("rotur_link_code", rawCode);
       window.location.href =
         "/auth?return_to=" +
@@ -207,7 +207,7 @@ export function Link() {
       return;
     }
 
-    // We have both code and token — send link request
+    // We have both code and token - send link request
     sendLinkRequest(rawCode, token);
   }, []);
 

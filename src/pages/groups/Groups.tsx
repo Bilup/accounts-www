@@ -916,7 +916,7 @@ function OnboardingWizard({
           <div>
             <h2 class={s.sectionTitle}>Create a new group</h2>
             <p class={s.sectionSubtitle}>
-              Step {step} of {totalSteps} — {currentStep.label}
+              Step {step} of {totalSteps} - {currentStep.label}
             </p>
           </div>
         </div>

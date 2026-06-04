@@ -22,6 +22,7 @@ import {
   AuthTosLinkBtn,
 } from "./Shell";
 import { UserAvatar } from "../../components/UserAvatar";
+import { TosContent } from "../../components/TosContent";
 
 declare const hcaptcha: any;
 
@@ -256,7 +257,6 @@ export function Auth() {
 
   const [tosBtn, setTosBtn] = useState<BtnState>(defaultBtn(""));
   const [tosChecking, setTosChecking] = useState(false);
-  const tosWindowRef = useRef<Window | null>(null);
   const pendingTosRef = useRef<{
     token: string;
     username: string;
@@ -693,7 +693,7 @@ export function Auth() {
         flashBtn(
           setResetBtn,
           "Reset password",
-          errorBtn("Network error — try again"),
+          errorBtn("Network error - try again"),
         );
       }
     },
@@ -811,6 +811,9 @@ export function Auth() {
             username: siUsername,
           };
           setTosBtn(defaultBtn(""));
+          setTosAccepted(false);
+          setTosScrolledToBottom(false);
+          setTosCheckboxChecked(false);
           setView("tos");
           setSiBtn(defaultBtn("Sign in"));
         } else if ((data as any).requiresEmailVerification) {
@@ -896,6 +899,9 @@ export function Auth() {
               username: suUsername,
             };
             setTosBtn(defaultBtn(""));
+            setTosAccepted(false);
+            setTosScrolledToBottom(false);
+            setTosCheckboxChecked(false);
             setView("tos");
             setSuBtn(defaultBtn("Create Account"));
           } else {
@@ -936,7 +942,18 @@ export function Auth() {
     try {
       const res = await fetch(`${API}/me?auth=${pending.token}`);
       const data = await res.json();
-      if (data["sys.email_verified"]) {
+      if (data["sys.tos_accepted"] === false) {
+        pendingVerificationRef.current = null;
+        pendingTosRef.current = {
+          token: pending.token,
+          username: pending.username,
+        };
+        setTosBtn(defaultBtn(""));
+        setTosAccepted(false);
+        setTosScrolledToBottom(false);
+        setTosCheckboxChecked(false);
+        setView("tos");
+      } else if (data["sys.email_verified"]) {
         handleAccountLogin(data);
         pendingVerificationRef.current = null;
       } else {
@@ -947,56 +964,7 @@ export function Auth() {
     }
   }, [handleAccountLogin]);
 
-  useEffect(() => {
-    if (view !== "verify") return;
-    const pending = pendingVerificationRef.current;
-    if (!pending) return;
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(
-          `${API}/me?auth=${encodeURIComponent(pending.token)}`,
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.["sys.email_verified"]) {
-          clearInterval(interval);
-          pendingVerificationRef.current = null;
-          handleAccountLogin(data);
-        }
-      } catch {
-        /* ignore */
-      }
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [view, handleAccountLogin]);
 
-  useEffect(() => {
-    if (view !== "tos") return;
-    const pending = pendingTosRef.current;
-    if (!pending) return;
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(
-          `${API}/me?auth=${encodeURIComponent(pending.token)}`,
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.["sys.tos_accepted"] === true) {
-          clearInterval(interval);
-          pendingTosRef.current = null;
-          const account: AccountData = {
-            ...data,
-            username: data.username || pending.username,
-            key: pending.token,
-          };
-          handleAccountLogin(account);
-        }
-      } catch {
-        /* ignore */
-      }
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [view, handleAccountLogin]);
 
   const handleVerifyResend = useCallback(async () => {
     const pending = pendingVerificationRef.current;
@@ -1019,21 +987,24 @@ export function Auth() {
     setView("signin");
   }, []);
 
-  const handleTosOpen = useCallback(() => {
-    const pending = pendingTosRef.current;
-    if (!pending) return;
-    const url = new URL("/terms-of-service", location.origin);
-    url.searchParams.set("from", "auth");
-    url.searchParams.set("token", pending.token);
-    if (returnToRef.current)
-      url.searchParams.set("return_to", returnToRef.current);
-    try {
-      const win = window.open(url.toString(), "_blank", "noopener,noreferrer");
-      if (win) tosWindowRef.current = win;
-    } catch {
-      location.href = url.toString();
-    }
-  }, []);
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [tosScrolledToBottom, setTosScrolledToBottom] = useState(false);
+  const [tosCheckboxChecked, setTosCheckboxChecked] = useState(false);
+  const tosContentRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (view !== "tos") return;
+    const el = tosContentRef.current;
+    if (!el) return;
+    const check = () => {
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 40) {
+        setTosScrolledToBottom(true);
+      }
+    };
+    check();
+    el.addEventListener("scroll", check);
+    return () => el.removeEventListener("scroll", check);
+  }, [view]);
 
   const handleTosContinue = useCallback(async () => {
     const pending = pendingTosRef.current;
@@ -1057,16 +1028,37 @@ export function Auth() {
           setTosBtn,
           "",
           errorBtn(
-            "Terms not accepted yet — open the tab above and click Accept",
+            "Terms not accepted yet – read and click Accept below",
           ),
         );
         setTosChecking(false);
       }
     } catch {
       setTosChecking(false);
-      flashBtn(setTosBtn, "", errorBtn("Network error — try again"));
+      flashBtn(setTosBtn, "", errorBtn("Network error - try again"));
     }
   }, [handleAccountLogin]);
+
+  const handleTosAccept = useCallback(async () => {
+    const pending = pendingTosRef.current;
+    if (!pending || !tosCheckboxChecked) return;
+    setTosBtn(loadingBtn("Accepting…"));
+    try {
+      const res = await fetch(
+        `${API}/accept_tos?auth=${encodeURIComponent(pending.token)}`,
+        { method: "POST", headers: { "Content-Type": "application/json" } },
+      );
+      if (res.ok) {
+        setTosAccepted(true);
+        setTosBtn(successBtn("Accepted!"));
+        setTimeout(() => handleTosContinue(), 800);
+      } else {
+        flashBtn(setTosBtn, "Accept Terms", errorBtn("Failed to accept – try again"));
+      }
+    } catch {
+      flashBtn(setTosBtn, "Accept Terms", errorBtn("Network error – try again"));
+    }
+  }, [tosCheckboxChecked, handleTosContinue]);
 
   const handleTosBack = useCallback(() => {
     pendingTosRef.current = null;
@@ -1723,7 +1715,7 @@ export function Auth() {
                 </div>
                 {selectedPerms.size === 0 ? (
                   <div class={s.permChipsEmpty}>
-                    No permissions selected — pick a group above or
+                    No permissions selected - pick a group above or
                     {showCustom ? " use the search below." : " open customize."}
                   </div>
                 ) : (
@@ -1758,7 +1750,7 @@ export function Auth() {
                         class={s.permChipsMore}
                         onClick={() => setShowCustom(true)}
                       >
-                        +{selectedChipsList.length - 16} more — open customize
+                        +{selectedChipsList.length - 16} more - open customize
                       </button>
                     )}
                   </div>
@@ -2026,8 +2018,8 @@ export function Auth() {
           </div>
           <AuthTosLinks>
             <p>
-              <a href="/terms-of-service?from=auth">Terms of Service</a> •{" "}
-              <a href="/privacy-policy?from=auth">Privacy Policy</a>
+              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
+              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
             </p>
           </AuthTosLinks>
         </div>
@@ -2053,8 +2045,8 @@ export function Auth() {
           </div>
           <AuthTosLinks>
             <p>
-              <a href="/terms-of-service?from=auth">Terms of Service</a> •{" "}
-              <a href="/privacy-policy?from=auth">Privacy Policy</a>
+              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
+              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
             </p>
           </AuthTosLinks>
         </div>
@@ -2105,8 +2097,8 @@ export function Auth() {
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>
-              <a href="/terms-of-service?from=auth">Terms of Service</a> •{" "}
-              <a href="/privacy-policy?from=auth">Privacy Policy</a>
+              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
+              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
             </p>
           </AuthTosLinks>
         </AuthMain>
@@ -2129,7 +2121,7 @@ export function Auth() {
           </p>
           <div class={s.verifyBtns}>
             <AuthBtnPrimary onClick={handleVerifyDone}>
-              I've verified — continue
+              I've verified - continue
             </AuthBtnPrimary>
             <AuthBtnSecondary onClick={handleVerifyResend}>
               Resend email
@@ -2148,27 +2140,36 @@ export function Auth() {
             One last step before you can use Rotur. Please read and accept our
             terms to continue.
           </AuthSubheading>
-          <p class={s.verifyInstruction}>
-            The terms will open in a new tab. After you accept them there, come
-            back to this tab and we'll continue automatically — or you can press
-            Continue below.
-          </p>
+            <div ref={tosContentRef} class={s.tosFrameContent}>
+              <TosContent />
+            </div>
+          {!tosScrolledToBottom && (
+            <p class={s.tosScrollHint}>
+              <i class="fas fa-arrow-down" /> Scroll to the bottom to accept
+            </p>
+          )}
+          <label class={s.tosCheckboxLabel}>
+            <input
+              type="checkbox"
+              class={s.tosCheckbox}
+              checked={tosCheckboxChecked}
+              disabled={!tosScrolledToBottom || tosAccepted}
+              onChange={(e: any) => setTosCheckboxChecked(e.target.checked)}
+            />
+            I have read and agree to the Terms of Service
+          </label>
           <div class={s.verifyBtns}>
             <AuthBtnPrimary
-              onClick={handleTosOpen}
-              disabled={tosBtn.disabled}
+              onClick={handleTosAccept}
+              disabled={tosBtn.disabled || tosAccepted || !tosCheckboxChecked}
               style={tosBtn.color ? { background: tosBtn.color } : undefined}
             >
               {tosBtn.text || (
                 <>
-                  <i class="fas fa-external-link-alt" /> Open Terms of Service
+                  <i class="fas fa-check" /> Accept Terms & Continue
                 </>
               )}
             </AuthBtnPrimary>
-            <AuthBtnPrimary onClick={handleTosContinue}>
-              {tosChecking ? "Checking…" : "I've accepted — continue"}
-            </AuthBtnPrimary>
-            <AuthBtnSecondary onClick={handleTosBack}>Back</AuthBtnSecondary>
           </div>
         </AuthMain>
       ) : view === "signup" ? (
@@ -2240,8 +2241,8 @@ export function Auth() {
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>
-              <a href="/terms-of-service?from=auth">Terms of Service</a> •{" "}
-              <a href="/privacy-policy?from=auth">Privacy Policy</a>
+              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
+              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
             </p>
           </AuthTosLinks>
         </AuthMain>
@@ -2288,8 +2289,8 @@ export function Auth() {
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>
-              <a href="/terms-of-service?from=auth">Terms of Service</a> •{" "}
-              <a href="/privacy-policy?from=auth">Privacy Policy</a>
+              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
+              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
             </p>
           </AuthTosLinks>
         </AuthMain>

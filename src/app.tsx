@@ -5,6 +5,7 @@ import { Premium } from "./pages/Premium";
 import { NotFound } from "./pages/NotFound";
 import { Auth } from "./pages/auth/Auth";
 import { Link } from "./pages/auth/Link";
+import { ResetPassword } from "./pages/auth/ResetPassword";
 import { Me } from "./pages/me/Me";
 import { Transactions } from "./pages/me/Transactions";
 import { Profile } from "./pages/Profile";
@@ -42,6 +43,7 @@ export function App() {
         <Route path="/terms-of-service" component={TermsOfService} />
         <Route path="/auth" component={Auth} />
         <Route path="/link" component={Link} />
+        <Route path="/reset_password" component={ResetPassword} />
         <Route default component={NotFound} />
       </Router>
     </>
