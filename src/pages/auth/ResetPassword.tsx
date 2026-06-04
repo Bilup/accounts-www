@@ -84,11 +84,7 @@ export function ResetPassword() {
         return;
       }
       if (newPw !== confirm) {
-        flashBtn(
-          setBtn,
-          "Reset password",
-          errorBtn("Passwords do not match"),
-        );
+        flashBtn(setBtn, "Reset password", errorBtn("Passwords do not match"));
         return;
       }
       setMsg("");
@@ -102,7 +98,7 @@ export function ResetPassword() {
             new_password: newPw,
           }),
         });
-        const data = await res.json().catch(() => ({} as any));
+        const data = await res.json().catch(() => ({}) as any);
         if (!res.ok) {
           setMsgVariant("error");
           flashBtn(
@@ -144,9 +140,7 @@ export function ResetPassword() {
           </AuthSubheading>
           <AuthTosLinks>
             <p>
-              <AuthTosLinkBtn
-                onClick={() => (window.location.href = "/auth")}
-              >
+              <AuthTosLinkBtn onClick={() => (window.location.href = "/auth")}>
                 Go to sign in
               </AuthTosLinkBtn>
             </p>
@@ -161,9 +155,7 @@ export function ResetPassword() {
       <AuthMain>
         <AuthLogo />
         <AuthHeading>Set a new password</AuthHeading>
-        <AuthSubheading>
-          Enter a new password for your account.
-        </AuthSubheading>
+        <AuthSubheading>Enter a new password for your account.</AuthSubheading>
         <form onSubmit={handleSubmit} style={{ maxWidth: 480, width: "100%" }}>
           <AuthFormGroup>
             <AuthInput

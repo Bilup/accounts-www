@@ -310,11 +310,7 @@ export function Link() {
           {errorMsg && <div class={s.errorText}>{errorMsg}</div>}
 
           <div class={s.linkActions}>
-            <AuthBtnPrimary
-              type="button"
-              disabled={isBusy}
-              onClick={beginAuth}
-            >
+            <AuthBtnPrimary type="button" disabled={isBusy} onClick={beginAuth}>
               {phase === "verifying"
                 ? "Verifying..."
                 : phase === "linking"

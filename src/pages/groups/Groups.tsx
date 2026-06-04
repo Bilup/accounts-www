@@ -447,7 +447,9 @@ export function Groups() {
   async function joinGroup(tag: string) {
     if (!isLoggedIn) {
       window.location.href = `/auth?return_to=${encodeURIComponent(
-        window.location.origin + window.location.pathname + window.location.search,
+        window.location.origin +
+          window.location.pathname +
+          window.location.search,
       )}`;
       return;
     }
@@ -502,7 +504,9 @@ export function Groups() {
               <a
                 class={s.btnPrimary}
                 href={`/auth?return_to=${encodeURIComponent(
-                  window.location.origin + window.location.pathname + window.location.search,
+                  window.location.origin +
+                    window.location.pathname +
+                    window.location.search,
                 )}`}
               >
                 <LogIn size={14} /> Sign in

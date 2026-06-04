@@ -963,8 +963,6 @@ export function Auth() {
     }
   }, [handleAccountLogin]);
 
-
-
   const handleVerifyResend = useCallback(async () => {
     const pending = pendingVerificationRef.current;
     if (!pending) return;
@@ -1025,9 +1023,7 @@ export function Auth() {
         flashBtn(
           setTosBtn,
           "",
-          errorBtn(
-            "Terms not accepted yet – read and click Accept below",
-          ),
+          errorBtn("Terms not accepted yet – read and click Accept below"),
         );
       }
     } catch {
@@ -1049,10 +1045,18 @@ export function Auth() {
         setTosBtn(successBtn("Accepted!"));
         setTimeout(() => handleTosContinue(), 800);
       } else {
-        flashBtn(setTosBtn, "Accept Terms", errorBtn("Failed to accept – try again"));
+        flashBtn(
+          setTosBtn,
+          "Accept Terms",
+          errorBtn("Failed to accept – try again"),
+        );
       }
     } catch {
-      flashBtn(setTosBtn, "Accept Terms", errorBtn("Network error – try again"));
+      flashBtn(
+        setTosBtn,
+        "Accept Terms",
+        errorBtn("Network error – try again"),
+      );
     }
   }, [tosCheckboxChecked, handleTosContinue]);
 
@@ -2009,8 +2013,21 @@ export function Auth() {
           </div>
           <AuthTosLinks>
             <p>
-              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
-              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+              <a
+                href="https://rotur.dev/terms-of-service?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Terms of Service
+              </a>{" "}
+              •{" "}
+              <a
+                href="https://rotur.dev/privacy-policy?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Privacy Policy
+              </a>
             </p>
           </AuthTosLinks>
         </div>
@@ -2036,8 +2053,21 @@ export function Auth() {
           </div>
           <AuthTosLinks>
             <p>
-              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
-              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+              <a
+                href="https://rotur.dev/terms-of-service?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Terms of Service
+              </a>{" "}
+              •{" "}
+              <a
+                href="https://rotur.dev/privacy-policy?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Privacy Policy
+              </a>
             </p>
           </AuthTosLinks>
         </div>
@@ -2088,8 +2118,21 @@ export function Auth() {
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>
-              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
-              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+              <a
+                href="https://rotur.dev/terms-of-service?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Terms of Service
+              </a>{" "}
+              •{" "}
+              <a
+                href="https://rotur.dev/privacy-policy?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Privacy Policy
+              </a>
             </p>
           </AuthTosLinks>
         </AuthMain>
@@ -2131,9 +2174,9 @@ export function Auth() {
             One last step before you can use Rotur. Please read and accept our
             terms to continue.
           </AuthSubheading>
-            <div ref={tosContentRef} class={s.tosFrameContent}>
-              <TosContent />
-            </div>
+          <div ref={tosContentRef} class={s.tosFrameContent}>
+            <TosContent />
+          </div>
           {!tosScrolledToBottom && (
             <p class={s.tosScrollHint}>
               <i class="fas fa-arrow-down" /> Scroll to the bottom to accept
@@ -2232,8 +2275,21 @@ export function Auth() {
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>
-              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
-              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+              <a
+                href="https://rotur.dev/terms-of-service?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Terms of Service
+              </a>{" "}
+              •{" "}
+              <a
+                href="https://rotur.dev/privacy-policy?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Privacy Policy
+              </a>
             </p>
           </AuthTosLinks>
         </AuthMain>
@@ -2280,8 +2336,21 @@ export function Auth() {
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>
-              <a href="https://rotur.dev/terms-of-service?from=auth" target="_blank" rel="noopener noreferrer">Terms of Service</a> •{" "}
-              <a href="https://rotur.dev/privacy-policy?from=auth" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+              <a
+                href="https://rotur.dev/terms-of-service?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Terms of Service
+              </a>{" "}
+              •{" "}
+              <a
+                href="https://rotur.dev/privacy-policy?from=auth"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Privacy Policy
+              </a>
             </p>
           </AuthTosLinks>
         </AuthMain>
