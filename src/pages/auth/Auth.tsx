@@ -256,7 +256,6 @@ export function Auth() {
   const [verifyMsg, setVerifyMsg] = useState("");
 
   const [tosBtn, setTosBtn] = useState<BtnState>(defaultBtn(""));
-  const [tosChecking, setTosChecking] = useState(false);
   const pendingTosRef = useRef<{
     token: string;
     username: string;
@@ -1009,7 +1008,6 @@ export function Auth() {
   const handleTosContinue = useCallback(async () => {
     const pending = pendingTosRef.current;
     if (!pending) return;
-    setTosChecking(true);
     try {
       const res = await fetch(
         `${API}/me?auth=${encodeURIComponent(pending.token)}`,
@@ -1031,10 +1029,8 @@ export function Auth() {
             "Terms not accepted yet – read and click Accept below",
           ),
         );
-        setTosChecking(false);
       }
     } catch {
-      setTosChecking(false);
       flashBtn(setTosBtn, "", errorBtn("Network error - try again"));
     }
   }, [handleAccountLogin]);
@@ -1059,11 +1055,6 @@ export function Auth() {
       flashBtn(setTosBtn, "Accept Terms", errorBtn("Network error – try again"));
     }
   }, [tosCheckboxChecked, handleTosContinue]);
-
-  const handleTosBack = useCallback(() => {
-    pendingTosRef.current = null;
-    setView("signin");
-  }, []);
 
   const handleAllowAccess = useCallback(() => {
     if (!account?.key) return;
