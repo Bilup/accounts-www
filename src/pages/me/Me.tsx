@@ -61,6 +61,31 @@ interface KeyRecord {
   subscription?: { next_billing: number; frequency: number; period: string };
 }
 
+function keyUserData(key: KeyRecord, username?: string): any {
+  if (!username || !key.users || Array.isArray(key.users)) return null;
+  return key.users[username] || key.users[username.toLowerCase()] || null;
+}
+
+function formatBillingDate(value: unknown): string {
+  if (typeof value !== "number") return "";
+  const ms = value < 10_000_000_000 ? value * 1000 : value;
+  return new Date(ms).toLocaleDateString();
+}
+
+interface GroupProductSubscription {
+  id: string;
+  group_tag: string;
+  product_id: string;
+  product_name: string;
+  username: string;
+  role_id: string;
+  role_name: string;
+  started_at: number;
+  next_billing: number;
+  cancel_at?: number;
+  active: boolean;
+}
+
 type MainTab = "profile" | "social" | "billing" | "security";
 
 const MAIN_TABS: { id: MainTab; label: string; icon: typeof Users }[] = [
@@ -77,6 +102,7 @@ export function Me() {
   const [friendsTab, setFriendsTab] = useState<"all" | "requests">("all");
   const [friendInput, setFriendInput] = useState("");
   const [keys, setKeys] = useState<KeyRecord[] | null>(null);
+  const [groupSubs, setGroupSubs] = useState<GroupProductSubscription[]>([]);
 
   useEffect(() => {
     captureTokenFromUrl();
@@ -107,6 +133,25 @@ export function Me() {
         );
         const data = await res.json();
         if (!cancelled && Array.isArray(data)) setKeys(data);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.username, token]);
+
+  useEffect(() => {
+    if (!user || !token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API}/groups/products/subscriptions/mine?auth=${encodeURIComponent(token)}`,
+        );
+        const data = await res.json();
+        if (!cancelled && res.ok && Array.isArray(data)) setGroupSubs(data);
       } catch {
         /* ignore */
       }
@@ -208,6 +253,30 @@ export function Me() {
           `${API}/keys/cancel/${encodeURIComponent(keyId)}?auth=${encodeURIComponent(token)}`,
           { method: "POST" },
         );
+        await reload();
+      } catch {
+        /* ignore */
+      }
+    },
+    [token, reload],
+  );
+
+  const cancelGroupSubscription = useCallback(
+    async (groupTag: string, productId: string) => {
+      if (!token) return;
+      if (!confirm("Cancel this group subscription?")) return;
+      try {
+        const res = await fetch(
+          `${API}/groups/${encodeURIComponent(groupTag)}/products/${encodeURIComponent(productId)}/cancel?auth=${encodeURIComponent(token)}`,
+          { method: "POST" },
+        );
+        if (res.ok) {
+          const refreshed = await fetch(
+            `${API}/groups/products/subscriptions/mine?auth=${encodeURIComponent(token)}`,
+          );
+          const data = await refreshed.json();
+          if (refreshed.ok && Array.isArray(data)) setGroupSubs(data);
+        }
         await reload();
       } catch {
         /* ignore */
@@ -362,7 +431,10 @@ export function Me() {
                 <SubscriptionsSection
                   paying={subscriptions.paying}
                   created={subscriptions.created}
+                  groupSubs={groupSubs}
+                  username={user.username}
                   onCancel={cancelSubscription}
+                  onCancelGroup={cancelGroupSubscription}
                 />
               </>
             )}
@@ -526,13 +598,19 @@ function FriendsSection({
 interface SubscriptionsSectionProps {
   paying: KeyRecord[];
   created: KeyRecord[];
+  groupSubs: GroupProductSubscription[];
+  username: string;
   onCancel: (keyId: string) => void;
+  onCancelGroup: (groupTag: string, productId: string) => void;
 }
 
 function SubscriptionsSection({
   paying,
   created,
+  groupSubs,
+  username,
   onCancel,
+  onCancelGroup,
 }: SubscriptionsSectionProps) {
   return (
     <div class={s.section}>
@@ -544,7 +622,7 @@ function SubscriptionsSection({
           <div>
             <div class={s.sectionTitle}>Subscriptions</div>
             <div class={s.sectionSubtitle}>
-              {paying.length} active • {created.length} created
+              {paying.length + groupSubs.length} active • {created.length} created
             </div>
           </div>
         </div>
@@ -557,31 +635,80 @@ function SubscriptionsSection({
       <div class={s.sectionBody}>
         {paying.length > 0 && (
           <>
-            <div class={s.sectionDivider}>Active Subscriptions</div>
-            {paying.map((sub) => (
-              <div key={sub.key} class={s.subCard}>
-                <a
-                  href={`/profile/${sub.creator}`}
-                  style={{ display: "contents" }}
-                >
-                  <UserAvatar username={sub.creator} className={s.subAvatar} />
+            <div class={s.sectionDivider}>Key Subscriptions</div>
+            {paying.map((sub) => {
+              const mine = keyUserData(sub, username);
+              return (
+                <div key={sub.key} class={s.subCard}>
+                  <a
+                    href={`/profile/${sub.creator}`}
+                    style={{ display: "contents" }}
+                  >
+                    <UserAvatar
+                      username={sub.creator}
+                      className={s.subAvatar}
+                    />
+                    <div class={s.subInfo}>
+                      <div class={s.subName}>{sub.name}</div>
+                      <div class={s.subMeta}>
+                        by @{sub.creator} • {sub.price} credits
+                        {mine?.cancel_at
+                          ? ` • Active until ${formatBillingDate(mine.cancel_at)}`
+                          : mine?.next_billing
+                            ? ` • Next ${formatBillingDate(mine.next_billing)}`
+                            : ""}
+                      </div>
+                    </div>
+                  </a>
+                  {mine?.cancel_at ? (
+                    <span class={s.statusPill}>
+                      Cancels {formatBillingDate(mine.cancel_at)}
+                    </span>
+                  ) : (
+                    <button
+                      class={`${s.subBtn} ${s.subBtnDanger}`}
+                      onClick={() => onCancel(sub.key)}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {groupSubs.length > 0 && (
+          <>
+            <div class={s.sectionDivider}>Group Role Subscriptions</div>
+            {groupSubs.map((sub) => {
+              const paidThrough = sub.cancel_at || sub.next_billing;
+              return (
+                <div key={sub.id} class={s.subCard}>
                   <div class={s.subInfo}>
-                    <div class={s.subName}>{sub.name}</div>
+                    <div class={s.subName}>{sub.product_name}</div>
                     <div class={s.subMeta}>
-                      by @{sub.creator} • {sub.price} credits/mo
-                      {sub.subscription?.next_billing &&
-                        ` • Next ${new Date(sub.subscription.next_billing * 1000).toLocaleDateString()}`}
+                      @{sub.group_tag} • {sub.role_name || "Role"}
+                      {sub.cancel_at
+                        ? ` • Cancels ${new Date(paidThrough).toLocaleDateString()}`
+                        : ` • Next ${new Date(sub.next_billing).toLocaleDateString()}`}
                     </div>
                   </div>
-                </a>
-                <button
-                  class={`${s.subBtn} ${s.subBtnDanger}`}
-                  onClick={() => onCancel(sub.key)}
-                >
-                  Cancel
-                </button>
-              </div>
-            ))}
+                  {sub.cancel_at ? (
+                    <span class={s.statusPill}>
+                      Active until {new Date(paidThrough).toLocaleDateString()}
+                    </span>
+                  ) : (
+                    <button
+                      class={`${s.subBtn} ${s.subBtnDanger}`}
+                      onClick={() => onCancelGroup(sub.group_tag, sub.product_id)}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </>
         )}
 
@@ -608,7 +735,7 @@ function SubscriptionsSection({
           </>
         )}
 
-        {paying.length === 0 && created.length === 0 && (
+        {paying.length === 0 && created.length === 0 && groupSubs.length === 0 && (
           <div class={s.empty}>
             <div class={s.emptyIcon}>
               <CreditCard size={24} />

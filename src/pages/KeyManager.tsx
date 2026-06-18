@@ -49,6 +49,33 @@ function normalizeUsers(
   return [];
 }
 
+function normalizeUserEntries(
+  raw: string[] | Record<string, any> | null | undefined,
+): Array<{ username: string; data: any }> {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw.map((username) => ({ username, data: {} }));
+  if (typeof raw === "object") {
+    return Object.entries(raw).map(([username, data]) => ({ username, data }));
+  }
+  return [];
+}
+
+function formatMsDate(value: unknown): string {
+  if (typeof value !== "number") return "";
+  const ms = value < 10_000_000_000 ? value * 1000 : value;
+  return new Date(ms).toLocaleDateString();
+}
+
+function keyUserSubscriptionText(data: any): string {
+  if (data?.cancel_at) {
+    return `Cancelled - access until ${formatMsDate(data.cancel_at)}`;
+  }
+  if (data?.next_billing) {
+    return `Next billing ${formatMsDate(data.next_billing)}`;
+  }
+  return "";
+}
+
 export function KeyManager() {
   const { user } = useAuth();
   const currentUser = user?.username || "";
@@ -623,7 +650,7 @@ function KeyDetailModal({
   const keyId = keyData.key;
   const isSubscription = keyData.type === "subscription";
   const sub = keyData.subscription;
-  const users = normalizeUsers(keyData.users);
+  const users = normalizeUserEntries(keyData.users);
 
   return (
     <div class={s.modal} onClick={onClose}>
@@ -759,12 +786,21 @@ function KeyDetailModal({
                 </div>
               ) : (
                 users.map((u) => (
-                  <div key={u} class={s.userItem}>
-                    <span class={s.userName}>{u}</span>
-                    {u.toLowerCase() !== currentUser.toLowerCase() && (
+                  <div key={u.username} class={s.userItem}>
+                    <span class={s.userName}>
+                      {u.username}
+                      {isSubscription && keyUserSubscriptionText(u.data) && (
+                        <small class={s.userMeta}>
+                          {keyUserSubscriptionText(u.data)}
+                        </small>
+                      )}
+                    </span>
+                    {u.username.toLowerCase() !== currentUser.toLowerCase() && (
                       <button
                         class={`${s.iconBtn} ${s.iconBtnDanger}`}
-                        onClick={() => onRemoveUser(keyId, u.toLowerCase())}
+                        onClick={() =>
+                          onRemoveUser(keyId, u.username.toLowerCase())
+                        }
                         title="Remove user"
                       >
                         <UserMinus size={14} />

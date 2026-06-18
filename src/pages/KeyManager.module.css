@@ -531,9 +531,19 @@
 }
 
 .userItem .userName {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
   flex: 1;
   color: var(--text);
   min-width: 0;
+  overflow: hidden;
+}
+
+.userMeta {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
