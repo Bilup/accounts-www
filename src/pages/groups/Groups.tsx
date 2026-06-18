@@ -6,7 +6,6 @@ import {
   Globe,
   Lock,
   Coins,
-  UserPlus,
   Crown,
   Calendar,
   LogIn,
