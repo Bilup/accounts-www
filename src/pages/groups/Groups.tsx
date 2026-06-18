@@ -1500,8 +1500,6 @@ function OnboardingWizard({
 function GroupCard({
   group,
   isMember,
-  onJoin,
-  joinBusy,
 }: {
   group: GroupNet | GroupPublic;
   isMember?: boolean;
@@ -1556,20 +1554,6 @@ function GroupCard({
             <Calendar size={11} /> {formatDate(group.created_at)}
           </span>
         </div>
-        {onJoin && (
-          <button
-            class={s.joinBtn}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onJoin();
-            }}
-            disabled={joinBusy}
-            type="button"
-          >
-            <UserPlus size={13} /> {joinBusy ? "Joining…" : "Join"}
-          </button>
-        )}
         {isMember && (
           <div class={s.memberBadge}>
             <Eye size={11} /> View
