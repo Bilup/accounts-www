@@ -941,7 +941,13 @@ function ChangePasswordSection() {
         });
         return;
       }
-      if (!token) return;
+      if (!token) {
+        setMsg({
+          kind: "err",
+          text: "Please sign in again to change your password",
+        });
+        return;
+      }
       setBusy(true);
       try {
         const res = await fetch(

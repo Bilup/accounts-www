@@ -584,7 +584,8 @@ export function Auth() {
     async (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!forgotEmail || !isValidEmail(forgotEmail)) {
+      const email = forgotEmail.trim();
+      if (!email || !isValidEmail(email)) {
         flashBtn(
           setForgotBtn,
           "Send reset link",
@@ -598,7 +599,7 @@ export function Auth() {
         const res = await fetch(`${API}/auth/request_reset`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: forgotEmail }),
+          body: JSON.stringify({ email }),
         });
         const data = await res.json().catch(() => ({}) as any);
         if (res.status === 429) {
@@ -634,12 +635,14 @@ export function Auth() {
     async (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      if (!resetToken.trim()) {
+      const token = resetToken.trim();
+      if (!token) {
         flashBtn(
           setResetBtn,
           "Reset password",
           errorBtn("Reset code is required"),
         );
+        setResetMsg("Reset code is required");
         return;
       }
       if (resetNewPw.length < 8) {
@@ -648,6 +651,7 @@ export function Auth() {
           "Reset password",
           errorBtn("Password must be 8+ characters"),
         );
+        setResetMsg("Password must be at least 8 characters.");
         return;
       }
       if (resetNewPw !== resetConfirm) {
@@ -656,6 +660,7 @@ export function Auth() {
           "Reset password",
           errorBtn("Passwords do not match"),
         );
+        setResetMsg("Passwords do not match.");
         return;
       }
       setResetMsg("");
@@ -665,7 +670,7 @@ export function Auth() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            token: resetToken.trim(),
+            token,
             new_password: resetNewPw,
           }),
         });
@@ -676,6 +681,7 @@ export function Auth() {
             "Reset password",
             errorBtn(data.error || "Failed to reset password"),
           );
+          setResetMsg(data.error || "Failed to reset password");
           return;
         }
         setResetBtn(successBtn("Password reset!"));
@@ -694,6 +700,7 @@ export function Auth() {
           "Reset password",
           errorBtn("Network error - try again"),
         );
+        setResetMsg("Network error - try again");
       }
     },
     [resetToken, resetNewPw, resetConfirm],

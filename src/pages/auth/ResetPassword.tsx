@@ -73,6 +73,8 @@ export function ResetPassword() {
       e.stopPropagation();
       if (!token.trim()) {
         flashBtn(setBtn, "Reset password", errorBtn("Reset code is required"));
+        setMsgVariant("error");
+        setMsg("Reset code is required");
         return;
       }
       if (newPw.length < 8) {
@@ -81,10 +83,14 @@ export function ResetPassword() {
           "Reset password",
           errorBtn("Password must be 8+ characters"),
         );
+        setMsgVariant("error");
+        setMsg("Password must be at least 8 characters.");
         return;
       }
       if (newPw !== confirm) {
         flashBtn(setBtn, "Reset password", errorBtn("Passwords do not match"));
+        setMsgVariant("error");
+        setMsg("Passwords do not match.");
         return;
       }
       setMsg("");
