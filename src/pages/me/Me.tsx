@@ -36,19 +36,14 @@ import {
   type Transaction,
   captureTokenFromUrl,
 } from "../../lib/auth";
+import {
+  computeTransactionStats,
+  describeTransaction,
+  isTransactionIncome,
+} from "../../lib/transactions";
 import s from "./Me.module.css";
 
 const API = "https://api.rotur.dev";
-
-const INCOME_TYPES = ["tax", "in", "gift_claim", "key_sale", "escrow_in"];
-const EXPENSE_TYPES = [
-  "out",
-  "gift_create",
-  "key_buy",
-  "gift_claimed",
-  "escrow_out",
-  "group_entry_fee",
-];
 
 interface KeyRecord {
   key: string;
@@ -181,14 +176,7 @@ export function Me() {
   const txStats = useMemo(() => {
     const thirtyDaysAgo = Date.now() - 2592000000;
     const recent = transactions.filter((t) => t.time >= thirtyDaysAgo);
-    let totalIncome = 0;
-    let totalExpense = 0;
-    recent.forEach((tx) => {
-      const amt = Math.abs(tx.amount);
-      if (INCOME_TYPES.includes(tx.type)) totalIncome += tx.amount;
-      else if (EXPENSE_TYPES.includes(tx.type)) totalExpense += amt;
-    });
-    return { totalIncome, totalExpense, net: totalIncome - totalExpense };
+    return computeTransactionStats(recent);
   }, [transactions]);
 
   const recentTx = useMemo(
@@ -820,16 +808,8 @@ function TransactionsSection({
         {recent.length > 0 ? (
           <div class={s.txList}>
             {recent.map((tx, i) => {
-              const isPos = INCOME_TYPES.includes(tx.type);
-              const title =
-                tx.note ||
-                (tx.user
-                  ? isPos
-                    ? `From @${tx.user}`
-                    : `To @${tx.user}`
-                  : isPos
-                    ? "Credit received"
-                    : "Payment made");
+              const isPos = isTransactionIncome(tx);
+              const title = describeTransaction(tx);
               return (
                 <div key={i} class={s.txItem}>
                   <div class={`${s.txIcon} ${isPos ? s.income : s.expense}`}>

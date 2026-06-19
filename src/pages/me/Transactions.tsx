@@ -22,6 +22,12 @@ import { Header } from "../../components/Header";
 import { Footer } from "../../components/Footer";
 import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, type Transaction, captureTokenFromUrl } from "../../lib/auth";
+import {
+  TRANSACTION_META,
+  describeTransaction,
+  isTransactionIncome,
+  transactionCounterparty,
+} from "../../lib/transactions";
 import s from "./Transactions.module.css";
 
 type RangeKey = "7d" | "30d" | "90d" | "1y" | "all";
@@ -33,108 +39,74 @@ type TypeFilter =
   | "transfer"
   | "cosmetic"
   | "key"
-  | "gift";
+  | "gift"
+  | "group";
 
-const TYPE_META: Record<
+const TYPE_ICONS: Record<
   string,
   {
-    label: string;
-    isIncome: boolean;
-    category: "tax" | "transfer" | "cosmetic" | "key" | "gift";
     icon: any;
-    color: string;
   }
 > = {
   tax: {
-    label: "Daily Credits",
-    isIncome: true,
-    category: "tax",
     icon: Calendar,
-    color: "#a78bfa",
   },
   in: {
-    label: "Transfer Received",
-    isIncome: true,
-    category: "transfer",
     icon: ArrowDownLeft,
-    color: "#4ade80",
   },
   out: {
-    label: "Transfer Sent",
-    isIncome: false,
-    category: "transfer",
     icon: ArrowUpRight,
-    color: "#f87171",
   },
   cosmetic_platform: {
-    label: "Cosmetic Platform Cut",
-    isIncome: true,
-    category: "cosmetic",
     icon: Sparkles,
-    color: "#f472b6",
   },
   cosmetic_sale: {
-    label: "Cosmetic Sale",
-    isIncome: true,
-    category: "cosmetic",
     icon: ShoppingBag,
-    color: "#fb923c",
   },
   cosmetic_purchase: {
-    label: "Cosmetic Purchase",
-    isIncome: false,
-    category: "cosmetic",
     icon: ShoppingBag,
-    color: "#fb923c",
   },
   key_sale: {
-    label: "Key Sale",
-    isIncome: true,
-    category: "key",
     icon: Key,
-    color: "#38bdf8",
   },
   key_buy: {
-    label: "Key Purchase",
-    isIncome: false,
-    category: "key",
     icon: Key,
-    color: "#38bdf8",
   },
   gift_create: {
-    label: "Gift Created",
-    isIncome: false,
-    category: "gift",
     icon: Gift,
-    color: "#facc15",
+  },
+  gift_claim: {
+    icon: Gift,
   },
   gift_claimed: {
-    label: "Gift Claimed",
-    isIncome: true,
-    category: "gift",
     icon: Gift,
-    color: "#facc15",
+  },
+  gift_refund: {
+    icon: Gift,
   },
   escrow_in: {
-    label: "Escrow Received",
-    isIncome: true,
-    category: "transfer",
     icon: ArrowDownLeft,
-    color: "#4ade80",
   },
   escrow_out: {
-    label: "Escrow Sent",
-    isIncome: false,
-    category: "transfer",
     icon: ArrowUpRight,
-    color: "#f87171",
   },
   group_entry_fee: {
-    label: "Group Entry Fee",
-    isIncome: false,
-    category: "transfer",
     icon: ArrowUpRight,
-    color: "#f87171",
+  },
+  group_create: {
+    icon: Users,
+  },
+  group_tip: {
+    icon: Gift,
+  },
+  group_tip_withdrawal: {
+    icon: ArrowDownLeft,
+  },
+  group_role_purchase: {
+    icon: Tag,
+  },
+  group_role_subscription: {
+    icon: Tag,
   },
 };
 
@@ -163,6 +135,7 @@ const TYPE_FILTERS: { key: TypeFilter; label: string }[] = [
   { key: "cosmetic", label: "Cosmetics" },
   { key: "key", label: "Keys" },
   { key: "gift", label: "Gifts" },
+  { key: "group", label: "Groups" },
 ];
 
 const PAGE_SIZE = 50;
@@ -192,15 +165,12 @@ function formatDateShort(ts: number): string {
 }
 
 function describeTx(tx: Transaction): string {
-  if (tx.note) return tx.note;
-  const meta = TYPE_META[tx.type];
-  if (meta) return meta.label;
-  return tx.type;
+  return describeTransaction(tx);
 }
 
 function userFilterMatches(typeFilter: TypeFilter, txType: string): boolean {
   if (typeFilter === "all") return true;
-  const meta = TYPE_META[txType];
+  const meta = TRANSACTION_META[txType];
   if (!meta) return false;
   if (typeFilter === "income") return meta.isIncome;
   if (typeFilter === "expense") return !meta.isIncome;
@@ -264,7 +234,12 @@ export function Transactions() {
       if (cutoff !== null && tx.time < cutoff) return false;
       if (!userFilterMatches(typeFilter, tx.type)) return false;
       if (q) {
-        const hay = [tx.user, tx.note, tx.type, TYPE_META[tx.type]?.label || ""]
+        const hay = [
+          transactionCounterparty(tx),
+          tx.note,
+          tx.type,
+          TRANSACTION_META[tx.type]?.label || "",
+        ]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
@@ -305,21 +280,25 @@ export function Transactions() {
     > = {};
 
     sorted.forEach((tx) => {
-      const meta = TYPE_META[tx.type];
-      const isIncome = meta ? meta.isIncome : tx.amount > 0;
+      const isIncome = isTransactionIncome(tx);
       const amt = Math.abs(tx.amount);
-      if (isIncome) totalIncome += tx.amount;
+      if (isIncome) totalIncome += amt;
       else totalExpense += amt;
 
       const t = (byType[tx.type] ||= { count: 0, income: 0, expense: 0 });
       t.count += 1;
-      if (isIncome) t.income += tx.amount;
+      if (isIncome) t.income += amt;
       else t.expense += amt;
 
-      if (tx.user && tx.user !== "rotur" && tx.user !== "roturBOT") {
-        const u = (byUser[tx.user] ||= { count: 0, income: 0, expense: 0 });
+      const counterparty = transactionCounterparty(tx);
+      if (counterparty) {
+        const u = (byUser[counterparty] ||= {
+          count: 0,
+          income: 0,
+          expense: 0,
+        });
         u.count += 1;
-        if (isIncome) u.income += tx.amount;
+        if (isIncome) u.income += amt;
         else u.expense += amt;
       }
     });
@@ -328,9 +307,8 @@ export function Transactions() {
     sorted.forEach((tx) => {
       const d = startOfDay(tx.time);
       const slot = dayMap.get(d) || { income: 0, expense: 0 };
-      const meta = TYPE_META[tx.type];
-      const isIncome = meta ? meta.isIncome : tx.amount > 0;
-      if (isIncome) slot.income += tx.amount;
+      const isIncome = isTransactionIncome(tx);
+      if (isIncome) slot.income += Math.abs(tx.amount);
       else slot.expense += Math.abs(tx.amount);
       dayMap.set(d, slot);
     });
@@ -439,7 +417,7 @@ export function Transactions() {
     return Object.entries(stats.byType)
       .map(([type, v]) => ({
         type,
-        meta: TYPE_META[type],
+        meta: TRANSACTION_META[type],
         ...v,
         net: v.income - v.expense,
       }))
@@ -679,7 +657,7 @@ export function Transactions() {
                 ) : (
                   <div class={s.breakdownList}>
                     {typeBreakdown.map((b) => {
-                      const Icon = b.meta?.icon || Receipt;
+                      const Icon = TYPE_ICONS[b.type]?.icon || Receipt;
                       return (
                         <div key={b.type} class={s.breakdownItem}>
                           <div
@@ -839,9 +817,10 @@ export function Transactions() {
                 <div class={s.txList}>
                   {pageItems.map((row, i) => {
                     const tx = row.txs[0];
-                    const meta = TYPE_META[tx.type];
-                    const isIncome = meta ? meta.isIncome : tx.amount > 0;
-                    const Icon = meta?.icon || Receipt;
+                    const meta = TRANSACTION_META[tx.type];
+                    const isIncome = isTransactionIncome(tx);
+                    const Icon = TYPE_ICONS[tx.type]?.icon || Receipt;
+                    const counterparty = transactionCounterparty(tx);
                     const grouped = row.txs.length > 1;
                     const totalAmount = row.txs.reduce(
                       (sum, t) => sum + t.amount,
@@ -888,22 +867,20 @@ export function Transactions() {
                             <div class={s.txTitle}>{title}</div>
                             <div class={s.txMeta}>
                               {meta?.label || tx.type}
-                              {tx.user &&
-                                tx.user !== "rotur" &&
-                                tx.user !== "roturBOT" && (
-                                  <>
-                                    {" · "}
-                                    <a
-                                      href={`/profile/${tx.user}`}
-                                      class={s.txUser}
-                                      onClick={(e: MouseEvent) =>
-                                        e.stopPropagation()
-                                      }
-                                    >
-                                      @{tx.user}
-                                    </a>
-                                  </>
-                                )}
+                              {counterparty && (
+                                <>
+                                  {" · "}
+                                  <a
+                                    href={`/profile/${counterparty}`}
+                                    class={s.txUser}
+                                    onClick={(e: MouseEvent) =>
+                                      e.stopPropagation()
+                                    }
+                                  >
+                                    @{counterparty}
+                                  </a>
+                                </>
+                              )}
                               {" · "}
                               {dateLabel}
                             </div>
@@ -930,14 +907,9 @@ export function Transactions() {
                             {[...row.txs]
                               .sort((a, b) => b.time - a.time)
                               .map((sub, j) => {
-                                const subMeta = TYPE_META[sub.type];
-                                const subIsIncome = subMeta
-                                  ? subMeta.isIncome
-                                  : sub.amount > 0;
-                                const showUser =
-                                  sub.user &&
-                                  sub.user !== "rotur" &&
-                                  sub.user !== "roturBOT";
+                                const subIsIncome = isTransactionIncome(sub);
+                                const counterparty =
+                                  transactionCounterparty(sub);
                                 return (
                                   <div
                                     key={`${sub.time}-${j}`}
@@ -946,15 +918,15 @@ export function Transactions() {
                                     <div class={s.txSubDot} />
                                     <div class={s.txSubInfo}>
                                       <div class={s.txSubTitle}>
-                                        {sub.note || subMeta?.label || sub.type}
+                                        {describeTransaction(sub)}
                                       </div>
                                       <div class={s.txSubMeta}>
-                                        {showUser ? (
+                                        {counterparty ? (
                                           <a
-                                            href={`/profile/${sub.user}`}
+                                            href={`/profile/${counterparty}`}
                                             class={s.txUser}
                                           >
-                                            @{sub.user}
+                                            @{counterparty}
                                           </a>
                                         ) : (
                                           <span>system</span>

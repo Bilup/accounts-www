@@ -46,10 +46,17 @@ export type TransactionType =
   | "key_sale"
   | "key_buy"
   | "gift_create"
+  | "gift_claim"
   | "gift_claimed"
+  | "gift_refund"
   | "escrow_in"
   | "escrow_out"
-  | "group_entry_fee";
+  | "group_create"
+  | "group_entry_fee"
+  | "group_tip"
+  | "group_tip_withdrawal"
+  | "group_role_purchase"
+  | "group_role_subscription";
 
 export type Transaction = {
   type: TransactionType;

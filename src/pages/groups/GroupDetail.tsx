@@ -59,6 +59,7 @@ interface GroupPublic {
   entry_fee: number;
   created_at: number;
   credits_balance: number;
+  credits_balance_visible?: boolean;
   member_count: number;
 }
 
@@ -703,7 +704,8 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                         to join
                       </span>
                     )}
-                    {group.credits_balance > 0 && (
+                    {group.credits_balance_visible &&
+                      group.credits_balance > 0 && (
                       <span class={s.metaChip}>
                         <Coins size={11} />{" "}
                         {group.credits_balance.toLocaleString()} balance
@@ -871,6 +873,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                 isMember={isMember}
                 isPublic={group.public}
                 groupBalance={group.credits_balance}
+                balanceVisible={!!group.credits_balance_visible}
                 onSent={() => {
                   loadGroup();
                   setActionMessage({
@@ -1287,12 +1290,14 @@ function OverviewTab({
                   <h4>Members</h4>
                   <div class={s.detailValue}>{group.member_count}</div>
                 </div>
-                <div class={s.detailItem}>
-                  <h4>Credit Balance</h4>
-                  <div class={s.detailValue}>
-                    {group.credits_balance.toLocaleString()}
+                {group.credits_balance_visible && (
+                  <div class={s.detailItem}>
+                    <h4>Credit Balance</h4>
+                    <div class={s.detailValue}>
+                      {group.credits_balance.toLocaleString()}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {group.readme && group.readme.trim() && (
@@ -3845,12 +3850,14 @@ function TipsTab({
   isMember,
   isPublic,
   groupBalance,
+  balanceVisible,
   onSent,
 }: {
   tag: string;
   isMember: boolean;
   isPublic: boolean;
   groupBalance: number;
+  balanceVisible: boolean;
   onSent: () => void;
 }) {
   const [tips, setTips] = useState<GroupTip[]>([]);
@@ -3923,23 +3930,27 @@ function TipsTab({
 
   return (
     <div class={s.tabColumn}>
-      <div class={s.section}>
-        <div class={s.sectionHeader}>
-          <div class={s.sectionTitleGroup}>
-            <div class={s.sectionIcon}>
+      {balanceVisible && (
+        <div class={s.section}>
+          <div class={s.sectionHeader}>
+            <div class={s.sectionTitleGroup}>
+              <div class={s.sectionIcon}>
+                <Coins size={18} />
+              </div>
+              <div>
+                <h2 class={s.sectionTitle}>Group Balance</h2>
+                <p class={s.sectionSubtitle}>
+                  Total tips received by this group
+                </p>
+              </div>
+            </div>
+            <div class={s.bigBalance}>
               <Coins size={18} />
+              <span>{groupBalance.toLocaleString()}</span>
             </div>
-            <div>
-              <h2 class={s.sectionTitle}>Group Balance</h2>
-              <p class={s.sectionSubtitle}>Total tips received by this group</p>
-            </div>
-          </div>
-          <div class={s.bigBalance}>
-            <Coins size={18} />
-            <span>{groupBalance.toLocaleString()}</span>
           </div>
         </div>
-      </div>
+      )}
 
       {canTip && (
         <div class={s.section}>
