@@ -50,6 +50,26 @@
   margin-right: auto;
 }
 
+.category {
+  margin-top: 3rem;
+}
+
+.category:first-of-type {
+  margin-top: 0;
+}
+
+.categoryTitle {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr;
