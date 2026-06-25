@@ -64,11 +64,12 @@ interface SubToken {
 
 const FORBIDDEN_PERMISSIONS = new Set(["tokens:manage", "account:delete"]);
 
-const AUTO_LOGIN_HOSTNAMES = new Set(["rotur.dev", "originchats.mistium.com"]);
+const AUTO_LOGIN_HOSTNAMES = new Set(["rotur.dev", "originchats.com"]);
 
 function isAutoLoginHost(url: string): boolean {
   const host = getHostname(url);
   if (!host) return false;
+  if (isRoturSubdomain(url)) return true;
   if (AUTO_LOGIN_HOSTNAMES.has(host)) return true;
   return AUTO_LOGIN_HOSTNAMES.has(host.replace(/^www\./, ""));
 }

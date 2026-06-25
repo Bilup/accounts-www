@@ -4,59 +4,67 @@
   padding-top: 5rem;
 }
 
-.wrapper {
+.section {
+  padding: var(--section-padding);
+  position: relative;
+  overflow: hidden;
+}
+
+.bgOrb {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18rem;
+  height: 18rem;
+  background-color: var(--accent-3);
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+}
+
+.inner {
   max-width: var(--inner-max);
   margin: 0 auto;
-  padding: 0 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  position: relative;
 }
 
-.title {
-  font-family: var(--heading-font);
-  font-size: 2.25rem;
-  margin-bottom: 0.5rem;
-  letter-spacing: var(--heading-spacing);
-  background: var(--gradient-heading);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.header {
+  text-align: center;
+  margin-bottom: 4rem;
 }
 
-.rule {
-  height: 1px;
-  width: 100%;
-  background-color: var(--text-subtle);
-  margin-bottom: 1rem;
+.label {
+  composes: sectionLabel from "../components/shared.module.css";
+}
+
+.heading {
+  composes: sectionHeading from "../components/shared.module.css";
+  margin-top: 0.75rem;
 }
 
 .sub {
-  font-family: var(--sub-font);
-  color: var(--sub-color);
-  font-size: 1rem;
-  margin-bottom: 2rem;
-  max-width: 40rem;
-  text-align: center;
+  composes: sectionSub from "../components/shared.module.css";
+  margin-top: 1rem;
+  max-width: 34rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
-  width: 100%;
-  margin-bottom: 3rem;
 }
 
 @media (min-width: 48rem) {
   .grid {
-    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
   }
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid var(--surface-3);
+  background-color: var(--surface-2-a50);
+  border: 1px solid var(--border-subtle);
   border-radius: 0.75rem;
   padding: 1.5rem;
   display: flex;
@@ -64,37 +72,52 @@
   gap: 1rem;
   transition:
     transform 0.2s,
-    box-shadow 0.2s;
+    border-color 0.2s,
+    background-color 0.2s;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: var(--border);
+  background-color: var(--surface-2);
 }
 
 .iconBox {
-  width: 3rem;
-  height: 3rem;
-  background: var(--surface-2);
-  border-radius: 0.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  background-color: var(--accent-10);
+  border-radius: 0.625rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--accent);
+}
+
+.icon {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
 }
 
 .cardTitle {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: var(--text);
   margin: 0;
 }
 
 .cardDesc {
   font-family: var(--font-body);
-  color: var(--text-muted);
-  opacity: 0.8;
+  color: var(--text-subtle);
   line-height: 1.5;
+  font-size: 0.875rem;
   margin: 0;
 }
 
@@ -115,6 +138,7 @@
 
 .badge {
   display: inline-block;
+  align-self: flex-start;
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-family: var(--font-heading);
@@ -125,11 +149,10 @@
   color: #ffc107;
 }
 
-.footerNote {
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  text-align: center;
-  margin-bottom: 2rem;
-  max-width: 40rem;
+.fadeUp {
+  composes: fadeUp from "../components/shared.module.css";
+}
+
+.hidden {
+  composes: hidden from "../components/shared.module.css";
 }
