@@ -20,6 +20,14 @@ import { Groups } from "./pages/groups/Groups";
 import { GroupDetail } from "./pages/groups/GroupDetail";
 import { StarField } from "./components/StarField";
 
+function VanityProfile(props: { matches?: { atname?: string } }) {
+  const atname = props.matches?.atname || "";
+  if (atname.startsWith("@") && atname.length > 1) {
+    return <Profile matches={{ username: atname.slice(1) }} />;
+  }
+  return <NotFound />;
+}
+
 export function App() {
   return (
     <>
@@ -44,6 +52,7 @@ export function App() {
         <Route path="/auth" component={Auth} />
         <Route path="/link" component={Link} />
         <Route path="/reset_password" component={ResetPassword} />
+        <Route path="/:atname" component={VanityProfile} />
         <Route default component={NotFound} />
       </Router>
     </>
