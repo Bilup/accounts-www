@@ -532,14 +532,6 @@ export function useBenefits() {
   return { benefits, loading };
 }
 
-export function avatarUrl(username: string): string {
-  return `https://avatars.rotur.dev/${username}`;
-}
-
-export function bannerUrl(username: string): string {
-  return `https://avatars.rotur.dev/.banners/${username}`;
-}
-
 export function formatRelativeTime(timestamp: number): string {
   const now = Date.now();
   const diff = Math.max(0, now - timestamp);

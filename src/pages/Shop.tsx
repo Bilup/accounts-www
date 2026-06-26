@@ -433,7 +433,7 @@ export function Shop() {
           {user && (
             <div class={s.balance}>
               <Coins size={16} />
-              <span>{user["sys.currency"].toLocaleString()} credits</span>
+              <span>{(user["sys.currency"] ?? 0).toLocaleString()} credits</span>
             </div>
           )}
         </div>

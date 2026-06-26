@@ -146,12 +146,6 @@ export function Groups() {
   const [topGroups, setTopGroups] = useState<GroupPublic[]>([]);
   const [topLoading, setTopLoading] = useState(false);
 
-  const [joinBusy, setJoinBusy] = useState<string | null>(null);
-  const [joinMessage, setJoinMessage] = useState<{
-    text: string;
-    type: "success" | "error";
-  } | null>(null);
-
   useEffect(() => {
     if (isLoggedIn) loadMyGroups();
   }, [isLoggedIn]);
@@ -443,38 +437,6 @@ export function Groups() {
     setBannerSetting(false);
   }
 
-  async function joinGroup(tag: string) {
-    if (!isLoggedIn) {
-      window.location.href = `/auth?return_to=${encodeURIComponent(
-        window.location.origin +
-          window.location.pathname +
-          window.location.search,
-      )}`;
-      return;
-    }
-    setJoinBusy(tag);
-    setJoinMessage(null);
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/join?${authQs().slice(1)}`,
-        { method: "POST" },
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setJoinMessage({
-          text: `Joined "${data.name}" successfully!`,
-          type: "success",
-        });
-        loadMyGroups();
-      } else {
-        setJoinMessage({ text: data.error || "Failed to join", type: "error" });
-      }
-    } catch {
-      setJoinMessage({ text: "Network error", type: "error" });
-    }
-    setJoinBusy(null);
-  }
-
   const filteredBrowse = useMemo(() => {
     if (!searchQuery.trim()) return browseResults;
     const q = searchQuery.toLowerCase();
@@ -634,16 +596,6 @@ export function Groups() {
                     </button>
                   </form>
 
-                  {joinMessage && (
-                    <div
-                      class={
-                        joinMessage.type === "success" ? s.success : s.error
-                      }
-                    >
-                      {joinMessage.text}
-                    </div>
-                  )}
-
                   {browseLoading && (
                     <div class={s.loading}>Searching groups…</div>
                   )}
@@ -660,12 +612,7 @@ export function Groups() {
                   )}
                   <div class={s.groupGrid}>
                     {filteredBrowse.map((g) => (
-                      <GroupCard
-                        key={g.tag}
-                        group={g}
-                        onJoin={() => joinGroup(g.tag)}
-                        joinBusy={joinBusy === g.tag}
-                      />
+                      <GroupCard key={g.tag} group={g} />
                     ))}
                   </div>
                 </div>
@@ -1502,8 +1449,6 @@ function GroupCard({
 }: {
   group: GroupNet | GroupPublic;
   isMember?: boolean;
-  onJoin?: () => void;
-  joinBusy?: boolean;
 }) {
   return (
     <a class={s.groupCard} href={`/groups/${encodeURIComponent(group.tag)}`}>

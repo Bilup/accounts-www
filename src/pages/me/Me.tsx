@@ -678,13 +678,13 @@ function SubscriptionsSection({
                     <div class={s.subMeta}>
                       @{sub.group_tag} • {sub.role_name || "Role"}
                       {sub.cancel_at
-                        ? ` • Cancels ${new Date(paidThrough).toLocaleDateString()}`
-                        : ` • Next ${new Date(sub.next_billing).toLocaleDateString()}`}
+                        ? ` • Cancels ${formatBillingDate(paidThrough)}`
+                        : ` • Next ${formatBillingDate(sub.next_billing)}`}
                     </div>
                   </div>
                   {sub.cancel_at ? (
                     <span class={s.statusPill}>
-                      Active until {new Date(paidThrough).toLocaleDateString()}
+                      Active until {formatBillingDate(paidThrough)}
                     </span>
                   ) : (
                     <button
