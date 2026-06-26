@@ -91,7 +91,7 @@ export function UserAvatar({
     src = defaultAvatarUrl(username);
   }
 
-  if (pfpFailed && !pfp) {
+  if (pfpFailed) {
     return (
       <div class={`${className || ""} ${s.wrapper}`} style={wrapperStyle}>
         <span class={s.avatar} style={initialsStyle}>
@@ -112,7 +112,8 @@ export function UserAvatar({
         class={s.avatar}
         onError={() => {
           if (!pfp) setPfpFailed(true);
-          else setPfpBust(Date.now());
+          else if (pfpBust === 0) setPfpBust(Date.now());
+          else setPfpFailed(true);
         }}
       />
       {showOverlay && !isCracked && !overlayFailed && (
