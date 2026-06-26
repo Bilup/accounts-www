@@ -39,6 +39,7 @@ export function ImageCropper({
   const [src, setSrc] = useState<string>("");
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [scale, setScale] = useState(1);
+  const [minScale, setMinScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [saving, setSaving] = useState(false);
   const [confirmPaid, setConfirmPaid] = useState(false);
@@ -93,6 +94,7 @@ export function ImageCropper({
     const minScaleX = viewport.w / img.naturalWidth;
     const minScaleY = viewport.h / img.naturalHeight;
     const min = Math.max(minScaleX, minScaleY);
+    setMinScale(min);
     setScale(min);
     setPos({
       x: (viewport.w - img.naturalWidth * min) / 2,
@@ -133,11 +135,11 @@ export function ImageCropper({
     e.preventDefault();
     if (!img) return;
     const delta = -e.deltaY * 0.0015;
-    setScale((s) => clamp(s * (1 + delta), 0.1, 5));
+    setScale((s) => clamp(s * (1 + delta), minScale, 5));
   };
 
   const zoomBy = (factor: number) => {
-    setScale((s) => clamp(s * factor, 0.1, 5));
+    setScale((s) => clamp(s * factor, minScale, 5));
   };
 
   const renderToDataUrl = async (): Promise<string> => {
@@ -170,7 +172,6 @@ export function ImageCropper({
       if (!ok) return;
       setConfirmPaid(true);
     }
-    setSaving(true);
     setSaving(true);
     try {
       const dataUrl = await renderToDataUrl();
@@ -255,11 +256,13 @@ export function ImageCropper({
             <input
               type="range"
               class={s.zoomSlider}
-              min={0.1}
+              min={minScale}
               max={5}
               step={0.01}
               value={scale}
-              onInput={(e: any) => setScale(parseFloat(e.target.value))}
+              onInput={(e: any) =>
+                setScale(clamp(parseFloat(e.target.value), minScale, 5))
+              }
               aria-label="Zoom"
             />
             <button

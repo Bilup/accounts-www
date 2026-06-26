@@ -220,7 +220,7 @@ export function Groups() {
   async function loadBrowse() {
     setBrowseLoading(true);
     try {
-      const res = (await searchQuery.trim())
+      const res = searchQuery.trim()
         ? await fetch(
             `${API_BASE_URL}/groups/search?query=${encodeURIComponent(
               searchQuery.trim(),

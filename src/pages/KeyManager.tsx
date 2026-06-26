@@ -316,7 +316,7 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, `Added $username`, "success");
+        setKeyMsg(keyId, `Added ${username}`, "success");
         if (input) input.value = "";
         fetchUserKeys();
       } else {
@@ -335,7 +335,7 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, `Removed $username`, "success");
+        setKeyMsg(keyId, `Removed ${username}`, "success");
         fetchUserKeys();
       } else {
         setKeyMsg(keyId, data.error || "Failed to remove user", "error");
