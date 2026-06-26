@@ -87,11 +87,14 @@ export function Premium() {
                 </ul>
               </div>
               {plan.href ? (
-                <form action={plan.href}>
-                  <button type="submit" class={s.ctaBtn}>
-                    Get Started
-                  </button>
-                </form>
+                <a
+                  href={plan.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class={s.ctaBtn}
+                >
+                  Get Started
+                </a>
               ) : (
                 <button class={s.ctaBtn} disabled>
                   Current Plan

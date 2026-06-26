@@ -366,16 +366,21 @@ export function Auth() {
       return;
     }
 
-    const username = getCookie("username");
-    if (username) {
-      setSiUsername(username);
-      setView("signin");
-      requestAnimationFrame(() => {
-        const pw = document.querySelector<HTMLInputElement>(
-          'input[name="password"]',
-        );
-        pw?.focus();
-      });
+    const signupParam = params.get("signup");
+    if (signupParam === "1" || signupParam === "true") {
+      setView("signup");
+    } else {
+      const username = getCookie("username");
+      if (username) {
+        setSiUsername(username);
+        setView("signin");
+        requestAnimationFrame(() => {
+          const pw = document.querySelector<HTMLInputElement>(
+            'input[name="password"]',
+          );
+          pw?.focus();
+        });
+      }
     }
 
     // Pre-load permission schema (public endpoint)

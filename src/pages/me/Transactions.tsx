@@ -164,10 +164,6 @@ function formatDateShort(ts: number): string {
   });
 }
 
-function describeTx(tx: Transaction): string {
-  return describeTransaction(tx);
-}
-
 function userFilterMatches(typeFilter: TypeFilter, txType: string): boolean {
   if (typeFilter === "all") return true;
   const meta = TRANSACTION_META[txType];
@@ -832,7 +828,7 @@ export function Transactions() {
                     const isOpen = expanded.has(tx.time);
                     const title = grouped
                       ? `${row.txs.length} daily credits`
-                      : describeTx(tx);
+                      : describeTransaction(tx);
                     const dateLabel = grouped
                       ? sameDay
                         ? formatDateTime(tx.time)
