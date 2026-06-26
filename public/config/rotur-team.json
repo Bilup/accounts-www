@@ -1,7 +1,8 @@
-[
-  {
+{
+  "lead": {
     "name": "Mist",
-    "role": "Lead Developer",
+    "role": "Founder & Lead Developer",
+    "bio": "I build things I personally use and enjoy. I love software that feels light, legible and hackable.",
     "pfp": "https://avatars.rotur.dev/mist",
     "socials": {
       "main": {
@@ -15,44 +16,31 @@
           "name": "GitHub"
         },
         {
-          "link": "https://originchats.com?server=chats.mistium.com",
-          "icon": "assets/icons/originchats.svg",
-          "name": "originChats"
+          "link": "https://patreon.com/mistium",
+          "icon": "assets/icons/patreon.svg",
+          "name": "Patreon"
         },
         {
-          "link": "https://www.youtube.com/@Mistium",
-          "icon": "assets/icons/youtube.svg",
-          "name": "Youtube"
+          "link": "https://scratch.mit.edu/users/m1stium",
+          "icon": "assets/icons/scratch.svg",
+          "name": "Scratch"
+        },
+        {
+          "link": "https://mistium.itch.io",
+          "icon": "assets/icons/itchdotio.svg",
+          "name": "Itch.io"
+        },
+        {
+          "link": "https://ko-fi.com/mistium",
+          "icon": "assets/icons/kofi.svg",
+          "name": "Ko-Fi"
         }
       ]
     }
   },
-  {
-    "name": "Flufi",
-    "role": "Developer",
-    "pfp": "https://avatars.rotur.dev/flufi",
-    "socials": {
-      "main": {
-        "link": "https://github.com/Flufi-Boi",
-        "name": "Github"
-      },
-      "alts": [
-        {
-          "link": "https://discord.gg/zTqgd3Gdx6",
-          "icon": "assets/icons/discord.svg",
-          "name": "Discord"
-        },
-        {
-          "link": "https://www.youtube.com//@Flufi_Boi",
-          "icon": "assets/icons/youtube.svg",
-          "name": "Youtube"
-        }
-      ]
-    }
-  },
-  {
+  "partner": {
     "name": "Iris",
-    "role": "Website Developer",
+    "role": "cute girlfriend",
     "pfp": "https://avatars.rotur.dev/iris",
     "socials": {
       "main": {
@@ -68,17 +56,59 @@
       ]
     }
   },
-  {
-    "name": "Green Panda",
-    "username": "b1j2754",
-    "role": "Consultant",
-    "pfp": "https://avatars.rotur.dev/B1j2754",
-    "socials": {
-      "main": {
-        "link": "https://github.com/b1j2754",
-        "name": "Github"
-      },
-      "alts": []
+  "tiers": [
+    {
+      "label": "Core Team",
+      "members": [
+        {
+          "name": "Flufi",
+          "role": "Developer",
+          "pfp": "https://avatars.rotur.dev/flufi",
+          "socials": {
+            "main": {
+              "link": "https://github.com/Flufi-Boi",
+              "name": "Github"
+            },
+            "alts": [
+              {
+                "link": "https://discord.gg/zTqgd3Gdx6",
+                "icon": "assets/icons/discord.svg",
+                "name": "Discord"
+              },
+              {
+                "link": "https://www.youtube.com//@Flufi_Boi",
+                "icon": "assets/icons/youtube.svg",
+                "name": "Youtube"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Green Panda",
+          "username": "b1j2754",
+          "role": "originChats developer",
+          "pfp": "https://avatars.rotur.dev/B1j2754",
+          "socials": {
+            "main": {
+              "link": "https://github.com/b1j2754",
+              "name": "Github"
+            },
+            "alts": []
+          }
+        },
+        {
+          "name": "Chloe",
+          "role": "originChats developer",
+          "pfp": "https://avatars.rotur.dev/stormy",
+          "socials": {
+            "main": {
+              "link": "https://github.com/chloe",
+              "name": "Github"
+            },
+            "alts": []
+          }
+        }
+      ]
     }
-  }
-]
+  ]
+}

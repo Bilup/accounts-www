@@ -116,7 +116,7 @@ const services: Service[] = [
   },
   {
     name: "roturPlace",
-    desc: "A collaborative pixel canvas in the spirit of r/place — claim pixels, team up, and paint the board together.",
+    desc: "A collaborative pixel canvas in the spirit of r/place, claim pixels, team up, and paint the board together.",
     href: "https://place.rotur.dev",
     label: "place.rotur.dev",
     icon: Palette,

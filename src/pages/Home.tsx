@@ -13,10 +13,17 @@ interface TeamMember {
   name: string;
   role: string;
   pfp: string;
+  username?: string;
+  bio?: string;
   socials: {
     main: { link: string; name: string };
     alts: { link: string; icon: string; name: string }[];
   };
+}
+
+interface TeamData {
+  lead: TeamMember;
+  tiers: { label: string; compact?: boolean; members: TeamMember[] }[];
 }
 
 interface Contributor {
@@ -26,7 +33,7 @@ interface Contributor {
 }
 
 export function Home() {
-  const [team, setTeam] = useState<TeamMember[] | null>(null);
+  const [team, setTeam] = useState<TeamData | null>(null);
   const [contributors, setContributors] = useState<Contributor[] | null>(null);
 
   useEffect(() => {
