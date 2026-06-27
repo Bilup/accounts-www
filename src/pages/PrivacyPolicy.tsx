@@ -1,11 +1,9 @@
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import { PageChrome } from "../components/PageChrome";
 import s from "./PrivacyPolicy.module.css";
 
 export function PrivacyPolicy() {
   return (
-    <div class={s.page}>
-      <Header />
+    <PageChrome className={s.page}>
       <div class={s.wrapper}>
         <h1 class={s.title}>Privacy Policy</h1>
         <div class={s.rule} />
@@ -562,7 +560,6 @@ export function PrivacyPolicy() {
           </div>
         </div>
       </div>
-      <Footer />
-    </div>
+    </PageChrome>
   );
 }

@@ -12,8 +12,14 @@ import {
   FileText,
   ExternalLink,
 } from "lucide-preact";
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import {
+  AccountPage,
+  AccountSection,
+  AccountTabPanel,
+  AccountTabs,
+  AuthRequired,
+  EmptyState,
+} from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
 import s from "./TokenManager.module.css";
 
@@ -505,450 +511,369 @@ export function TokenManager() {
 
   if (!currentUser) {
     return (
-      <div>
-        <Header />
-        <div class={s.page}>
-          <div class={s.layout}>
-            <div class={s.authRequired}>
-              <div class={s.authRequiredIcon}>
-                <Key size={28} />
-              </div>
-              <div class={s.authRequiredTitle}>
-                Sign in to manage sub-tokens
-              </div>
-              <p class={s.authRequiredText}>
-                Sign in to create and manage permission-scoped sub-tokens for
-                the apps you use.
-              </p>
-              <a
-                href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/tokens")}`}
-                class={s.btnPrimary}
-              >
-                Sign in
-              </a>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
+      <AuthRequired
+        icon={<Key size={28} />}
+        title="Sign in to manage sub-tokens"
+        text="Sign in to create and manage permission-scoped sub-tokens for the apps you use."
+        href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/tokens")}`}
+      />
     );
   }
 
   return (
-    <div>
-      <Header />
-      <div class={s.page}>
-        <div class={s.layout}>
-          <div class={s.pageHeader}>
-            <div>
-              <h1 class={s.pageTitle}>Token Manager</h1>
-              <p class={s.pageSubtitle}>
-                Create and manage permission-scoped sub-tokens for the apps you
-                use
-              </p>
-            </div>
+    <AccountPage
+      title="Token Manager"
+      subtitle="Create and manage permission-scoped sub-tokens for the apps you use"
+    >
+      {/* Newly created token reveal */}
+      {createdToken && (
+        <div class={s.tokenReveal}>
+          <div class={s.tokenRevealHeader}>
+            <Shield size={16} /> Token created: {createdToken.name}
           </div>
-
-          {/* Newly created token reveal */}
-          {createdToken && (
-            <div class={s.tokenReveal}>
-              <div class={s.tokenRevealHeader}>
-                <Shield size={16} /> Token created: {createdToken.name}
-              </div>
-              <p class={s.tokenRevealText}>
-                Copy this token now.{" "}
-                <strong>It will never be shown again.</strong> Store it
-                somewhere safe, you'll need to provide it to the app that
-                requested it.
-              </p>
-              <div class={s.tokenRevealValue}>
-                <code>{createdToken.token}</code>
-                <button
-                  class={s.copyBtn}
-                  onClick={() => copyToClipboard(createdToken.token, "__new__")}
-                >
-                  <Copy size={12} /> Copy
-                </button>
-              </div>
-              <button
-                class={s.btnSecondary}
-                style={{ marginTop: "0.75rem" }}
-                onClick={() => setCreatedToken(null)}
-              >
-                Dismiss
-              </button>
-            </div>
-          )}
-
-          <div class={s.tabsBar} role="tablist" aria-label="Token sections">
-            <div class={s.tabs}>
-              {TABS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  role="tab"
-                  aria-selected={activeTab === id}
-                  class={`${s.tab} ${activeTab === id ? s.tabActive : ""}`}
-                  onClick={() => setActiveTab(id)}
-                >
-                  <Icon size={15} />
-                  <span>{label}</span>
-                  {id === "your-tokens" && tokens.length > 0 && (
-                    <span class={s.tabBadge}>{tokens.length}</span>
-                  )}
-                </button>
-              ))}
-            </div>
+          <p class={s.tokenRevealText}>
+            Copy this token now. <strong>It will never be shown again.</strong>{" "}
+            Store it somewhere safe, you'll need to provide it to the app that
+            requested it.
+          </p>
+          <div class={s.tokenRevealValue}>
+            <code>{createdToken.token}</code>
+            <button
+              class={s.copyBtn}
+              onClick={() => copyToClipboard(createdToken.token, "__new__")}
+            >
+              <Copy size={12} /> Copy
+            </button>
           </div>
+          <button
+            class={s.btnSecondary}
+            style={{ marginTop: "0.75rem" }}
+            onClick={() => setCreatedToken(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
-          <div role="tabpanel" class={s.tabPanel}>
-            {activeTab === "your-tokens" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <Key size={18} />
-                    </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Your Sub-Tokens</h2>
-                      <p class={s.sectionSubtitle}>
-                        {tokens.length}/25 created
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  {tokensLoading && (
-                    <div class={s.loading}>Loading your tokens…</div>
-                  )}
-                  {!tokensLoading && tokens.length === 0 && (
-                    <div class={s.empty}>
-                      <div class={s.emptyIcon}>
-                        <Key size={24} />
-                      </div>
-                      <div class={s.emptyTitle}>No sub-tokens yet</div>
-                      <div class={s.emptyText}>
-                        Create one in the Create Token tab or grant scoped
-                        access from the /auth page.
-                      </div>
-                    </div>
-                  )}
-                  <div class={s.tokenGrid}>
-                    {tokens.map((token) => {
-                      const st = statusOf(token);
-                      return (
-                        <div
-                          key={token.id}
-                          class={`${s.tokenCard} ${token.revoked ? s.tokenCardRevoked : ""}`}
-                          onClick={() => setSelectedToken(token)}
-                        >
-                          <div class={s.tokenHeader}>
-                            <h3 class={s.tokenName}>{token.name}</h3>
-                            <span class={`${s.tokenTag} ${s[st.cls]}`}>
-                              {st.label}
-                            </span>
-                          </div>
-                          <div class={s.tokenInfo}>
-                            <div class={s.tokenInfoRow}>
-                              <span class={s.tokenInfoLabel}>Permissions:</span>
-                              <span class={s.tokenInfoValue}>
-                                {token.permissions.length}
-                              </span>
-                            </div>
-                            <div class={s.tokenInfoRow}>
-                              <span class={s.tokenInfoLabel}>Created:</span>
-                              <span class={s.tokenInfoValue}>
-                                {formatDate(token.created_at)}
-                              </span>
-                            </div>
-                            {token.origin && (
-                              <div class={s.tokenInfoRow}>
-                                <span class={s.tokenInfoLabel}>Origin:</span>
-                                <span class={s.tokenInfoValue}>
-                                  {token.origin}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+      <AccountTabs
+        tabs={TABS.map((tab) => ({
+          ...tab,
+          badge:
+            tab.id === "your-tokens" && tokens.length > 0
+              ? tokens.length
+              : undefined,
+        }))}
+        active={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Token sections"
+      />
+
+      <AccountTabPanel>
+        {activeTab === "your-tokens" && (
+          <AccountSection
+            icon={<Key size={18} />}
+            title="Your Sub-Tokens"
+            subtitle={`${tokens.length}/25 created`}
+          >
+            {tokensLoading && <div class={s.loading}>Loading your tokens…</div>}
+            {!tokensLoading && tokens.length === 0 && (
+              <EmptyState
+                icon={<Key size={24} />}
+                title="No sub-tokens yet"
+                text="Create one in the Create Token tab or grant scoped access from the /auth page."
+              />
             )}
-
-            {activeTab === "create-token" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <PlusCircle size={18} />
-                    </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Create New Sub-Token</h2>
-                      <p class={s.sectionSubtitle}>
-                        Set up a new permission-scoped token
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  <div class={s.formGroup}>
-                    <label for="new-token-name">
-                      Token Name{" "}
-                      <span style={{ color: "var(--text-subtle)" }}>
-                        (1–50 chars)
+            <div class={s.tokenGrid}>
+              {tokens.map((token) => {
+                const st = statusOf(token);
+                return (
+                  <div
+                    key={token.id}
+                    class={`${s.tokenCard} ${token.revoked ? s.tokenCardRevoked : ""}`}
+                    onClick={() => setSelectedToken(token)}
+                  >
+                    <div class={s.tokenHeader}>
+                      <h3 class={s.tokenName}>{token.name}</h3>
+                      <span class={`${s.tokenTag} ${s[st.cls]}`}>
+                        {st.label}
                       </span>
-                    </label>
-                    <input
-                      type="text"
-                      id="new-token-name"
-                      class={s.formInput}
-                      placeholder='e.g. "My App, read-only"'
-                      value={createName}
-                      maxLength={50}
-                      onInput={(e: any) => setCreateName(e.target.value)}
-                    />
-                  </div>
-
-                  <div class={s.formRow}>
-                    <div class={s.formGroup}>
-                      <label for="new-token-origin">Origin / App</label>
-                      <input
-                        type="text"
-                        id="new-token-origin"
-                        class={s.formInput}
-                        placeholder="https://myapp.example.com"
-                        value={createOrigin}
-                        onInput={(e: any) => setCreateOrigin(e.target.value)}
-                      />
                     </div>
-                    <div class={s.formGroup}>
-                      <label for="new-token-expires">
-                        Expires in (hours){" "}
-                        <span style={{ color: "var(--text-subtle)" }}>
-                          (blank = never)
+                    <div class={s.tokenInfo}>
+                      <div class={s.tokenInfoRow}>
+                        <span class={s.tokenInfoLabel}>Permissions:</span>
+                        <span class={s.tokenInfoValue}>
+                          {token.permissions.length}
                         </span>
-                      </label>
-                      <input
-                        type="number"
-                        id="new-token-expires"
-                        class={s.formInput}
-                        placeholder="e.g. 720 for 30 days"
-                        min={0}
-                        max={8760}
-                        value={createExpiresHrs}
-                        onInput={(e: any) =>
-                          setCreateExpiresHrs(e.target.value)
-                        }
-                      />
+                      </div>
+                      <div class={s.tokenInfoRow}>
+                        <span class={s.tokenInfoLabel}>Created:</span>
+                        <span class={s.tokenInfoValue}>
+                          {formatDate(token.created_at)}
+                        </span>
+                      </div>
+                      {token.origin && (
+                        <div class={s.tokenInfoRow}>
+                          <span class={s.tokenInfoLabel}>Origin:</span>
+                          <span class={s.tokenInfoValue}>{token.origin}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          </AccountSection>
+        )}
 
-                  <div class={s.formGroup}>
-                    <label for="new-token-websites">
-                      Websites{" "}
-                      <span style={{ color: "var(--text-subtle)" }}>
-                        (comma or space separated)
-                      </span>
-                    </label>
-                    <input
-                      type="text"
-                      id="new-token-websites"
+        {activeTab === "create-token" && (
+          <AccountSection
+            icon={<PlusCircle size={18} />}
+            title="Create New Sub-Token"
+            subtitle="Set up a new permission-scoped token"
+          >
+            <div class={s.formGroup}>
+              <label for="new-token-name">
+                Token Name{" "}
+                <span style={{ color: "var(--text-subtle)" }}>
+                  (1–50 chars)
+                </span>
+              </label>
+              <input
+                type="text"
+                id="new-token-name"
+                class={s.formInput}
+                placeholder='e.g. "My App, read-only"'
+                value={createName}
+                maxLength={50}
+                onInput={(e: any) => setCreateName(e.target.value)}
+              />
+            </div>
+
+            <div class={s.formRow}>
+              <div class={s.formGroup}>
+                <label for="new-token-origin">Origin / App</label>
+                <input
+                  type="text"
+                  id="new-token-origin"
+                  class={s.formInput}
+                  placeholder="https://myapp.example.com"
+                  value={createOrigin}
+                  onInput={(e: any) => setCreateOrigin(e.target.value)}
+                />
+              </div>
+              <div class={s.formGroup}>
+                <label for="new-token-expires">
+                  Expires in (hours){" "}
+                  <span style={{ color: "var(--text-subtle)" }}>
+                    (blank = never)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  id="new-token-expires"
+                  class={s.formInput}
+                  placeholder="e.g. 720 for 30 days"
+                  min={0}
+                  max={8760}
+                  value={createExpiresHrs}
+                  onInput={(e: any) => setCreateExpiresHrs(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div class={s.formGroup}>
+              <label for="new-token-websites">
+                Websites{" "}
+                <span style={{ color: "var(--text-subtle)" }}>
+                  (comma or space separated)
+                </span>
+              </label>
+              <input
+                type="text"
+                id="new-token-websites"
+                class={s.formInput}
+                placeholder="https://myapp.example.com, https://other.example.com"
+                value={createWebsites}
+                onInput={(e: any) => setCreateWebsites(e.target.value)}
+              />
+            </div>
+
+            <div class={s.formGroup}>
+              <label for="new-token-description">Description</label>
+              <textarea
+                id="new-token-description"
+                class={s.formInput}
+                placeholder="What is this token for?"
+                value={createDescription}
+                onInput={(e: any) => setCreateDescription(e.target.value)}
+                rows={2}
+              />
+            </div>
+
+            {/* Permission picker */}
+            <div class={s.permPicker}>
+              <div class={s.permPickerHeader}>
+                <h5 class={s.permPickerTitle}>Permissions</h5>
+                <div class={s.permPickerActions}>
+                  {schema?.groups && schema.groups.length > 0 && (
+                    <select
                       class={s.formInput}
-                      placeholder="https://myapp.example.com, https://other.example.com"
-                      value={createWebsites}
-                      onInput={(e: any) => setCreateWebsites(e.target.value)}
-                    />
-                  </div>
-
-                  <div class={s.formGroup}>
-                    <label for="new-token-description">Description</label>
-                    <textarea
-                      id="new-token-description"
-                      class={s.formInput}
-                      placeholder="What is this token for?"
-                      value={createDescription}
-                      onInput={(e: any) => setCreateDescription(e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-
-                  {/* Permission picker */}
-                  <div class={s.permPicker}>
-                    <div class={s.permPickerHeader}>
-                      <h5 class={s.permPickerTitle}>Permissions</h5>
-                      <div class={s.permPickerActions}>
-                        {schema?.groups && schema.groups.length > 0 && (
-                          <select
-                            class={s.formInput}
-                            style={{
-                              width: "auto",
-                              padding: "0.3rem 0.5rem",
-                              fontSize: "0.75rem",
-                            }}
-                            onChange={(e: any) => {
-                              const g = schema.groups.find(
-                                (x) => x.name === e.target.value,
-                              );
-                              if (g)
-                                setCreatePerms(
-                                  applyGroup(createPerms, g.permissions),
-                                );
-                              e.target.value = "";
-                            }}
-                            defaultValue=""
-                          >
-                            <option value="" disabled>
-                              Apply group…
-                            </option>
-                            {schema.groups.map((g) => (
-                              <option key={g.name} value={g.name}>
-                                {g.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
+                      style={{
+                        width: "auto",
+                        padding: "0.3rem 0.5rem",
+                        fontSize: "0.75rem",
+                      }}
+                      onChange={(e: any) => {
+                        const g = schema.groups.find(
+                          (x) => x.name === e.target.value,
+                        );
+                        if (g)
+                          setCreatePerms(
+                            applyGroup(createPerms, g.permissions),
+                          );
+                        e.target.value = "";
+                      }}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Apply group…
+                      </option>
+                      {schema.groups.map((g) => (
+                        <option key={g.name} value={g.name}>
+                          {g.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    class={s.permApplyBtn}
+                    onClick={() => setCreatePerms(new Set())}
+                  >
+                    Clear all
+                  </button>
+                </div>
+              </div>
+              <input
+                type="text"
+                class={s.formInput}
+                placeholder="Search permissions…"
+                value={createPermSearch}
+                onInput={(e: any) => setCreatePermSearch(e.target.value)}
+                style={{ marginBottom: "0.75rem" }}
+              />
+              {Object.entries(groupedPerms).map(([cat, perms]) => {
+                const visible = filteredCreatePerms.filter((p) =>
+                  perms.includes(p),
+                );
+                if (visible.length === 0) return null;
+                return (
+                  <div key={cat} class={s.permGroup}>
+                    <div class={s.permGroupHeader}>
+                      <span>{cat}</span>
+                      <div class={s.permGroupActions}>
                         <button
                           class={s.permApplyBtn}
-                          onClick={() => setCreatePerms(new Set())}
+                          onClick={() =>
+                            setCreatePerms(applyGroup(createPerms, visible))
+                          }
                         >
-                          Clear all
+                          All
+                        </button>
+                        <button
+                          class={s.permApplyBtn}
+                          onClick={() =>
+                            setCreatePerms(clearGroup(createPerms, visible))
+                          }
+                        >
+                          None
                         </button>
                       </div>
                     </div>
-                    <input
-                      type="text"
-                      class={s.formInput}
-                      placeholder="Search permissions…"
-                      value={createPermSearch}
-                      onInput={(e: any) => setCreatePermSearch(e.target.value)}
-                      style={{ marginBottom: "0.75rem" }}
-                    />
-                    {Object.entries(groupedPerms).map(([cat, perms]) => {
-                      const visible = filteredCreatePerms.filter((p) =>
-                        perms.includes(p),
-                      );
-                      if (visible.length === 0) return null;
-                      return (
-                        <div key={cat} class={s.permGroup}>
-                          <div class={s.permGroupHeader}>
-                            <span>{cat}</span>
-                            <div class={s.permGroupActions}>
-                              <button
-                                class={s.permApplyBtn}
-                                onClick={() =>
-                                  setCreatePerms(
-                                    applyGroup(createPerms, visible),
-                                  )
-                                }
-                              >
-                                All
-                              </button>
-                              <button
-                                class={s.permApplyBtn}
-                                onClick={() =>
-                                  setCreatePerms(
-                                    clearGroup(createPerms, visible),
-                                  )
-                                }
-                              >
-                                None
-                              </button>
-                            </div>
-                          </div>
-                          <div class={s.permList}>
-                            {visible.map((p) => {
-                              const forbidden = FORBIDDEN_PERMISSIONS.has(p);
-                              const checked = createPerms.has(p);
-                              return (
-                                <label
-                                  key={p}
-                                  class={`${s.permItem} ${checked ? s.permItemChecked : ""} ${forbidden ? s.permForbidden : ""}`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    disabled={forbidden}
-                                    onChange={() =>
-                                      setCreatePerms(togglePerm(createPerms, p))
-                                    }
-                                  />
-                                  <span class={s.permItemLabel}>{p}</span>
-                                  {forbidden && (
-                                    <span class={s.permBadge}>forbidden</span>
-                                  )}
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div class={s.permPickerFooter}>
-                      <span>
-                        <span class={s.permPickerCount}>
-                          {createPerms.size}
-                        </span>{" "}
-                        permission{createPerms.size !== 1 ? "s" : ""} selected
-                        {createPerms.size === 0 && (
-                          <span
-                            style={{
-                              color: "#fbbf24",
-                              marginLeft: "0.5rem",
-                            }}
+                    <div class={s.permList}>
+                      {visible.map((p) => {
+                        const forbidden = FORBIDDEN_PERMISSIONS.has(p);
+                        const checked = createPerms.has(p);
+                        return (
+                          <label
+                            key={p}
+                            class={`${s.permItem} ${checked ? s.permItemChecked : ""} ${forbidden ? s.permForbidden : ""}`}
                           >
-                            - pick at least one
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "0.7rem",
-                          color: "var(--text-subtle)",
-                        }}
-                      >
-                        <code>tokens:manage</code> and{" "}
-                        <code>account:delete</code> cannot be granted
-                      </span>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={forbidden}
+                              onChange={() =>
+                                setCreatePerms(togglePerm(createPerms, p))
+                              }
+                            />
+                            <span class={s.permItemLabel}>{p}</span>
+                            {forbidden && (
+                              <span class={s.permBadge}>forbidden</span>
+                            )}
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
-
-                  <div class={s.formGroup}>
-                    <button
-                      class={s.btnPrimary}
-                      style={{ width: "100%" }}
-                      onClick={createNewToken}
-                      disabled={createSubmitting}
+                );
+              })}
+              <div class={s.permPickerFooter}>
+                <span>
+                  <span class={s.permPickerCount}>{createPerms.size}</span>{" "}
+                  permission{createPerms.size !== 1 ? "s" : ""} selected
+                  {createPerms.size === 0 && (
+                    <span
+                      style={{
+                        color: "#fbbf24",
+                        marginLeft: "0.5rem",
+                      }}
                     >
-                      <PlusCircle size={14} />{" "}
-                      {createSubmitting ? "Creating…" : "Create Sub-Token"}
-                    </button>
-                  </div>
-                  {createMessage && (
-                    <div
-                      class={
-                        createMessageType === "success" ? s.success : s.error
-                      }
-                    >
-                      {createMessage}
-                    </div>
+                      - pick at least one
+                    </span>
                   )}
-                </div>
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "var(--text-subtle)",
+                  }}
+                >
+                  <code>tokens:manage</code> and <code>account:delete</code>{" "}
+                  cannot be granted
+                </span>
+              </div>
+            </div>
+
+            <div class={s.formGroup}>
+              <button
+                class={s.btnPrimary}
+                style={{ width: "100%" }}
+                onClick={createNewToken}
+                disabled={createSubmitting}
+              >
+                <PlusCircle size={14} />{" "}
+                {createSubmitting ? "Creating…" : "Create Sub-Token"}
+              </button>
+            </div>
+            {createMessage && (
+              <div
+                class={createMessageType === "success" ? s.success : s.error}
+              >
+                {createMessage}
               </div>
             )}
-          </div>
+          </AccountSection>
+        )}
+      </AccountTabPanel>
 
-          <a
-            href="https://docs.rotur.dev/assorted-apis/tokens"
-            target="_blank"
-            rel="noopener noreferrer"
-            class={s.docsLink}
-          >
-            <ExternalLink size={14} /> Tokens API docs
-          </a>
-        </div>
-      </div>
+      <a
+        href="https://docs.rotur.dev/assorted-apis/tokens"
+        target="_blank"
+        rel="noopener noreferrer"
+        class={s.docsLink}
+      >
+        <ExternalLink size={14} /> Tokens API docs
+      </a>
 
       {selectedToken && (
         <TokenDetailModal
@@ -983,9 +908,7 @@ export function TokenManager() {
           descInputRefs={descInputRefs}
         />
       )}
-
-      <Footer />
-    </div>
+    </AccountPage>
   );
 }
 

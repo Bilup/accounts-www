@@ -18,8 +18,12 @@ import {
   ChevronRight,
   ChevronDown,
 } from "lucide-preact";
-import { Header } from "../../components/Header";
-import { Footer } from "../../components/Footer";
+import {
+  AccountPage,
+  AccountSection,
+  AuthRequired,
+  EmptyState,
+} from "../../components/AccountPage";
 import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, type Transaction, captureTokenFromUrl } from "../../lib/auth";
 import {
@@ -431,532 +435,437 @@ export function Transactions() {
 
   if (!user) {
     return (
-      <div>
-        <Header />
-        <div class={s.page}>
-          <div class={s.layout}>
-            <div class={s.authRequired}>
-              <div class={s.authRequiredIcon}>
-                <Receipt size={28} />
-              </div>
-              <div class={s.authRequiredTitle}>
-                Sign in to view transactions
-              </div>
-              <p class={s.authRequiredText}>
-                Sign in to see your full transaction history and analytics.
-              </p>
-              <a
-                href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/me/transactions")}`}
-                class={s.btnPrimary}
-              >
-                Sign in
-              </a>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
+      <AuthRequired
+        icon={<Receipt size={28} />}
+        title="Sign in to view transactions"
+        text="Sign in to see your full transaction history and analytics."
+        href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/me/transactions")}`}
+      />
     );
   }
 
   return (
-    <div>
-      <Header />
-      <div class={s.page}>
-        <div class={s.layout}>
-          <a href="/me" class={s.backLink}>
-            <ArrowLeft size={14} /> Back to account
-          </a>
+    <AccountPage layoutClassName={s.wideLayout}>
+      <a href="/me" class={s.backLink}>
+        <ArrowLeft size={14} /> Back to account
+      </a>
 
-          <div class={s.controls}>
-            <div class={s.controlsRow}>
-              {availableRanges.length > 0 ? (
-                <div class={s.rangeGroup}>
-                  {availableRanges.map((r) => (
-                    <button
-                      key={r}
-                      class={`${s.rangeBtn} ${range === r ? s.active : ""}`}
-                      onClick={() => setRange(r)}
-                    >
-                      {RANGE_LABELS[r]}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <span class={s.rangeEmpty}>No transactions yet</span>
-              )}
-              <div class={s.searchWrap}>
-                <Search size={14} class={s.searchIcon} />
-                <input
-                  class={s.searchInput}
-                  placeholder="Search transactions..."
-                  value={query}
-                  onInput={(e: any) => setQuery(e.target.value)}
-                />
-                {query && (
-                  <button
-                    class={s.searchClear}
-                    onClick={() => setQuery("")}
-                    aria-label="Clear"
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-              </div>
-            </div>
-            <div class={s.typeGroup}>
-              {TYPE_FILTERS.map((f) => (
+      <div class={s.controls}>
+        <div class={s.controlsRow}>
+          {availableRanges.length > 0 ? (
+            <div class={s.rangeGroup}>
+              {availableRanges.map((r) => (
                 <button
-                  key={f.key}
-                  class={`${s.typeBtn} ${typeFilter === f.key ? s.active : ""}`}
-                  onClick={() => setTypeFilter(f.key)}
+                  key={r}
+                  class={`${s.rangeBtn} ${range === r ? s.active : ""}`}
+                  onClick={() => setRange(r)}
                 >
-                  {f.label}
+                  {RANGE_LABELS[r]}
                 </button>
               ))}
             </div>
-          </div>
-
-          <div class={s.summaryGrid}>
-            <div class={s.summaryCard}>
-              <div class={s.summaryLabel}>Balance</div>
-              <div class={s.summaryValue}>
-                {balance.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                })}
-              </div>
-            </div>
-            <div class={s.summaryCard}>
-              <div class={s.summaryLabel}>Income</div>
-              <div class={`${s.summaryValue} ${s.income}`}>
-                +
-                {stats.totalIncome.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                })}
-              </div>
-            </div>
-            <div class={s.summaryCard}>
-              <div class={s.summaryLabel}>Spent</div>
-              <div class={`${s.summaryValue} ${s.expense}`}>
-                -
-                {stats.totalExpense.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                })}
-              </div>
-            </div>
-            <div class={s.summaryCard}>
-              <div class={s.summaryLabel}>Net</div>
-              <div
-                class={`${s.summaryValue} ${stats.net >= 0 ? s.income : s.expense}`}
+          ) : (
+            <span class={s.rangeEmpty}>No transactions yet</span>
+          )}
+          <div class={s.searchWrap}>
+            <Search size={14} class={s.searchIcon} />
+            <input
+              class={s.searchInput}
+              placeholder="Search transactions..."
+              value={query}
+              onInput={(e: any) => setQuery(e.target.value)}
+            />
+            {query && (
+              <button
+                class={s.searchClear}
+                onClick={() => setQuery("")}
+                aria-label="Clear"
               >
-                {stats.net >= 0 ? "+" : ""}
-                {stats.net.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                })}
-              </div>
-            </div>
+                <X size={12} />
+              </button>
+            )}
           </div>
+        </div>
+        <div class={s.typeGroup}>
+          {TYPE_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              class={`${s.typeBtn} ${typeFilter === f.key ? s.active : ""}`}
+              onClick={() => setTypeFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          <div class={s.section}>
-            <div class={s.sectionHeader}>
-              <div class={s.sectionTitleGroup}>
-                <div class={s.sectionIcon}>
-                  <TrendingUp size={18} />
-                </div>
-                <div>
-                  <div class={s.sectionTitle}>Credit Flow</div>
-                  <div class={s.sectionSubtitle}>
-                    Income vs expense ({stats.chartLabel})
-                  </div>
-                </div>
-              </div>
-              <div class={s.chartLegend}>
-                <span class={s.chartLegendItem}>
-                  <span class={`${s.chartLegendDot} ${s.income}`} /> Income
-                </span>
-                <span class={s.chartLegendItem}>
-                  <span class={`${s.chartLegendDot} ${s.expense}`} /> Expense
-                </span>
-              </div>
-            </div>
-            <div class={s.sectionBody}>
-              {stats.daily.length === 0 ? (
-                <div class={s.empty}>
-                  <div class={s.emptyIcon}>
-                    <Receipt size={24} />
-                  </div>
-                  <div class={s.emptyTitle}>No data for this range</div>
-                </div>
-              ) : (
-                <div class={s.chartWrap}>
-                  <div class={s.chartArea}>
-                    {stats.daily.map((d, i) => {
-                      const incomeH = (d.income / chartMax) * 100;
-                      const expenseH = (d.expense / chartMax) * 100;
-                      return (
-                        <div
-                          key={i}
-                          class={s.chartBar}
-                          title={`${d.label}: +${d.income.toFixed(2)} / -${d.expense.toFixed(2)} (net ${d.net >= 0 ? "+" : ""}${d.net.toFixed(2)})`}
-                        >
-                          <div class={s.chartStack}>
-                            {d.expense > 0 && (
-                              <div
-                                class={`${s.chartSegment} ${s.expense}`}
-                                style={{ height: `${expenseH}%` }}
-                              />
-                            )}
-                            {d.income > 0 && (
-                              <div
-                                class={`${s.chartSegment} ${s.income}`}
-                                style={{ height: `${incomeH}%` }}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div class={s.chartLabels}>
-                    {stats.daily.map((d, i) => (
-                      <div key={i} class={s.chartLabel}>
-                        {d.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+      <div class={s.summaryGrid}>
+        <div class={s.summaryCard}>
+          <div class={s.summaryLabel}>Balance</div>
+          <div class={s.summaryValue}>
+            {balance.toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })}
           </div>
-
-          <div class={s.twoCol}>
-            <div class={s.section}>
-              <div class={s.sectionHeader}>
-                <div class={s.sectionTitleGroup}>
-                  <div class={s.sectionIcon}>
-                    <Tag size={18} />
-                  </div>
-                  <div>
-                    <div class={s.sectionTitle}>By Type</div>
-                    <div class={s.sectionSubtitle}>Activity breakdown</div>
-                  </div>
-                </div>
-              </div>
-              <div class={s.sectionBody}>
-                {typeBreakdown.length === 0 ? (
-                  <div class={s.empty}>
-                    <div class={s.emptyIcon}>
-                      <Tag size={24} />
-                    </div>
-                    <div class={s.emptyTitle}>No activity</div>
-                  </div>
-                ) : (
-                  <div class={s.breakdownList}>
-                    {typeBreakdown.map((b) => {
-                      const Icon = TYPE_ICONS[b.type]?.icon || Receipt;
-                      return (
-                        <div key={b.type} class={s.breakdownItem}>
-                          <div
-                            class={s.breakdownIcon}
-                            style={{ color: b.meta?.color || "var(--text)" }}
-                          >
-                            <Icon size={14} />
-                          </div>
-                          <div class={s.breakdownInfo}>
-                            <div class={s.breakdownName}>
-                              {b.meta?.label || b.type}
-                            </div>
-                            <div class={s.breakdownMeta}>
-                              {b.count}{" "}
-                              {b.count === 1 ? "transaction" : "transactions"}
-                            </div>
-                          </div>
-                          <div class={s.breakdownValues}>
-                            {b.income > 0 && (
-                              <div class={`${s.breakdownValue} ${s.income}`}>
-                                +
-                                {b.income.toLocaleString(undefined, {
-                                  maximumFractionDigits: 2,
-                                })}
-                              </div>
-                            )}
-                            {b.expense > 0 && (
-                              <div class={`${s.breakdownValue} ${s.expense}`}>
-                                -
-                                {b.expense.toLocaleString(undefined, {
-                                  maximumFractionDigits: 2,
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div class={s.section}>
-              <div class={s.sectionHeader}>
-                <div class={s.sectionTitleGroup}>
-                  <div class={s.sectionIcon}>
-                    <Users size={18} />
-                  </div>
-                  <div>
-                    <div class={s.sectionTitle}>Top Counterparties</div>
-                    <div class={s.sectionSubtitle}>Most active users</div>
-                  </div>
-                </div>
-              </div>
-              <div class={s.sectionBody}>
-                {topUsers.length === 0 ? (
-                  <div class={s.empty}>
-                    <div class={s.emptyIcon}>
-                      <Users size={24} />
-                    </div>
-                    <div class={s.emptyTitle}>No counterparties</div>
-                  </div>
-                ) : (
-                  <div class={s.userList}>
-                    {topUsers.map((u) => (
-                      <a
-                        key={u.name}
-                        href={`/profile/${u.name}`}
-                        class={s.userItem}
-                      >
-                        <UserAvatar
-                          username={u.name}
-                          className={s.userAvatar}
-                        />
-                        <div class={s.userInfo}>
-                          <div class={s.userName}>@{u.name}</div>
-                          <div class={s.userMeta}>
-                            {u.count}{" "}
-                            {u.count === 1 ? "transaction" : "transactions"}
-                          </div>
-                        </div>
-                        <div class={s.userValues}>
-                          {u.income > 0 && (
-                            <div class={`${s.breakdownValue} ${s.income}`}>
-                              +
-                              {u.income.toLocaleString(undefined, {
-                                maximumFractionDigits: 2,
-                              })}
-                            </div>
-                          )}
-                          {u.expense > 0 && (
-                            <div class={`${s.breakdownValue} ${s.expense}`}>
-                              -
-                              {u.expense.toLocaleString(undefined, {
-                                maximumFractionDigits: 2,
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+        </div>
+        <div class={s.summaryCard}>
+          <div class={s.summaryLabel}>Income</div>
+          <div class={`${s.summaryValue} ${s.income}`}>
+            +
+            {stats.totalIncome.toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })}
           </div>
-
-          <div class={s.section}>
-            <div class={s.sectionHeader}>
-              <div class={s.sectionTitleGroup}>
-                <div class={s.sectionIcon}>
-                  <Receipt size={18} />
-                </div>
-                <div>
-                  <div class={s.sectionTitle}>All Transactions</div>
-                </div>
-              </div>
-              {totalPages > 1 && (
-                <div class={s.pager}>
-                  <button
-                    class={s.pagerBtn}
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    disabled={safePage === 0}
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-                  <span class={s.pagerInfo}>
-                    {safePage + 1} / {totalPages}
-                  </span>
-                  <button
-                    class={s.pagerBtn}
-                    onClick={() =>
-                      setPage((p) => Math.min(totalPages - 1, p + 1))
-                    }
-                    disabled={safePage >= totalPages - 1}
-                    aria-label="Next page"
-                  >
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
-              )}
-            </div>
-            <div class={s.sectionBody}>
-              {sortedRows.length === 0 ? (
-                <div class={s.empty}>
-                  <div class={s.emptyIcon}>
-                    <Receipt size={24} />
-                  </div>
-                  <div class={s.emptyTitle}>No matching transactions</div>
-                  <div class={s.emptyText}>
-                    Try adjusting the time range, type filter, or search query.
-                  </div>
-                </div>
-              ) : (
-                <div class={s.txList}>
-                  {pageItems.map((row, i) => {
-                    const tx = row.txs[0];
-                    const meta = TRANSACTION_META[tx.type];
-                    const isIncome = isTransactionIncome(tx);
-                    const Icon = TYPE_ICONS[tx.type]?.icon || Receipt;
-                    const counterparty = transactionCounterparty(tx);
-                    const grouped = row.txs.length > 1;
-                    const totalAmount = row.txs.reduce(
-                      (sum, t) => sum + t.amount,
-                      0,
-                    );
-                    const oldest = row.txs[row.txs.length - 1];
-                    const sameDay =
-                      startOfDay(tx.time) === startOfDay(oldest.time);
-                    const isOpen = expanded.has(tx.time);
-                    const title = grouped
-                      ? `${row.txs.length} daily credits`
-                      : describeTransaction(tx);
-                    const dateLabel = grouped
-                      ? sameDay
-                        ? formatDateTime(tx.time)
-                        : `${formatDateShort(oldest.time)} – ${formatDateTime(tx.time)}`
-                      : formatDateTime(tx.time);
-                    const toggle = () => {
-                      if (!grouped) return;
-                      setExpanded((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(tx.time)) next.delete(tx.time);
-                        else next.add(tx.time);
-                        return next;
-                      });
-                    };
-                    return (
-                      <div key={`${tx.time}-${i}`} class={s.txGroup}>
-                        <div
-                          class={`${s.txItem} ${grouped ? s.txItemGrouped : ""} ${isOpen ? s.txItemOpen : ""}`}
-                          onClick={toggle}
-                          role={grouped ? "button" : undefined}
-                          aria-expanded={grouped ? isOpen : undefined}
-                        >
-                          <div
-                            class={`${s.txIcon} ${isIncome ? s.income : s.expense}`}
-                          >
-                            <Icon size={14} />
-                            {grouped && (
-                              <span class={s.txCount}>×{row.txs.length}</span>
-                            )}
-                          </div>
-                          <div class={s.txInfo}>
-                            <div class={s.txTitle}>{title}</div>
-                            <div class={s.txMeta}>
-                              {meta?.label || tx.type}
-                              {counterparty && (
-                                <>
-                                  {" · "}
-                                  <a
-                                    href={`/profile/${counterparty}`}
-                                    class={s.txUser}
-                                    onClick={(e: MouseEvent) =>
-                                      e.stopPropagation()
-                                    }
-                                  >
-                                    @{counterparty}
-                                  </a>
-                                </>
-                              )}
-                              {" · "}
-                              {dateLabel}
-                            </div>
-                          </div>
-                          <div
-                            class={`${s.txAmount} ${isIncome ? s.income : s.expense}`}
-                          >
-                            {isIncome ? "+" : "-"}
-                            {Math.abs(totalAmount).toLocaleString(undefined, {
-                              maximumFractionDigits: 2,
-                            })}
-                          </div>
-                          {grouped && (
-                            <span
-                              class={`${s.txChevron} ${isOpen ? s.txChevronOpen : ""}`}
-                              aria-hidden="true"
-                            >
-                              <ChevronDown size={14} />
-                            </span>
-                          )}
-                        </div>
-                        {grouped && isOpen && (
-                          <div class={s.txSubList}>
-                            {[...row.txs]
-                              .sort((a, b) => b.time - a.time)
-                              .map((sub, j) => {
-                                const subIsIncome = isTransactionIncome(sub);
-                                const counterparty =
-                                  transactionCounterparty(sub);
-                                return (
-                                  <div
-                                    key={`${sub.time}-${j}`}
-                                    class={s.txSubItem}
-                                  >
-                                    <div class={s.txSubDot} />
-                                    <div class={s.txSubInfo}>
-                                      <div class={s.txSubTitle}>
-                                        {describeTransaction(sub)}
-                                      </div>
-                                      <div class={s.txSubMeta}>
-                                        {counterparty ? (
-                                          <a
-                                            href={`/profile/${counterparty}`}
-                                            class={s.txUser}
-                                          >
-                                            @{counterparty}
-                                          </a>
-                                        ) : (
-                                          <span>system</span>
-                                        )}
-                                        {" · "}
-                                        {formatDateTime(sub.time)}
-                                      </div>
-                                    </div>
-                                    <div
-                                      class={`${s.txSubAmount} ${subIsIncome ? s.income : s.expense}`}
-                                    >
-                                      {subIsIncome ? "+" : "-"}
-                                      {Math.abs(sub.amount).toLocaleString(
-                                        undefined,
-                                        {
-                                          maximumFractionDigits: 2,
-                                        },
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+        </div>
+        <div class={s.summaryCard}>
+          <div class={s.summaryLabel}>Spent</div>
+          <div class={`${s.summaryValue} ${s.expense}`}>
+            -
+            {stats.totalExpense.toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })}
+          </div>
+        </div>
+        <div class={s.summaryCard}>
+          <div class={s.summaryLabel}>Net</div>
+          <div
+            class={`${s.summaryValue} ${stats.net >= 0 ? s.income : s.expense}`}
+          >
+            {stats.net >= 0 ? "+" : ""}
+            {stats.net.toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })}
           </div>
         </div>
       </div>
-      <Footer />
-    </div>
+
+      <AccountSection
+        icon={<TrendingUp size={18} />}
+        title="Credit Flow"
+        subtitle={`Income vs expense (${stats.chartLabel})`}
+        actions={
+          <div class={s.chartLegend}>
+            <span class={s.chartLegendItem}>
+              <span class={`${s.chartLegendDot} ${s.income}`} /> Income
+            </span>
+            <span class={s.chartLegendItem}>
+              <span class={`${s.chartLegendDot} ${s.expense}`} /> Expense
+            </span>
+          </div>
+        }
+      >
+        {stats.daily.length === 0 ? (
+          <EmptyState
+            icon={<Receipt size={24} />}
+            title="No data for this range"
+          />
+        ) : (
+          <div class={s.chartWrap}>
+            <div class={s.chartArea}>
+              {stats.daily.map((d, i) => {
+                const incomeH = (d.income / chartMax) * 100;
+                const expenseH = (d.expense / chartMax) * 100;
+                return (
+                  <div
+                    key={i}
+                    class={s.chartBar}
+                    title={`${d.label}: +${d.income.toFixed(2)} / -${d.expense.toFixed(2)} (net ${d.net >= 0 ? "+" : ""}${d.net.toFixed(2)})`}
+                  >
+                    <div class={s.chartStack}>
+                      {d.expense > 0 && (
+                        <div
+                          class={`${s.chartSegment} ${s.expense}`}
+                          style={{ height: `${expenseH}%` }}
+                        />
+                      )}
+                      {d.income > 0 && (
+                        <div
+                          class={`${s.chartSegment} ${s.income}`}
+                          style={{ height: `${incomeH}%` }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div class={s.chartLabels}>
+              {stats.daily.map((d, i) => (
+                <div key={i} class={s.chartLabel}>
+                  {d.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </AccountSection>
+
+      <div class={s.twoCol}>
+        <AccountSection
+          icon={<Tag size={18} />}
+          title="By Type"
+          subtitle="Activity breakdown"
+        >
+          {typeBreakdown.length === 0 ? (
+            <EmptyState icon={<Tag size={24} />} title="No activity" />
+          ) : (
+            <div class={s.breakdownList}>
+              {typeBreakdown.map((b) => {
+                const Icon = TYPE_ICONS[b.type]?.icon || Receipt;
+                return (
+                  <div key={b.type} class={s.breakdownItem}>
+                    <div
+                      class={s.breakdownIcon}
+                      style={{ color: b.meta?.color || "var(--text)" }}
+                    >
+                      <Icon size={14} />
+                    </div>
+                    <div class={s.breakdownInfo}>
+                      <div class={s.breakdownName}>
+                        {b.meta?.label || b.type}
+                      </div>
+                      <div class={s.breakdownMeta}>
+                        {b.count}{" "}
+                        {b.count === 1 ? "transaction" : "transactions"}
+                      </div>
+                    </div>
+                    <div class={s.breakdownValues}>
+                      {b.income > 0 && (
+                        <div class={`${s.breakdownValue} ${s.income}`}>
+                          +
+                          {b.income.toLocaleString(undefined, {
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      )}
+                      {b.expense > 0 && (
+                        <div class={`${s.breakdownValue} ${s.expense}`}>
+                          -
+                          {b.expense.toLocaleString(undefined, {
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </AccountSection>
+
+        <AccountSection
+          icon={<Users size={18} />}
+          title="Top Counterparties"
+          subtitle="Most active users"
+        >
+          {topUsers.length === 0 ? (
+            <EmptyState icon={<Users size={24} />} title="No counterparties" />
+          ) : (
+            <div class={s.userList}>
+              {topUsers.map((u) => (
+                <a key={u.name} href={`/profile/${u.name}`} class={s.userItem}>
+                  <UserAvatar username={u.name} className={s.userAvatar} />
+                  <div class={s.userInfo}>
+                    <div class={s.userName}>@{u.name}</div>
+                    <div class={s.userMeta}>
+                      {u.count} {u.count === 1 ? "transaction" : "transactions"}
+                    </div>
+                  </div>
+                  <div class={s.userValues}>
+                    {u.income > 0 && (
+                      <div class={`${s.breakdownValue} ${s.income}`}>
+                        +
+                        {u.income.toLocaleString(undefined, {
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    )}
+                    {u.expense > 0 && (
+                      <div class={`${s.breakdownValue} ${s.expense}`}>
+                        -
+                        {u.expense.toLocaleString(undefined, {
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+        </AccountSection>
+      </div>
+
+      <AccountSection
+        icon={<Receipt size={18} />}
+        title="All Transactions"
+        actions={
+          totalPages > 1 && (
+            <div class={s.pager}>
+              <button
+                class={s.pagerBtn}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={safePage === 0}
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span class={s.pagerInfo}>
+                {safePage + 1} / {totalPages}
+              </span>
+              <button
+                class={s.pagerBtn}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={safePage >= totalPages - 1}
+                aria-label="Next page"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )
+        }
+      >
+        {sortedRows.length === 0 ? (
+          <EmptyState
+            icon={<Receipt size={24} />}
+            title="No matching transactions"
+            text="Try adjusting the time range, type filter, or search query."
+          />
+        ) : (
+          <div class={s.txList}>
+            {pageItems.map((row, i) => {
+              const tx = row.txs[0];
+              const meta = TRANSACTION_META[tx.type];
+              const isIncome = isTransactionIncome(tx);
+              const Icon = TYPE_ICONS[tx.type]?.icon || Receipt;
+              const counterparty = transactionCounterparty(tx);
+              const grouped = row.txs.length > 1;
+              const totalAmount = row.txs.reduce((sum, t) => sum + t.amount, 0);
+              const oldest = row.txs[row.txs.length - 1];
+              const sameDay = startOfDay(tx.time) === startOfDay(oldest.time);
+              const isOpen = expanded.has(tx.time);
+              const title = grouped
+                ? `${row.txs.length} daily credits`
+                : describeTransaction(tx);
+              const dateLabel = grouped
+                ? sameDay
+                  ? formatDateTime(tx.time)
+                  : `${formatDateShort(oldest.time)} – ${formatDateTime(tx.time)}`
+                : formatDateTime(tx.time);
+              const toggle = () => {
+                if (!grouped) return;
+                setExpanded((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(tx.time)) next.delete(tx.time);
+                  else next.add(tx.time);
+                  return next;
+                });
+              };
+              return (
+                <div key={`${tx.time}-${i}`} class={s.txGroup}>
+                  <div
+                    class={`${s.txItem} ${grouped ? s.txItemGrouped : ""} ${isOpen ? s.txItemOpen : ""}`}
+                    onClick={toggle}
+                    role={grouped ? "button" : undefined}
+                    aria-expanded={grouped ? isOpen : undefined}
+                  >
+                    <div
+                      class={`${s.txIcon} ${isIncome ? s.income : s.expense}`}
+                    >
+                      <Icon size={14} />
+                      {grouped && (
+                        <span class={s.txCount}>×{row.txs.length}</span>
+                      )}
+                    </div>
+                    <div class={s.txInfo}>
+                      <div class={s.txTitle}>{title}</div>
+                      <div class={s.txMeta}>
+                        {meta?.label || tx.type}
+                        {counterparty && (
+                          <>
+                            {" · "}
+                            <a
+                              href={`/profile/${counterparty}`}
+                              class={s.txUser}
+                              onClick={(e: MouseEvent) => e.stopPropagation()}
+                            >
+                              @{counterparty}
+                            </a>
+                          </>
+                        )}
+                        {" · "}
+                        {dateLabel}
+                      </div>
+                    </div>
+                    <div
+                      class={`${s.txAmount} ${isIncome ? s.income : s.expense}`}
+                    >
+                      {isIncome ? "+" : "-"}
+                      {Math.abs(totalAmount).toLocaleString(undefined, {
+                        maximumFractionDigits: 2,
+                      })}
+                    </div>
+                    {grouped && (
+                      <span
+                        class={`${s.txChevron} ${isOpen ? s.txChevronOpen : ""}`}
+                        aria-hidden="true"
+                      >
+                        <ChevronDown size={14} />
+                      </span>
+                    )}
+                  </div>
+                  {grouped && isOpen && (
+                    <div class={s.txSubList}>
+                      {[...row.txs]
+                        .sort((a, b) => b.time - a.time)
+                        .map((sub, j) => {
+                          const subIsIncome = isTransactionIncome(sub);
+                          const counterparty = transactionCounterparty(sub);
+                          return (
+                            <div key={`${sub.time}-${j}`} class={s.txSubItem}>
+                              <div class={s.txSubDot} />
+                              <div class={s.txSubInfo}>
+                                <div class={s.txSubTitle}>
+                                  {describeTransaction(sub)}
+                                </div>
+                                <div class={s.txSubMeta}>
+                                  {counterparty ? (
+                                    <a
+                                      href={`/profile/${counterparty}`}
+                                      class={s.txUser}
+                                    >
+                                      @{counterparty}
+                                    </a>
+                                  ) : (
+                                    <span>system</span>
+                                  )}
+                                  {" · "}
+                                  {formatDateTime(sub.time)}
+                                </div>
+                              </div>
+                              <div
+                                class={`${s.txSubAmount} ${subIsIncome ? s.income : s.expense}`}
+                              >
+                                {subIsIncome ? "+" : "-"}
+                                {Math.abs(sub.amount).toLocaleString(
+                                  undefined,
+                                  {
+                                    maximumFractionDigits: 2,
+                                  },
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </AccountSection>
+    </AccountPage>
   );
 }

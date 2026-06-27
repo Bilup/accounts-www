@@ -11,8 +11,13 @@ import {
   Send,
   Link2,
 } from "lucide-preact";
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import {
+  AccountPage,
+  AccountSection,
+  AccountTabPanel,
+  AccountTabs,
+  EmptyState,
+} from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
 import s from "./InventoryManager.module.css";
 
@@ -482,569 +487,469 @@ export function InventoryManager() {
       item.owner.toLowerCase() === currentUser.toLowerCase();
 
     return (
-      <div>
-        <Header />
-        <div class={s.page}>
-          <div class={s.layout}>
-            <button
-              class={s.backBtn}
-              onClick={() => {
-                setViewingItem(null);
-                setSingleItemMsg("");
-                setSingleItemErr("");
-              }}
-            >
-              <ArrowLeft size={14} /> Back to Inventory
-            </button>
+      <AccountPage>
+        <button
+          class={s.backBtn}
+          onClick={() => {
+            setViewingItem(null);
+            setSingleItemMsg("");
+            setSingleItemErr("");
+          }}
+        >
+          <ArrowLeft size={14} /> Back to Inventory
+        </button>
 
-            <div class={s.singleItemCard}>
-              <h2 class={s.singleItemName}>
-                {item.name}
-                <button
-                  class={s.copyBtn}
-                  onClick={() => copyItemLink(item.name)}
-                  title="Copy link to this item"
-                >
-                  <Link2 size={14} />
-                </button>
-              </h2>
-              <div class={s.singleItemDescription}>
-                {item.description || "No description available"}
-              </div>
-              <div class={s.singleItemPrice}>
-                {formatPrice(item.price)} credits
-              </div>
-              <div
-                class={`${s.saleStatus} ${item.selling ? s.forSale : s.notForSale}`}
-              >
-                {item.selling ? "For Sale" : "Not For Sale"}
-              </div>
-              <div class={s.singleItemMeta}>
-                <div>
-                  <strong>Owner:</strong> {item.owner || item.author}
-                </div>
-                <div>
-                  <strong>Author:</strong> {item.author}
-                </div>
-                <div>
-                  <strong>Created:</strong> {formatDate(item.created)}
-                </div>
-                {item.total_income !== undefined && (
-                  <div>
-                    <strong>Total Income:</strong>{" "}
-                    {formatPrice(item.total_income)} credits
-                  </div>
-                )}
-              </div>
-              <div class={s.singleItemActions}>
-                {item.selling && user && !isOwnItem && (
-                  <button class={s.btnPrimary} onClick={buySingleItem}>
-                    <Coins size={14} /> Buy for {formatPrice(item.price)}{" "}
-                    credits
-                  </button>
-                )}
-                {isOwnItem && (
-                  <div class={s.ownItemNotice}>This is your item</div>
-                )}
-                {!item.selling && !isOwnItem && (
-                  <div class={s.notForSaleNotice}>
-                    This item is not currently for sale
-                  </div>
-                )}
-              </div>
-              {singleItemMsg && <div class={s.success}>{singleItemMsg}</div>}
-              {singleItemErr && <div class={s.error}>{singleItemErr}</div>}
-            </div>
+        <div class={s.singleItemCard}>
+          <h2 class={s.singleItemName}>
+            {item.name}
+            <button
+              class={s.copyBtn}
+              onClick={() => copyItemLink(item.name)}
+              title="Copy link to this item"
+            >
+              <Link2 size={14} />
+            </button>
+          </h2>
+          <div class={s.singleItemDescription}>
+            {item.description || "No description available"}
           </div>
+          <div class={s.singleItemPrice}>{formatPrice(item.price)} credits</div>
+          <div
+            class={`${s.saleStatus} ${item.selling ? s.forSale : s.notForSale}`}
+          >
+            {item.selling ? "For Sale" : "Not For Sale"}
+          </div>
+          <div class={s.singleItemMeta}>
+            <div>
+              <strong>Owner:</strong> {item.owner || item.author}
+            </div>
+            <div>
+              <strong>Author:</strong> {item.author}
+            </div>
+            <div>
+              <strong>Created:</strong> {formatDate(item.created)}
+            </div>
+            {item.total_income !== undefined && (
+              <div>
+                <strong>Total Income:</strong> {formatPrice(item.total_income)}{" "}
+                credits
+              </div>
+            )}
+          </div>
+          <div class={s.singleItemActions}>
+            {item.selling && user && !isOwnItem && (
+              <button class={s.btnPrimary} onClick={buySingleItem}>
+                <Coins size={14} /> Buy for {formatPrice(item.price)} credits
+              </button>
+            )}
+            {isOwnItem && <div class={s.ownItemNotice}>This is your item</div>}
+            {!item.selling && !isOwnItem && (
+              <div class={s.notForSaleNotice}>
+                This item is not currently for sale
+              </div>
+            )}
+          </div>
+          {singleItemMsg && <div class={s.success}>{singleItemMsg}</div>}
+          {singleItemErr && <div class={s.error}>{singleItemErr}</div>}
         </div>
-        <Footer />
-      </div>
+      </AccountPage>
     );
   }
 
   return (
-    <div>
-      <Header />
-      <div class={s.page}>
-        <div class={s.layout}>
-          <div class={s.pageHeader}>
-            <div>
-              <h1 class={s.pageTitle}>Inventory Manager</h1>
-              <p class={s.pageSubtitle}>
-                Create, buy, sell, and manage your items
-              </p>
-            </div>
-          </div>
+    <AccountPage
+      title="Inventory Manager"
+      subtitle="Create, buy, sell, and manage your items"
+    >
+      <AccountTabs
+        tabs={TABS}
+        active={activeTab}
+        onChange={handleTabChange}
+        ariaLabel="Inventory sections"
+      />
 
-          <div class={s.tabsBar} role="tablist" aria-label="Inventory sections">
-            <div class={s.tabs}>
-              {TABS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  role="tab"
-                  aria-selected={activeTab === id}
-                  class={`${s.tab} ${activeTab === id ? s.tabActive : ""}`}
-                  onClick={() => handleTabChange(id)}
-                >
-                  <Icon size={15} />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div role="tabpanel" class={s.tabPanel}>
-            {activeTab === "my-items" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <Package size={18} />
+      <AccountTabPanel>
+        {activeTab === "my-items" && (
+          <AccountSection
+            icon={<Package size={18} />}
+            title="Your Items"
+            subtitle={
+              <>
+                {myItems.length} items &bull; {userCurrency} credits
+              </>
+            }
+          >
+            {myItemsLoading && <div class={s.loading}>Loading your items…</div>}
+            {!myItemsLoading && myItems.length === 0 && (
+              <EmptyState
+                icon={<Package size={24} />}
+                title="No items yet"
+                text="Create your first item in the Create Item tab."
+              />
+            )}
+            <div class={s.itemGrid}>
+              {myItems.map((item) => {
+                const safeId = createSafeId(item.name);
+                const msg = itemMessages[safeId];
+                return (
+                  <div key={item.name} class={s.itemCard}>
+                    <div class={s.itemHeader}>
+                      <h3 class={s.itemName}>{item.name}</h3>
+                      {item.selling ? (
+                        <span class={`${s.itemTag} ${s.forSale}`}>
+                          For Sale
+                        </span>
+                      ) : (
+                        <span class={`${s.itemTag} ${s.notForSale}`}>
+                          Private
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Your Items</h2>
-                      <p class={s.sectionSubtitle}>
-                        {myItems.length} items &bull; {userCurrency} credits
-                      </p>
+                    <div class={s.itemDescription}>
+                      {item.description || "No description"}
                     </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  {myItemsLoading && (
-                    <div class={s.loading}>Loading your items…</div>
-                  )}
-                  {!myItemsLoading && myItems.length === 0 && (
-                    <div class={s.empty}>
-                      <div class={s.emptyIcon}>
-                        <Package size={24} />
+                    <div class={s.itemPrice}>
+                      {formatPrice(item.price)} credits
+                    </div>
+                    <div class={s.itemInfo}>
+                      <div class={s.itemInfoRow}>
+                        <span class={s.itemInfoLabel}>Created:</span>
+                        <span class={s.itemInfoValue}>
+                          {formatDate(item.created)}
+                        </span>
                       </div>
-                      <div class={s.emptyTitle}>No items yet</div>
-                      <div class={s.emptyText}>
-                        Create your first item in the Create Item tab.
+                      <div class={s.itemInfoRow}>
+                        <span class={s.itemInfoLabel}>Income:</span>
+                        <span class={s.itemInfoValue}>
+                          {formatPrice(item.total_income)} credits
+                        </span>
                       </div>
                     </div>
-                  )}
-                  <div class={s.itemGrid}>
-                    {myItems.map((item) => {
-                      const safeId = createSafeId(item.name);
-                      const msg = itemMessages[safeId];
-                      return (
-                        <div key={item.name} class={s.itemCard}>
-                          <div class={s.itemHeader}>
-                            <h3 class={s.itemName}>{item.name}</h3>
-                            {item.selling ? (
-                              <span class={`${s.itemTag} ${s.forSale}`}>
-                                For Sale
-                              </span>
-                            ) : (
-                              <span class={`${s.itemTag} ${s.notForSale}`}>
-                                Private
-                              </span>
-                            )}
-                          </div>
-                          <div class={s.itemDescription}>
-                            {item.description || "No description"}
-                          </div>
-                          <div class={s.itemPrice}>
-                            {formatPrice(item.price)} credits
-                          </div>
-                          <div class={s.itemInfo}>
-                            <div class={s.itemInfoRow}>
-                              <span class={s.itemInfoLabel}>Created:</span>
-                              <span class={s.itemInfoValue}>
-                                {formatDate(item.created)}
-                              </span>
-                            </div>
-                            <div class={s.itemInfoRow}>
-                              <span class={s.itemInfoLabel}>Income:</span>
-                              <span class={s.itemInfoValue}>
-                                {formatPrice(item.total_income)} credits
-                              </span>
-                            </div>
-                          </div>
 
-                          {item.transfer_history &&
-                            item.transfer_history.length > 0 && (
-                              <div>
-                                <button
-                                  class={s.transferHistoryToggle}
-                                  onClick={() =>
-                                    setExpandedHistory((prev) => ({
-                                      ...prev,
-                                      [safeId]: !prev[safeId],
-                                    }))
-                                  }
-                                >
-                                  {expandedHistory[safeId]
-                                    ? "Hide Transfer History"
-                                    : "View Transfer History"}
-                                </button>
-                                {expandedHistory[safeId] && (
-                                  <div class={s.transferHistory}>
-                                    {item.transfer_history.map((t, idx) => (
-                                      <div key={idx} class={s.transferItem}>
-                                        {t.type === "creation"
-                                          ? "Created"
-                                          : t.type === "transfer"
-                                            ? `Transferred from ${t.from || ""} to ${t.to || ""}`
-                                            : t.type === "purchase"
-                                              ? `Purchased by ${t.to || ""} for ${formatPrice(t.price)} credits`
-                                              : "Unknown"}
-                                        {" - "}
-                                        {formatDate(t.timestamp)}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                          <div class={s.itemActions}>
-                            {!item.selling ? (
-                              <button
-                                class={s.btnPrimary}
-                                onClick={() => putItemForSale(item.name)}
-                              >
-                                <Tag size={14} /> Put For Sale
-                              </button>
-                            ) : (
-                              <button
-                                class={s.btnSecondary}
-                                onClick={() => stopSelling(item.name)}
-                              >
-                                Stop Selling
-                              </button>
-                            )}
-                          </div>
-                          <div class={s.actionRow}>
-                            <input
-                              ref={(el) => {
-                                priceInputRefs.current[safeId] = el;
-                              }}
-                              type="number"
-                              class={s.formInput}
-                              defaultValue={formatPrice(item.price)}
-                              min={0}
-                              placeholder="Price"
-                            />
-                            <button
-                              class={s.btnSecondary}
-                              onClick={() => updatePrice(item.name, safeId)}
-                            >
-                              <Tag size={14} /> Update Price
-                            </button>
-                          </div>
-                          <div class={s.actionRow}>
-                            <input
-                              ref={(el) => {
-                                transferInputRefs.current[safeId] = el;
-                              }}
-                              type="text"
-                              class={s.formInput}
-                              placeholder="Username"
-                            />
-                            <button
-                              class={s.btnSecondary}
-                              onClick={() => transferItem(item.name, safeId)}
-                            >
-                              <Send size={14} /> Transfer
-                            </button>
-                          </div>
-                          <div class={s.actionRow}>
-                            <button
-                              class={s.btnDanger}
-                              onClick={() => deleteItem(item.name)}
-                            >
-                              <Trash2 size={14} /> Delete Item
-                            </button>
-                          </div>
-                          {msg && (
-                            <div
-                              class={
-                                msg.type === "success" ? s.success : s.error
-                              }
-                            >
-                              {msg.text}
+                    {item.transfer_history &&
+                      item.transfer_history.length > 0 && (
+                        <div>
+                          <button
+                            class={s.transferHistoryToggle}
+                            onClick={() =>
+                              setExpandedHistory((prev) => ({
+                                ...prev,
+                                [safeId]: !prev[safeId],
+                              }))
+                            }
+                          >
+                            {expandedHistory[safeId]
+                              ? "Hide Transfer History"
+                              : "View Transfer History"}
+                          </button>
+                          {expandedHistory[safeId] && (
+                            <div class={s.transferHistory}>
+                              {item.transfer_history.map((t, idx) => (
+                                <div key={idx} class={s.transferItem}>
+                                  {t.type === "creation"
+                                    ? "Created"
+                                    : t.type === "transfer"
+                                      ? `Transferred from ${t.from || ""} to ${t.to || ""}`
+                                      : t.type === "purchase"
+                                        ? `Purchased by ${t.to || ""} for ${formatPrice(t.price)} credits`
+                                        : "Unknown"}
+                                  {" - "}
+                                  {formatDate(t.timestamp)}
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
+                      )}
 
-            {activeTab === "marketplace" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <ShoppingBag size={18} />
+                    <div class={s.itemActions}>
+                      {!item.selling ? (
+                        <button
+                          class={s.btnPrimary}
+                          onClick={() => putItemForSale(item.name)}
+                        >
+                          <Tag size={14} /> Put For Sale
+                        </button>
+                      ) : (
+                        <button
+                          class={s.btnSecondary}
+                          onClick={() => stopSelling(item.name)}
+                        >
+                          Stop Selling
+                        </button>
+                      )}
                     </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Marketplace</h2>
-                      <p class={s.sectionSubtitle}>
-                        {marketplaceItems.length} items for sale
-                      </p>
+                    <div class={s.actionRow}>
+                      <input
+                        ref={(el) => {
+                          priceInputRefs.current[safeId] = el;
+                        }}
+                        type="number"
+                        class={s.formInput}
+                        defaultValue={formatPrice(item.price)}
+                        min={0}
+                        placeholder="Price"
+                      />
+                      <button
+                        class={s.btnSecondary}
+                        onClick={() => updatePrice(item.name, safeId)}
+                      >
+                        <Tag size={14} /> Update Price
+                      </button>
                     </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  <div class={s.searchRow}>
-                    <input
-                      type="text"
-                      class={s.searchInput}
-                      placeholder="Search items by name, description, or owner…"
-                      value={marketplaceSearch}
-                      onInput={(e) =>
-                        setMarketplaceSearch(
-                          (e.target as HTMLInputElement).value,
-                        )
-                      }
-                    />
-                  </div>
-                  {marketplaceLoading && (
-                    <div class={s.loading}>Loading marketplace…</div>
-                  )}
-                  {!marketplaceLoading && marketplaceItems.length === 0 && (
-                    <div class={s.empty}>
-                      <div class={s.emptyIcon}>
-                        <ShoppingBag size={24} />
-                      </div>
-                      <div class={s.emptyTitle}>No items for sale</div>
-                      <div class={s.emptyText}>
-                        No items are currently listed in the marketplace.
-                      </div>
+                    <div class={s.actionRow}>
+                      <input
+                        ref={(el) => {
+                          transferInputRefs.current[safeId] = el;
+                        }}
+                        type="text"
+                        class={s.formInput}
+                        placeholder="Username"
+                      />
+                      <button
+                        class={s.btnSecondary}
+                        onClick={() => transferItem(item.name, safeId)}
+                      >
+                        <Send size={14} /> Transfer
+                      </button>
                     </div>
-                  )}
-                  {!marketplaceLoading &&
-                    marketplaceItems.length > 0 &&
-                    filteredMarketplaceItems.length === 0 && (
-                      <div class={s.empty}>
-                        <div class={s.emptyIcon}>
-                          <Search size={24} />
-                        </div>
-                        <div class={s.emptyTitle}>No results</div>
-                        <div class={s.emptyText}>
-                          No items match your search.
-                        </div>
+                    <div class={s.actionRow}>
+                      <button
+                        class={s.btnDanger}
+                        onClick={() => deleteItem(item.name)}
+                      >
+                        <Trash2 size={14} /> Delete Item
+                      </button>
+                    </div>
+                    {msg && (
+                      <div class={msg.type === "success" ? s.success : s.error}>
+                        {msg.text}
                       </div>
                     )}
-                  <div class={s.itemGrid}>
-                    {filteredMarketplaceItems.map((item) => {
-                      const safeId = createSafeId(item.name);
-                      const msg = itemMessages[`mp-${safeId}`];
-                      const isOwn =
-                        item.owner &&
-                        currentUser &&
-                        item.owner.toLowerCase() === currentUser.toLowerCase();
-                      return (
-                        <div key={item.name} class={s.itemCard}>
-                          <div class={s.itemHeader}>
-                            <h3 class={s.itemName}>{item.name}</h3>
-                            <button
-                              class={s.copyBtn}
-                              onClick={() => copyItemLink(item.name)}
-                              title="Copy link to this item"
-                            >
-                              <Link2 size={14} />
-                            </button>
-                          </div>
-                          <div class={s.itemDescription}>
-                            {item.description || "No description"}
-                          </div>
-                          <div class={s.itemPrice}>
-                            {formatPrice(item.price)} credits
-                          </div>
-                          <div class={s.itemInfo}>
-                            <div class={s.itemInfoRow}>
-                              <span class={s.itemInfoLabel}>Owner:</span>
-                              <span class={s.itemInfoValue}>
-                                {item.owner || ""}
-                              </span>
-                            </div>
-                            <div class={s.itemInfoRow}>
-                              <span class={s.itemInfoLabel}>Author:</span>
-                              <span class={s.itemInfoValue}>{item.author}</span>
-                            </div>
-                            <div class={s.itemInfoRow}>
-                              <span class={s.itemInfoLabel}>Created:</span>
-                              <span class={s.itemInfoValue}>
-                                {formatDate(item.created)}
-                              </span>
-                            </div>
-                          </div>
-                          <div class={s.itemActions}>
-                            {!isOwn ? (
-                              <button
-                                class={s.btnPrimary}
-                                onClick={() =>
-                                  buyItemMarketplace(item.name, safeId)
-                                }
-                              >
-                                <Coins size={14} /> Buy for{" "}
-                                {formatPrice(item.price)} credits
-                              </button>
-                            ) : (
-                              <div class={s.ownItemNotice}>
-                                This is your item
-                              </div>
-                            )}
-                          </div>
-                          {msg && (
-                            <div
-                              class={
-                                msg.type === "success" ? s.success : s.error
-                              }
-                            >
-                              {msg.text}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
                   </div>
-                </div>
+                );
+              })}
+            </div>
+          </AccountSection>
+        )}
+
+        {activeTab === "marketplace" && (
+          <AccountSection
+            icon={<ShoppingBag size={18} />}
+            title="Marketplace"
+            subtitle={`${marketplaceItems.length} items for sale`}
+          >
+            <div class={s.searchRow}>
+              <input
+                type="text"
+                class={s.searchInput}
+                placeholder="Search items by name, description, or owner…"
+                value={marketplaceSearch}
+                onInput={(e) =>
+                  setMarketplaceSearch((e.target as HTMLInputElement).value)
+                }
+              />
+            </div>
+            {marketplaceLoading && (
+              <div class={s.loading}>Loading marketplace…</div>
+            )}
+            {!marketplaceLoading && marketplaceItems.length === 0 && (
+              <EmptyState
+                icon={<ShoppingBag size={24} />}
+                title="No items for sale"
+                text="No items are currently listed in the marketplace."
+              />
+            )}
+            {!marketplaceLoading &&
+              marketplaceItems.length > 0 &&
+              filteredMarketplaceItems.length === 0 && (
+                <EmptyState
+                  icon={<Search size={24} />}
+                  title="No results"
+                  text="No items match your search."
+                />
+              )}
+            <div class={s.itemGrid}>
+              {filteredMarketplaceItems.map((item) => {
+                const safeId = createSafeId(item.name);
+                const msg = itemMessages[`mp-${safeId}`];
+                const isOwn =
+                  item.owner &&
+                  currentUser &&
+                  item.owner.toLowerCase() === currentUser.toLowerCase();
+                return (
+                  <div key={item.name} class={s.itemCard}>
+                    <div class={s.itemHeader}>
+                      <h3 class={s.itemName}>{item.name}</h3>
+                      <button
+                        class={s.copyBtn}
+                        onClick={() => copyItemLink(item.name)}
+                        title="Copy link to this item"
+                      >
+                        <Link2 size={14} />
+                      </button>
+                    </div>
+                    <div class={s.itemDescription}>
+                      {item.description || "No description"}
+                    </div>
+                    <div class={s.itemPrice}>
+                      {formatPrice(item.price)} credits
+                    </div>
+                    <div class={s.itemInfo}>
+                      <div class={s.itemInfoRow}>
+                        <span class={s.itemInfoLabel}>Owner:</span>
+                        <span class={s.itemInfoValue}>{item.owner || ""}</span>
+                      </div>
+                      <div class={s.itemInfoRow}>
+                        <span class={s.itemInfoLabel}>Author:</span>
+                        <span class={s.itemInfoValue}>{item.author}</span>
+                      </div>
+                      <div class={s.itemInfoRow}>
+                        <span class={s.itemInfoLabel}>Created:</span>
+                        <span class={s.itemInfoValue}>
+                          {formatDate(item.created)}
+                        </span>
+                      </div>
+                    </div>
+                    <div class={s.itemActions}>
+                      {!isOwn ? (
+                        <button
+                          class={s.btnPrimary}
+                          onClick={() => buyItemMarketplace(item.name, safeId)}
+                        >
+                          <Coins size={14} /> Buy for {formatPrice(item.price)}{" "}
+                          credits
+                        </button>
+                      ) : (
+                        <div class={s.ownItemNotice}>This is your item</div>
+                      )}
+                    </div>
+                    {msg && (
+                      <div class={msg.type === "success" ? s.success : s.error}>
+                        {msg.text}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </AccountSection>
+        )}
+
+        {activeTab === "create-item" && (
+          <AccountSection
+            icon={<PlusCircle size={18} />}
+            title="Create New Item"
+            subtitle="Fill in the details to create a new inventory item"
+          >
+            <div class={s.formGroup}>
+              <label for="item-name">Item Name</label>
+              <input
+                type="text"
+                id="item-name"
+                class={s.formInput}
+                placeholder="Enter a unique name for your item"
+                maxlength={50}
+                value={createName}
+                onInput={(e) =>
+                  setCreateName((e.target as HTMLInputElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                Choose a descriptive name (max 50 characters)
+              </small>
+            </div>
+
+            <div class={s.formGroup}>
+              <label for="item-description">Description</label>
+              <textarea
+                id="item-description"
+                class={s.formInput}
+                placeholder="Describe your item in detail…"
+                maxlength={500}
+                rows={4}
+                value={createDescription}
+                onInput={(e) =>
+                  setCreateDescription((e.target as HTMLTextAreaElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                Provide a clear description (max 500 characters)
+              </small>
+            </div>
+
+            <div class={s.formRow}>
+              <div class={s.formGroup}>
+                <label for="item-price">Price (credits)</label>
+                <input
+                  type="number"
+                  id="item-price"
+                  class={s.formInput}
+                  placeholder="0"
+                  min={0}
+                  max={999999}
+                  value={createPrice}
+                  onInput={(e) =>
+                    setCreatePrice((e.target as HTMLInputElement).value)
+                  }
+                />
+                <small class={s.formHint}>Set your asking price</small>
+              </div>
+            </div>
+
+            <div class={s.formGroup}>
+              <div class={s.checkboxGroup}>
+                <input
+                  type="checkbox"
+                  id="item-selling"
+                  checked={createSelling}
+                  onChange={(e) =>
+                    setCreateSelling((e.target as HTMLInputElement).checked)
+                  }
+                />
+                <label for="item-selling">Put up for sale immediately</label>
+              </div>
+              <small class={s.formHint}>
+                Enable this to make the item available in the marketplace
+              </small>
+            </div>
+
+            <div class={s.formGroup}>
+              <label for="item-data">Private Data (JSON)</label>
+              <textarea
+                id="item-data"
+                class={s.formInput}
+                placeholder='{"key": "value"}'
+                rows={3}
+                value={createData}
+                onInput={(e) =>
+                  setCreateData((e.target as HTMLTextAreaElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                Optional: Store private metadata in JSON format
+              </small>
+            </div>
+
+            <div class={s.formActions}>
+              <button class={s.btnPrimary} onClick={createNewItem}>
+                <PlusCircle size={14} /> Create Item
+              </button>
+              <button class={s.btnSecondary} onClick={resetCreateForm}>
+                Clear Form
+              </button>
+            </div>
+
+            {createMessage && (
+              <div
+                class={createMessageType === "success" ? s.success : s.error}
+              >
+                {createMessage}
               </div>
             )}
-
-            {activeTab === "create-item" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <PlusCircle size={18} />
-                    </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Create New Item</h2>
-                      <p class={s.sectionSubtitle}>
-                        Fill in the details to create a new inventory item
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  <div class={s.formGroup}>
-                    <label for="item-name">Item Name</label>
-                    <input
-                      type="text"
-                      id="item-name"
-                      class={s.formInput}
-                      placeholder="Enter a unique name for your item"
-                      maxlength={50}
-                      value={createName}
-                      onInput={(e) =>
-                        setCreateName((e.target as HTMLInputElement).value)
-                      }
-                    />
-                    <small class={s.formHint}>
-                      Choose a descriptive name (max 50 characters)
-                    </small>
-                  </div>
-
-                  <div class={s.formGroup}>
-                    <label for="item-description">Description</label>
-                    <textarea
-                      id="item-description"
-                      class={s.formInput}
-                      placeholder="Describe your item in detail…"
-                      maxlength={500}
-                      rows={4}
-                      value={createDescription}
-                      onInput={(e) =>
-                        setCreateDescription(
-                          (e.target as HTMLTextAreaElement).value,
-                        )
-                      }
-                    />
-                    <small class={s.formHint}>
-                      Provide a clear description (max 500 characters)
-                    </small>
-                  </div>
-
-                  <div class={s.formRow}>
-                    <div class={s.formGroup}>
-                      <label for="item-price">Price (credits)</label>
-                      <input
-                        type="number"
-                        id="item-price"
-                        class={s.formInput}
-                        placeholder="0"
-                        min={0}
-                        max={999999}
-                        value={createPrice}
-                        onInput={(e) =>
-                          setCreatePrice((e.target as HTMLInputElement).value)
-                        }
-                      />
-                      <small class={s.formHint}>Set your asking price</small>
-                    </div>
-                  </div>
-
-                  <div class={s.formGroup}>
-                    <div class={s.checkboxGroup}>
-                      <input
-                        type="checkbox"
-                        id="item-selling"
-                        checked={createSelling}
-                        onChange={(e) =>
-                          setCreateSelling(
-                            (e.target as HTMLInputElement).checked,
-                          )
-                        }
-                      />
-                      <label for="item-selling">
-                        Put up for sale immediately
-                      </label>
-                    </div>
-                    <small class={s.formHint}>
-                      Enable this to make the item available in the marketplace
-                    </small>
-                  </div>
-
-                  <div class={s.formGroup}>
-                    <label for="item-data">Private Data (JSON)</label>
-                    <textarea
-                      id="item-data"
-                      class={s.formInput}
-                      placeholder='{"key": "value"}'
-                      rows={3}
-                      value={createData}
-                      onInput={(e) =>
-                        setCreateData((e.target as HTMLTextAreaElement).value)
-                      }
-                    />
-                    <small class={s.formHint}>
-                      Optional: Store private metadata in JSON format
-                    </small>
-                  </div>
-
-                  <div class={s.formActions}>
-                    <button class={s.btnPrimary} onClick={createNewItem}>
-                      <PlusCircle size={14} /> Create Item
-                    </button>
-                    <button class={s.btnSecondary} onClick={resetCreateForm}>
-                      Clear Form
-                    </button>
-                  </div>
-
-                  {createMessage && (
-                    <div
-                      class={
-                        createMessageType === "success" ? s.success : s.error
-                      }
-                    >
-                      {createMessage}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        <Footer />
-      </div>
-    </div>
+          </AccountSection>
+        )}
+      </AccountTabPanel>
+    </AccountPage>
   );
 }

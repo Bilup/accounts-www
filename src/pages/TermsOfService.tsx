@@ -1,5 +1,4 @@
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import { PageChrome } from "../components/PageChrome";
 import { TosContent } from "../components/TosContent";
 import { useState, useCallback, useRef, useEffect } from "preact/hooks";
 import "./TermsOfService.css";
@@ -130,9 +129,7 @@ export function TermsOfService() {
         : "Accept Terms & Authenticate";
 
   return (
-    <div className="page">
-      <Header />
-
+    <PageChrome className="page">
       <div className="wrapper">
         <p className="title">Terms of Service</p>
         <div className="rule" />
@@ -225,8 +222,6 @@ export function TermsOfService() {
           </div>
         )}
       </div>
-
-      <Footer />
-    </div>
+    </PageChrome>
   );
 }

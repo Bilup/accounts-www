@@ -1,12 +1,11 @@
 import { useState, useEffect } from "preact/hooks";
-import { Header } from "../components/Header";
+import { PageChrome } from "../components/PageChrome";
 import { Hero } from "../components/Hero";
 import { About } from "../components/About";
 import { Features } from "../components/Features";
 import { Team } from "../components/Team";
 import { Contributors } from "../components/Contributors";
 import { CTA } from "../components/CTA";
-import { Footer } from "../components/Footer";
 import { features } from "../../public/config/features";
 
 interface TeamMember {
@@ -48,8 +47,7 @@ export function Home() {
   }, []);
 
   return (
-    <div style="min-height:100vh;background-color:var(--void)">
-      <Header />
+    <PageChrome style="min-height:100vh;background-color:var(--void)">
       <main>
         <Hero />
         <About />
@@ -58,7 +56,6 @@ export function Home() {
         <Contributors data={contributors} />
         <CTA />
       </main>
-      <Footer />
-    </div>
+    </PageChrome>
   );
 }

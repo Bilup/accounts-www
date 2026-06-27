@@ -66,6 +66,14 @@ const FORBIDDEN_PERMISSIONS = new Set(["tokens:manage", "account:delete"]);
 
 const AUTO_LOGIN_HOSTNAMES = new Set(["rotur.dev", "originchats.com"]);
 
+function parseReturnUrl(url: string): URL | null {
+  try {
+    return new URL(url, location.origin);
+  } catch {
+    return null;
+  }
+}
+
 function isAutoLoginHost(url: string): boolean {
   const host = getHostname(url);
   if (!host) return false;
@@ -80,11 +88,11 @@ function isRoturSubdomain(url: string): boolean {
 }
 
 function getHostname(url: string): string {
-  try {
-    return new URL(url).hostname.toLowerCase();
-  } catch {
-    return "";
-  }
+  return parseReturnUrl(url)?.hostname.toLowerCase() || "";
+}
+
+function returnUrl(url: string): URL {
+  return parseReturnUrl(url) || new URL("https://rotur.dev/me");
 }
 
 function isValidEmail(email: string): boolean {
@@ -307,11 +315,7 @@ export function Auth() {
   const addBtnIcon = view === "welcome" ? "fa-user-plus" : "fa-arrow-left";
 
   const requestor = useMemo(() => {
-    try {
-      return new URL(returnToRef.current).hostname;
-    } catch {
-      return "This website";
-    }
+    return getHostname(returnToRef.current) || "This website";
   }, [returnToRef.current]);
 
   useEffect(() => {
@@ -434,7 +438,7 @@ export function Auth() {
       }
       return;
     }
-    const finalUrl = new URL(returnTo);
+    const finalUrl = returnUrl(returnTo);
     finalUrl.searchParams.set("token", token);
     location.href = finalUrl.toString();
   }, []);
@@ -467,7 +471,7 @@ export function Auth() {
             { type: "rotur-auth-token", token: data.key, scope: "full" },
             "*",
           );
-        const ref = new URL(returnToRef.current);
+        const ref = returnUrl(returnToRef.current);
         ref.searchParams.set("token", data.key!);
         location.href = ref.toString();
         return;
@@ -520,7 +524,7 @@ export function Auth() {
       };
       if (window.opener) window.opener.postMessage(payload, "*");
       if (window.parent !== window) window.parent.postMessage(payload, "*");
-      const ref = new URL(returnToRef.current);
+      const ref = returnUrl(returnToRef.current);
       ref.searchParams.set("token", sub.token);
       location.href = ref.toString();
     },
@@ -752,8 +756,7 @@ export function Auth() {
         setCookie("username", hydrated.username, 7);
 
         const inFrameOrPopup = !!window.opener || window.parent !== window;
-        const defaultReturn = "https://rotur.dev/me";
-        const isOwnDomain = returnToRef.current === defaultReturn;
+        const isOwnDomain = isAutoLoginHost(returnToRef.current);
 
         if (!checkTOSAcceptance(hydrated)) return;
 
@@ -773,7 +776,7 @@ export function Auth() {
           } catch {
             /* ignore */
           }
-          const ref = new URL(returnToRef.current);
+          const ref = returnUrl(returnToRef.current);
           ref.searchParams.set("token", saved.token!);
           location.href = ref.toString();
           return;
@@ -1086,7 +1089,7 @@ export function Auth() {
         { type: "rotur-auth-token", token: account.key, scope: "full" },
         "*",
       );
-    const ref = new URL(returnToRef.current);
+    const ref = returnUrl(returnToRef.current);
     ref.searchParams.set("token", account.key);
     location.href = ref.toString();
   }, [account]);
@@ -1296,7 +1299,7 @@ export function Auth() {
           "*",
         );
       }
-      const ref = new URL(returnToRef.current);
+      const ref = returnUrl(returnToRef.current);
       ref.searchParams.set("token", subToken);
       location.href = ref.toString();
     } catch (e: any) {

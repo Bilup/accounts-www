@@ -10,8 +10,13 @@ import {
   RotateCcw,
   X,
 } from "lucide-preact";
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import {
+  AccountPage,
+  AccountSection,
+  AccountTabPanel,
+  AccountTabs,
+  EmptyState,
+} from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
 import s from "./KeyManager.module.css";
 
@@ -53,7 +58,8 @@ function normalizeUserEntries(
   raw: string[] | Record<string, any> | null | undefined,
 ): Array<{ username: string; data: any }> {
   if (raw == null) return [];
-  if (Array.isArray(raw)) return raw.map((username) => ({ username, data: {} }));
+  if (Array.isArray(raw))
+    return raw.map((username) => ({ username, data: {} }));
   if (typeof raw === "object") {
     return Object.entries(raw).map(([username, data]) => ({ username, data }));
   }
@@ -364,227 +370,176 @@ export function KeyManager() {
   }
 
   return (
-    <div>
-      <Header />
-      <div class={s.page}>
-        <div class={s.layout}>
-          <div class={s.pageHeader}>
-            <div>
-              <h1 class={s.pageTitle}>Key Manager</h1>
-              <p class={s.pageSubtitle}>
-                Create and manage API keys for authentication and monetization
-              </p>
-            </div>
-          </div>
+    <AccountPage
+      title="Key Manager"
+      subtitle="Create and manage API keys for authentication and monetization"
+    >
+      <AccountTabs
+        tabs={TABS}
+        active={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Key sections"
+      />
 
-          <div class={s.tabsBar} role="tablist" aria-label="Key sections">
-            <div class={s.tabs}>
-              {TABS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  role="tab"
-                  aria-selected={activeTab === id}
-                  class={`${s.tab} ${activeTab === id ? s.tabActive : ""}`}
-                  onClick={() => setActiveTab(id)}
-                >
-                  <Icon size={15} />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+      <AccountTabPanel>
+        {activeTab === "your-keys" && (
+          <AccountSection
+            icon={<Key size={18} />}
+            title="Your Keys"
+            subtitle={`${keys.length} created`}
+          >
+            {keysLoading && <div class={s.loading}>Loading your keys…</div>}
+            {!keysLoading && keys.length === 0 && (
+              <EmptyState
+                icon={<Key size={24} />}
+                title="No keys yet"
+                text="Create your first key in the Create Key tab."
+              />
+            )}
+            <div class={s.keyGrid}>
+              {keys.map((key) => {
+                const keyId = key.key;
+                const isSubscription = key.type === "subscription";
+                const users = normalizeUsers(key.users);
 
-          <div role="tabpanel" class={s.tabPanel}>
-            {activeTab === "your-keys" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <Key size={18} />
+                return (
+                  <div
+                    key={keyId}
+                    class={s.keyCard}
+                    onClick={() => setSelectedKey(key)}
+                  >
+                    <div class={s.keyHeader}>
+                      <h3 class={s.keyName}>
+                        {key.name || `${keyId.substring(0, 8)}…`}
+                      </h3>
+                      <span
+                        class={`${s.keyTag} ${isSubscription ? s.keyTagSubscription : s.keyTagRegular}`}
+                      >
+                        {isSubscription ? "Subscription" : "Regular"}
+                      </span>
                     </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Your Keys</h2>
-                      <p class={s.sectionSubtitle}>{keys.length} created</p>
+                    <div class={s.keyInfo}>
+                      <div class={s.keyInfoRow}>
+                        <span class={s.keyInfoLabel}>Price:</span>
+                        <span class={s.keyInfoValue}>
+                          {key.price || 0} credits
+                        </span>
+                      </div>
+                      <div class={s.keyInfoRow}>
+                        <span class={s.keyInfoLabel}>Users:</span>
+                        <span class={s.keyInfoValue}>{users.length}</span>
+                      </div>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          </AccountSection>
+        )}
+
+        {activeTab === "create-key" && (
+          <AccountSection
+            icon={<CreditCard size={18} />}
+            title="Create New Key"
+            subtitle="Set up a new API key"
+          >
+            <div class={s.formRow}>
+              <div class={s.formGroup}>
+                <label for="new-key-name">Key Name</label>
+                <input
+                  type="text"
+                  id="new-key-name"
+                  class={s.formInput}
+                  placeholder="Enter a descriptive name"
+                  value={createName}
+                  onInput={(e) =>
+                    setCreateName((e.target as HTMLInputElement).value)
+                  }
+                />
+              </div>
+              <div class={s.formGroup}>
+                <label for="new-key-price">Price (credits)</label>
+                <input
+                  type="number"
+                  id="new-key-price"
+                  class={s.formInput}
+                  placeholder="0"
+                  min={0}
+                  value={createPrice}
+                  onInput={(e) =>
+                    setCreatePrice((e.target as HTMLInputElement).value)
+                  }
+                />
+              </div>
+            </div>
+
+            <div class={s.formGroup}>
+              <label for="new-key-type">Key Type</label>
+              <select
+                id="new-key-type"
+                class={s.formInput}
+                value={createType}
+                onChange={(e) =>
+                  setCreateType((e.target as HTMLSelectElement).value as any)
+                }
+              >
+                <option value="regular">Regular Key</option>
+                <option value="subscription">Subscription Key</option>
+              </select>
+            </div>
+
+            {createType === "subscription" && (
+              <div class={s.formRow}>
+                <div class={s.formGroup}>
+                  <label for="billing-frequency">Bill every</label>
+                  <input
+                    type="number"
+                    id="billing-frequency"
+                    class={s.formInput}
+                    value={billingFrequency}
+                    min={1}
+                    onInput={(e) =>
+                      setBillingFrequency((e.target as HTMLInputElement).value)
+                    }
+                  />
                 </div>
-                <div class={s.sectionBody}>
-                  {keysLoading && (
-                    <div class={s.loading}>Loading your keys…</div>
-                  )}
-                  {!keysLoading && keys.length === 0 && (
-                    <div class={s.empty}>
-                      <div class={s.emptyIcon}>
-                        <Key size={24} />
-                      </div>
-                      <div class={s.emptyTitle}>No keys yet</div>
-                      <div class={s.emptyText}>
-                        Create your first key in the Create Key tab.
-                      </div>
-                    </div>
-                  )}
-                  <div class={s.keyGrid}>
-                    {keys.map((key) => {
-                      const keyId = key.key;
-                      const isSubscription = key.type === "subscription";
-                      const users = normalizeUsers(key.users);
-
-                      return (
-                        <div
-                          key={keyId}
-                          class={s.keyCard}
-                          onClick={() => setSelectedKey(key)}
-                        >
-                          <div class={s.keyHeader}>
-                            <h3 class={s.keyName}>
-                              {key.name || `${keyId.substring(0, 8)}…`}
-                            </h3>
-                            <span
-                              class={`${s.keyTag} ${isSubscription ? s.keyTagSubscription : s.keyTagRegular}`}
-                            >
-                              {isSubscription ? "Subscription" : "Regular"}
-                            </span>
-                          </div>
-                          <div class={s.keyInfo}>
-                            <div class={s.keyInfoRow}>
-                              <span class={s.keyInfoLabel}>Price:</span>
-                              <span class={s.keyInfoValue}>
-                                {key.price || 0} credits
-                              </span>
-                            </div>
-                            <div class={s.keyInfoRow}>
-                              <span class={s.keyInfoLabel}>Users:</span>
-                              <span class={s.keyInfoValue}>{users.length}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div class={s.formGroup}>
+                  <label for="billing-period">Period</label>
+                  <select
+                    id="billing-period"
+                    class={s.formInput}
+                    value={billingPeriod}
+                    onChange={(e) =>
+                      setBillingPeriod(
+                        (e.target as HTMLSelectElement).value as any,
+                      )
+                    }
+                  >
+                    <option value="day">Day(s)</option>
+                    <option value="week">Week(s)</option>
+                    <option value="month">Month(s)</option>
+                    <option value="year">Year(s)</option>
+                  </select>
                 </div>
               </div>
             )}
 
-            {activeTab === "create-key" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <CreditCard size={18} />
-                    </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Create New Key</h2>
-                      <p class={s.sectionSubtitle}>Set up a new API key</p>
-                    </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  <div class={s.formRow}>
-                    <div class={s.formGroup}>
-                      <label for="new-key-name">Key Name</label>
-                      <input
-                        type="text"
-                        id="new-key-name"
-                        class={s.formInput}
-                        placeholder="Enter a descriptive name"
-                        value={createName}
-                        onInput={(e) =>
-                          setCreateName((e.target as HTMLInputElement).value)
-                        }
-                      />
-                    </div>
-                    <div class={s.formGroup}>
-                      <label for="new-key-price">Price (credits)</label>
-                      <input
-                        type="number"
-                        id="new-key-price"
-                        class={s.formInput}
-                        placeholder="0"
-                        min={0}
-                        value={createPrice}
-                        onInput={(e) =>
-                          setCreatePrice((e.target as HTMLInputElement).value)
-                        }
-                      />
-                    </div>
-                  </div>
+            <div class={s.formGroup}>
+              <button class={s.btnPrimary} onClick={createNewKey}>
+                <PlusCircle size={14} /> Create Key
+              </button>
+            </div>
 
-                  <div class={s.formGroup}>
-                    <label for="new-key-type">Key Type</label>
-                    <select
-                      id="new-key-type"
-                      class={s.formInput}
-                      value={createType}
-                      onChange={(e) =>
-                        setCreateType(
-                          (e.target as HTMLSelectElement).value as any,
-                        )
-                      }
-                    >
-                      <option value="regular">Regular Key</option>
-                      <option value="subscription">Subscription Key</option>
-                    </select>
-                  </div>
-
-                  {createType === "subscription" && (
-                    <div class={s.formRow}>
-                      <div class={s.formGroup}>
-                        <label for="billing-frequency">Bill every</label>
-                        <input
-                          type="number"
-                          id="billing-frequency"
-                          class={s.formInput}
-                          value={billingFrequency}
-                          min={1}
-                          onInput={(e) =>
-                            setBillingFrequency(
-                              (e.target as HTMLInputElement).value,
-                            )
-                          }
-                        />
-                      </div>
-                      <div class={s.formGroup}>
-                        <label for="billing-period">Period</label>
-                        <select
-                          id="billing-period"
-                          class={s.formInput}
-                          value={billingPeriod}
-                          onChange={(e) =>
-                            setBillingPeriod(
-                              (e.target as HTMLSelectElement).value as any,
-                            )
-                          }
-                        >
-                          <option value="day">Day(s)</option>
-                          <option value="week">Week(s)</option>
-                          <option value="month">Month(s)</option>
-                          <option value="year">Year(s)</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
-
-                  <div class={s.formGroup}>
-                    <button class={s.btnPrimary} onClick={createNewKey}>
-                      <PlusCircle size={14} /> Create Key
-                    </button>
-                  </div>
-
-                  {createMessage && (
-                    <div
-                      class={
-                        createMessageType === "success" ? s.success : s.error
-                      }
-                    >
-                      {createMessage}
-                    </div>
-                  )}
-                </div>
+            {createMessage && (
+              <div
+                class={createMessageType === "success" ? s.success : s.error}
+              >
+                {createMessage}
               </div>
             )}
-          </div>
-        </div>
-      </div>
+          </AccountSection>
+        )}
+      </AccountTabPanel>
 
       {selectedKey && (
         <KeyDetailModal
@@ -606,9 +561,7 @@ export function KeyManager() {
           addUserInputRefs={addUserInputRefs}
         />
       )}
-
-      <Footer />
-    </div>
+    </AccountPage>
   );
 }
 

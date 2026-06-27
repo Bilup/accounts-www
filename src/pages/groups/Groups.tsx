@@ -8,7 +8,6 @@ import {
   Coins,
   Crown,
   Calendar,
-  LogIn,
   Eye,
   Megaphone,
   Trophy,
@@ -22,8 +21,15 @@ import {
   Save,
   XCircle,
 } from "lucide-preact";
-import { Header } from "../../components/Header";
-import { Footer } from "../../components/Footer";
+import {
+  AccountPage,
+  AccountPageHeader,
+  AccountSection,
+  AccountTabPanel,
+  AccountTabs,
+  AuthRequired,
+  EmptyState,
+} from "../../components/AccountPage";
 import { useAuth, getToken } from "../../lib/auth";
 import s from "./Groups.module.css";
 
@@ -450,319 +456,236 @@ export function Groups() {
 
   if (!isLoggedIn) {
     return (
-      <div>
-        <Header />
-        <div class={s.page}>
-          <div class={s.layout}>
-            <div class={s.authRequired}>
-              <div class={s.authRequiredIcon}>
-                <Users size={32} />
-              </div>
-              <div class={s.authRequiredTitle}>Sign in to use Groups</div>
-              <div class={s.authRequiredText}>
-                Join communities, manage members, and post announcements.
-              </div>
-              <a
-                class={s.btnPrimary}
-                href={`/auth?return_to=${encodeURIComponent(
-                  window.location.origin +
-                    window.location.pathname +
-                    window.location.search,
-                )}`}
-              >
-                <LogIn size={14} /> Sign in
-              </a>
-            </div>
-          </div>
-        </div>
-        <Footer />
-      </div>
+      <AuthRequired
+        icon={<Users size={32} />}
+        title="Sign in to use Groups"
+        text="Join communities, manage members, and post announcements."
+        href={`/auth?return_to=${encodeURIComponent(
+          window.location.origin +
+            window.location.pathname +
+            window.location.search,
+        )}`}
+      />
     );
   }
 
   return (
-    <div>
-      <Header />
-      <div class={s.page}>
-        <div class={s.layout}>
-          <div class={s.pageHeader}>
-            <div>
-              <h1 class={s.pageTitle}>Groups</h1>
-              <p class={s.pageSubtitle}>
-                Join communities, manage members, and post announcements
-              </p>
+    <AccountPage layoutClassName={s.wideLayout}>
+      <AccountPageHeader
+        title="Groups"
+        subtitle="Join communities, manage members, and post announcements"
+        actions={
+          user && (
+            <div class={s.balance}>
+              <Coins size={16} />
+              <span>
+                {(user["sys.currency"] ?? 0).toLocaleString()} credits
+              </span>
             </div>
-            {user && (
-              <div class={s.balance}>
-                <Coins size={16} />
-                <span>
-                  {(user["sys.currency"] ?? 0).toLocaleString()} credits
-                </span>
-              </div>
+          )
+        }
+      />
+
+      <AccountTabs
+        tabs={HUB_TABS}
+        active={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Groups sections"
+      />
+
+      <AccountTabPanel>
+        {activeTab === "my-groups" && (
+          <AccountSection
+            icon={<Users size={18} />}
+            title="Your Groups"
+            subtitle={`${myGroups.length} group${
+              myGroups.length === 1 ? "" : "s"
+            }`}
+          >
+            {myGroupsLoading && (
+              <div class={s.loading}>Loading your groups…</div>
             )}
-          </div>
-
-          <div class={s.tabsBar} role="tablist" aria-label="Groups sections">
-            <div class={s.tabs}>
-              {HUB_TABS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  role="tab"
-                  aria-selected={activeTab === id}
-                  class={`${s.tab} ${activeTab === id ? s.tabActive : ""}`}
-                  onClick={() => setActiveTab(id)}
-                >
-                  <Icon size={15} />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div role="tabpanel" class={s.tabPanel}>
-            {activeTab === "my-groups" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <Users size={18} />
-                    </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Your Groups</h2>
-                      <p class={s.sectionSubtitle}>
-                        {myGroups.length} group
-                        {myGroups.length === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  {myGroupsLoading && (
-                    <div class={s.loading}>Loading your groups…</div>
-                  )}
-                  {!myGroupsLoading && myGroups.length === 0 && (
-                    <div class={s.empty}>
-                      <div class={s.emptyIcon}>
-                        <Users size={24} />
-                      </div>
-                      <div class={s.emptyTitle}>No groups yet</div>
-                      <div class={s.emptyText}>
-                        Browse public groups or create your own to get started.
-                      </div>
-                    </div>
-                  )}
-                  <div class={s.groupGrid}>
-                    {myGroups.map((g) => (
-                      <GroupCard key={g.tag} group={g} isMember />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "browse" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <Search size={18} />
-                    </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Browse Public Groups</h2>
-                      <p class={s.sectionSubtitle}>
-                        {browseResults.length} result
-                        {browseResults.length === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  <form class={s.searchRow} onSubmit={onSearchSubmit}>
-                    <input
-                      type="text"
-                      class={s.searchInput}
-                      placeholder="Search by name, description, or tag…"
-                      value={searchQuery}
-                      onInput={(e) =>
-                        setSearchQuery((e.target as HTMLInputElement).value)
-                      }
-                    />
-                    <button
-                      class={s.btnPrimary}
-                      type="submit"
-                      disabled={browseLoading}
-                    >
-                      <Search size={14} /> Search
-                    </button>
-                  </form>
-
-                  {browseLoading && (
-                    <div class={s.loading}>Searching groups…</div>
-                  )}
-                  {!browseLoading && browseResults.length === 0 && (
-                    <div class={s.empty}>
-                      <div class={s.emptyIcon}>
-                        <Search size={24} />
-                      </div>
-                      <div class={s.emptyTitle}>No groups found</div>
-                      <div class={s.emptyText}>
-                        Try a different search term.
-                      </div>
-                    </div>
-                  )}
-                  <div class={s.groupGrid}>
-                    {filteredBrowse.map((g) => (
-                      <GroupCard key={g.tag} group={g} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "top" && (
-              <div class={s.section}>
-                <div class={s.sectionHeader}>
-                  <div class={s.sectionTitleGroup}>
-                    <div class={s.sectionIcon}>
-                      <Trophy size={18} />
-                    </div>
-                    <div>
-                      <h2 class={s.sectionTitle}>Top Public Groups</h2>
-                      <p class={s.sectionSubtitle}>
-                        {topGroups.length} group
-                        {topGroups.length === 1 ? "" : "s"} ranked by members
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class={s.sectionBody}>
-                  {topLoading && (
-                    <div class={s.loading}>Loading top groups…</div>
-                  )}
-                  {!topLoading && topGroups.length === 0 && (
-                    <div class={s.empty}>
-                      <div class={s.emptyIcon}>
-                        <Trophy size={24} />
-                      </div>
-                      <div class={s.emptyTitle}>No top groups yet</div>
-                      <div class={s.emptyText}>
-                        Public groups will appear here once they have members.
-                      </div>
-                    </div>
-                  )}
-                  <div class={s.groupGrid}>
-                    {topGroups.map((g, i) => (
-                      <a
-                        class={s.groupCard}
-                        href={`/groups/${encodeURIComponent(g.tag)}`}
-                        key={g.tag}
-                      >
-                        {i < 3 && (
-                          <div class={s.rankBadge}>
-                            <Sparkles size={10} /> #{i + 1}
-                          </div>
-                        )}
-                        {g.banner_url ? (
-                          <div
-                            class={s.groupBanner}
-                            style={{ backgroundImage: `url(${g.banner_url})` }}
-                          />
-                        ) : (
-                          <div class={s.groupBannerPlaceholder}>
-                            <Megaphone size={28} />
-                          </div>
-                        )}
-                        <div class={s.groupCardBody}>
-                          <div class={s.groupCardHeader}>
-                            {g.icon_url ? (
-                              <img
-                                src={g.icon_url}
-                                alt={g.name}
-                                class={s.groupCardIcon}
-                              />
-                            ) : (
-                              <div class={s.groupCardIconPlaceholder}>
-                                <Users size={18} />
-                              </div>
-                            )}
-                            <div class={s.groupCardTitles}>
-                              <div class={s.groupCardName}>{g.name}</div>
-                              <div class={s.groupCardTag}>@{g.tag}</div>
-                            </div>
-                          </div>
-                          {g.description && (
-                            <div class={s.groupCardDescription}>
-                              {g.description}
-                            </div>
-                          )}
-                          <div class={s.groupCardMeta}>
-                            <span class={s.metaChip}>
-                              <Users size={11} /> {g.member_count}
-                            </span>
-                            {g.public ? (
-                              <span class={s.metaChip}>
-                                <Globe size={11} /> Public
-                              </span>
-                            ) : (
-                              <span class={s.metaChip}>
-                                <Lock size={11} /> Private
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "create" && (
-              <OnboardingWizard
-                step={onboardingStep}
-                setStep={setOnboardingStep}
-                createdTag={createdTag}
-                createdName={createdName}
-                iconUrl={iconUrl}
-                iconUploaded={iconUploaded}
-                iconUploading={iconUploading}
-                bannerSet={bannerSet}
-                bannerSetting={bannerSetting}
-                bannerUrl={bannerUrl}
-                setBannerUrl={setBannerUrl}
-                entryFee={entryFee}
-                setEntryFee={setEntryFee}
-                entryFeeBusy={entryFeeBusy}
-                entryFeeSet={entryFeeSet}
-                wizardMessage={wizardMessage}
-                setWizardMessage={setWizardMessage}
-                createTag={createTag}
-                setCreateTag={setCreateTag}
-                createName={createName}
-                setCreateName={setCreateName}
-                createDescription={createDescription}
-                setCreateDescription={setCreateDescription}
-                createPublic={createPublic}
-                setCreatePublic={setCreatePublic}
-                createPolicy={createPolicy}
-                setCreatePolicy={setCreatePolicy}
-                createMessage={createMessage}
-                createMessageType={createMessageType}
-                createBusy={createBusy}
-                tagStatus={tagStatus}
-                onCreate={createGroup}
-                onUploadIcon={uploadOnboardingIcon}
-                onUploadBanner={uploadOnboardingBanner}
-                onSetEntryFee={setOnboardingEntryFee}
-                onReset={resetOnboarding}
-                balance={(user?.["sys.currency"] ?? 0) as number}
+            {!myGroupsLoading && myGroups.length === 0 && (
+              <EmptyState
+                icon={<Users size={24} />}
+                title="No groups yet"
+                text="Browse public groups or create your own to get started."
               />
             )}
-          </div>
-        </div>
-      </div>
-      <Footer />
-    </div>
+            <div class={s.groupGrid}>
+              {myGroups.map((g) => (
+                <GroupCard key={g.tag} group={g} isMember />
+              ))}
+            </div>
+          </AccountSection>
+        )}
+
+        {activeTab === "browse" && (
+          <AccountSection
+            icon={<Search size={18} />}
+            title="Browse Public Groups"
+            subtitle={`${browseResults.length} result${
+              browseResults.length === 1 ? "" : "s"
+            }`}
+          >
+            <form class={s.searchRow} onSubmit={onSearchSubmit}>
+              <input
+                type="text"
+                class={s.searchInput}
+                placeholder="Search by name, description, or tag…"
+                value={searchQuery}
+                onInput={(e) =>
+                  setSearchQuery((e.target as HTMLInputElement).value)
+                }
+              />
+              <button
+                class={s.btnPrimary}
+                type="submit"
+                disabled={browseLoading}
+              >
+                <Search size={14} /> Search
+              </button>
+            </form>
+
+            {browseLoading && <div class={s.loading}>Searching groups…</div>}
+            {!browseLoading && browseResults.length === 0 && (
+              <EmptyState
+                icon={<Search size={24} />}
+                title="No groups found"
+                text="Try a different search term."
+              />
+            )}
+            <div class={s.groupGrid}>
+              {filteredBrowse.map((g) => (
+                <GroupCard key={g.tag} group={g} />
+              ))}
+            </div>
+          </AccountSection>
+        )}
+
+        {activeTab === "top" && (
+          <AccountSection
+            icon={<Trophy size={18} />}
+            title="Top Public Groups"
+            subtitle={`${topGroups.length} group${
+              topGroups.length === 1 ? "" : "s"
+            } ranked by members`}
+          >
+            {topLoading && <div class={s.loading}>Loading top groups…</div>}
+            {!topLoading && topGroups.length === 0 && (
+              <EmptyState
+                icon={<Trophy size={24} />}
+                title="No top groups yet"
+                text="Public groups will appear here once they have members."
+              />
+            )}
+            <div class={s.groupGrid}>
+              {topGroups.map((g, i) => (
+                <a
+                  class={s.groupCard}
+                  href={`/groups/${encodeURIComponent(g.tag)}`}
+                  key={g.tag}
+                >
+                  {i < 3 && (
+                    <div class={s.rankBadge}>
+                      <Sparkles size={10} /> #{i + 1}
+                    </div>
+                  )}
+                  {g.banner_url ? (
+                    <div
+                      class={s.groupBanner}
+                      style={{ backgroundImage: `url(${g.banner_url})` }}
+                    />
+                  ) : (
+                    <div class={s.groupBannerPlaceholder}>
+                      <Megaphone size={28} />
+                    </div>
+                  )}
+                  <div class={s.groupCardBody}>
+                    <div class={s.groupCardHeader}>
+                      {g.icon_url ? (
+                        <img
+                          src={g.icon_url}
+                          alt={g.name}
+                          class={s.groupCardIcon}
+                        />
+                      ) : (
+                        <div class={s.groupCardIconPlaceholder}>
+                          <Users size={18} />
+                        </div>
+                      )}
+                      <div class={s.groupCardTitles}>
+                        <div class={s.groupCardName}>{g.name}</div>
+                        <div class={s.groupCardTag}>@{g.tag}</div>
+                      </div>
+                    </div>
+                    {g.description && (
+                      <div class={s.groupCardDescription}>{g.description}</div>
+                    )}
+                    <div class={s.groupCardMeta}>
+                      <span class={s.metaChip}>
+                        <Users size={11} /> {g.member_count}
+                      </span>
+                      {g.public ? (
+                        <span class={s.metaChip}>
+                          <Globe size={11} /> Public
+                        </span>
+                      ) : (
+                        <span class={s.metaChip}>
+                          <Lock size={11} /> Private
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </AccountSection>
+        )}
+
+        {activeTab === "create" && (
+          <OnboardingWizard
+            step={onboardingStep}
+            setStep={setOnboardingStep}
+            createdTag={createdTag}
+            createdName={createdName}
+            iconUrl={iconUrl}
+            iconUploaded={iconUploaded}
+            iconUploading={iconUploading}
+            bannerSet={bannerSet}
+            bannerSetting={bannerSetting}
+            bannerUrl={bannerUrl}
+            setBannerUrl={setBannerUrl}
+            entryFee={entryFee}
+            setEntryFee={setEntryFee}
+            entryFeeBusy={entryFeeBusy}
+            entryFeeSet={entryFeeSet}
+            wizardMessage={wizardMessage}
+            setWizardMessage={setWizardMessage}
+            createTag={createTag}
+            setCreateTag={setCreateTag}
+            createName={createName}
+            setCreateName={setCreateName}
+            createDescription={createDescription}
+            setCreateDescription={setCreateDescription}
+            createPublic={createPublic}
+            setCreatePublic={setCreatePublic}
+            createPolicy={createPolicy}
+            setCreatePolicy={setCreatePolicy}
+            createMessage={createMessage}
+            createMessageType={createMessageType}
+            createBusy={createBusy}
+            tagStatus={tagStatus}
+            onCreate={createGroup}
+            onUploadIcon={uploadOnboardingIcon}
+            onUploadBanner={uploadOnboardingBanner}
+            onSetEntryFee={setOnboardingEntryFee}
+            onReset={resetOnboarding}
+            balance={(user?.["sys.currency"] ?? 0) as number}
+          />
+        )}
+      </AccountTabPanel>
+    </AccountPage>
   );
 }
 
@@ -857,421 +780,480 @@ function OnboardingWizard({
   const progress = ((step - 1) / (totalSteps - 1)) * 100;
 
   return (
-    <div class={s.section}>
-      <div class={s.sectionHeader}>
-        <div class={s.sectionTitleGroup}>
-          <div class={s.sectionIcon}>
-            <PlusCircle size={18} />
-          </div>
-          <div>
-            <h2 class={s.sectionTitle}>Create a new group</h2>
-            <p class={s.sectionSubtitle}>
-              Step {step} of {totalSteps} - {currentStep.label}
-            </p>
-          </div>
+    <AccountSection
+      icon={<PlusCircle size={18} />}
+      title="Create a new group"
+      subtitle={`Step ${step} of ${totalSteps} - ${currentStep.label}`}
+    >
+      <div class={s.stepper}>
+        <div class={s.stepperProgress}>
+          <div class={s.stepperProgressBar} style={{ width: `${progress}%` }} />
+        </div>
+        <div class={s.stepperDots}>
+          {ONBOARDING_STEPS.map((st) => (
+            <button
+              key={st.id}
+              type="button"
+              class={`${s.stepDot} ${
+                step >= st.id ? s.stepDotActive : ""
+              } ${step === st.id ? s.stepDotCurrent : ""}`}
+              onClick={() => {
+                if (st.id < step) setStep(st.id as 1 | 2 | 3 | 4 | 5);
+              }}
+              disabled={st.id >= step}
+            >
+              <span class={s.stepDotNum}>
+                {step > st.id ? <Check size={11} /> : st.id}
+              </span>
+              <span class={s.stepDotLabel}>{st.label}</span>
+            </button>
+          ))}
         </div>
       </div>
-      <div class={s.sectionBody}>
-        <div class={s.stepper}>
-          <div class={s.stepperProgress}>
-            <div
-              class={s.stepperProgressBar}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div class={s.stepperDots}>
-            {ONBOARDING_STEPS.map((st) => (
-              <button
-                key={st.id}
-                type="button"
-                class={`${s.stepDot} ${
-                  step >= st.id ? s.stepDotActive : ""
-                } ${step === st.id ? s.stepDotCurrent : ""}`}
-                onClick={() => {
-                  if (st.id < step) setStep(st.id as 1 | 2 | 3 | 4 | 5);
-                }}
-                disabled={st.id >= step}
-              >
-                <span class={s.stepDotNum}>
-                  {step > st.id ? <Check size={11} /> : st.id}
-                </span>
-                <span class={s.stepDotLabel}>{st.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {step === 1 && (
-          <div class={s.wizardStep}>
-            <div class={s.wizardHeader}>
-              <h3 class={s.wizardTitle}>Tell us about your group</h3>
-              <p class={s.wizardLead}>
-                The essentials. You can add a readme, rules, banner, and more
-                from the group page after creation.
-              </p>
-            </div>
+      {step === 1 && (
+        <div class={s.wizardStep}>
+          <div class={s.wizardHeader}>
+            <h3 class={s.wizardTitle}>Tell us about your group</h3>
+            <p class={s.wizardLead}>
+              The essentials. You can add a readme, rules, banner, and more from
+              the group page after creation.
+            </p>
+          </div>
 
-            <div class={s.wizardCard}>
-              <div class={s.formGroup}>
-                <label for="group-tag">Group tag</label>
-                <div class={s.tagField}>
-                  <input
-                    id="group-tag"
-                    type="text"
-                    class={`${s.formInput} ${s.tagInput} ${
-                      tagStatus === "available"
-                        ? s.tagInputOk
-                        : tagStatus === "taken" || tagStatus === "invalid"
-                          ? s.tagInputBad
-                          : ""
-                    }`}
-                    placeholder="mygroup"
-                    maxlength={20}
-                    value={createTag}
-                    onInput={(e) =>
-                      setCreateTag(
-                        (e.target as HTMLInputElement).value.toLowerCase(),
-                      )
-                    }
-                  />
-                  {tagStatus === "checking" && (
-                    <span class={s.tagStatus} title="Checking…">
-                      <span class={s.tagSpinner} />
-                    </span>
-                  )}
-                  {tagStatus === "available" && (
-                    <span
-                      class={`${s.tagStatus} ${s.tagStatusOk}`}
-                      title="Tag is available"
-                    >
-                      <Check size={13} />
-                    </span>
-                  )}
-                  {(tagStatus === "taken" || tagStatus === "invalid") && (
-                    <span
-                      class={`${s.tagStatus} ${s.tagStatusBad}`}
-                      title={
-                        tagStatus === "taken"
-                          ? "Tag already in use"
-                          : "Invalid characters"
-                      }
-                    >
-                      <XCircle size={13} />
-                    </span>
-                  )}
-                </div>
-                <small
-                  class={`${s.formHint} ${
+          <div class={s.wizardCard}>
+            <div class={s.formGroup}>
+              <label for="group-tag">Group tag</label>
+              <div class={s.tagField}>
+                <input
+                  id="group-tag"
+                  type="text"
+                  class={`${s.formInput} ${s.tagInput} ${
                     tagStatus === "available"
-                      ? s.formHintOk
+                      ? s.tagInputOk
                       : tagStatus === "taken" || tagStatus === "invalid"
-                        ? s.formHintBad
+                        ? s.tagInputBad
                         : ""
                   }`}
-                >
-                  {tagStatus === "available" && "Tag not used · "}
-                  {tagStatus === "taken" && "Tag is already taken · "}
-                  {tagStatus === "invalid" && "Letters and numbers only · "}
-                  URL: <code>rotur.dev/groups/{createTag || "tag"}</code>
-                </small>
-              </div>
-
-              <div class={s.formGroup}>
-                <label for="group-name">Display name</label>
-                <input
-                  id="group-name"
-                  type="text"
-                  class={s.formInput}
-                  placeholder="My Awesome Group"
-                  maxlength={50}
-                  value={createName}
+                  placeholder="mygroup"
+                  maxlength={20}
+                  value={createTag}
                   onInput={(e) =>
-                    setCreateName((e.target as HTMLInputElement).value)
-                  }
-                />
-              </div>
-
-              <div class={s.formGroup}>
-                <label for="group-description">Description (optional)</label>
-                <textarea
-                  id="group-description"
-                  class={s.formInput}
-                  placeholder="What is this group about?"
-                  maxlength={500}
-                  rows={3}
-                  value={createDescription}
-                  onInput={(e) =>
-                    setCreateDescription(
-                      (e.target as HTMLTextAreaElement).value,
+                    setCreateTag(
+                      (e.target as HTMLInputElement).value.toLowerCase(),
                     )
                   }
                 />
-                <small class={s.formHint}>
-                  {createDescription.length} / 500 characters
-                </small>
+                {tagStatus === "checking" && (
+                  <span class={s.tagStatus} title="Checking…">
+                    <span class={s.tagSpinner} />
+                  </span>
+                )}
+                {tagStatus === "available" && (
+                  <span
+                    class={`${s.tagStatus} ${s.tagStatusOk}`}
+                    title="Tag is available"
+                  >
+                    <Check size={13} />
+                  </span>
+                )}
+                {(tagStatus === "taken" || tagStatus === "invalid") && (
+                  <span
+                    class={`${s.tagStatus} ${s.tagStatusBad}`}
+                    title={
+                      tagStatus === "taken"
+                        ? "Tag already in use"
+                        : "Invalid characters"
+                    }
+                  >
+                    <XCircle size={13} />
+                  </span>
+                )}
               </div>
-
-              <div class={s.formGroup}>
-                <div class={s.toggleRow}>
-                  <div>
-                    <div class={s.toggleLabel}>Public group</div>
-                    <div class={s.toggleDesc}>
-                      Public groups appear in search. You can still choose how
-                      members join in the next steps.
-                    </div>
-                  </div>
-                  <label class={s.toggleSwitch}>
-                    <input
-                      type="checkbox"
-                      checked={createPublic}
-                      onChange={(e) =>
-                        setCreatePublic((e.target as HTMLInputElement).checked)
-                      }
-                    />
-                    <span class={s.toggleTrack}>
-                      <span class={s.toggleThumb} />
-                    </span>
-                  </label>
-                </div>
-              </div>
+              <small
+                class={`${s.formHint} ${
+                  tagStatus === "available"
+                    ? s.formHintOk
+                    : tagStatus === "taken" || tagStatus === "invalid"
+                      ? s.formHintBad
+                      : ""
+                }`}
+              >
+                {tagStatus === "available" && "Tag not used · "}
+                {tagStatus === "taken" && "Tag is already taken · "}
+                {tagStatus === "invalid" && "Letters and numbers only · "}
+                URL: <code>rotur.dev/groups/{createTag || "tag"}</code>
+              </small>
             </div>
 
-            <div class={s.wizardFooter}>
-              {wizardMessage && (
-                <div
-                  class={wizardMessage.type === "success" ? s.success : s.error}
-                >
-                  {wizardMessage.text}
+            <div class={s.formGroup}>
+              <label for="group-name">Display name</label>
+              <input
+                id="group-name"
+                type="text"
+                class={s.formInput}
+                placeholder="My Awesome Group"
+                maxlength={50}
+                value={createName}
+                onInput={(e) =>
+                  setCreateName((e.target as HTMLInputElement).value)
+                }
+              />
+            </div>
+
+            <div class={s.formGroup}>
+              <label for="group-description">Description (optional)</label>
+              <textarea
+                id="group-description"
+                class={s.formInput}
+                placeholder="What is this group about?"
+                maxlength={500}
+                rows={3}
+                value={createDescription}
+                onInput={(e) =>
+                  setCreateDescription((e.target as HTMLTextAreaElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                {createDescription.length} / 500 characters
+              </small>
+            </div>
+
+            <div class={s.formGroup}>
+              <div class={s.toggleRow}>
+                <div>
+                  <div class={s.toggleLabel}>Public group</div>
+                  <div class={s.toggleDesc}>
+                    Public groups appear in search. You can still choose how
+                    members join in the next steps.
+                  </div>
                 </div>
-              )}
-              <div class={s.wizardFooterActions}>
-                <button
-                  class={s.btnPrimary}
-                  type="button"
-                  onClick={() => {
-                    if (
-                      !createTag.trim() ||
-                      !/^[a-zA-Z0-9]+$/.test(createTag.trim())
-                    ) {
-                      setWizardMessage({
-                        text: "Tag is required and must be alphanumeric.",
-                        type: "error",
-                      });
-                      return;
+                <label class={s.toggleSwitch}>
+                  <input
+                    type="checkbox"
+                    checked={createPublic}
+                    onChange={(e) =>
+                      setCreatePublic((e.target as HTMLInputElement).checked)
                     }
-                    if (tagStatus === "taken") {
-                      setWizardMessage({
-                        text: "That tag is already in use.",
-                        type: "error",
-                      });
-                      return;
-                    }
-                    if (!createName.trim()) {
-                      setWizardMessage({
-                        text: "Name is required.",
-                        type: "error",
-                      });
-                      return;
-                    }
-                    setWizardMessage(null);
-                    setStep(2);
-                  }}
-                  disabled={tagStatus === "taken" || tagStatus === "checking"}
-                >
-                  Continue <ArrowRight size={14} />
-                </button>
+                  />
+                  <span class={s.toggleTrack}>
+                    <span class={s.toggleThumb} />
+                  </span>
+                </label>
               </div>
             </div>
           </div>
-        )}
 
-        {step === 2 && (
-          <div class={s.wizardStep}>
-            <div class={s.wizardHeader}>
-              <h3 class={s.wizardTitle}>Review and create</h3>
-              <p class={s.wizardLead}>
-                Creating the group will charge <strong>50 credits</strong> from
-                your balance.
-              </p>
-            </div>
-
-            <div class={s.reviewCard}>
-              <div class={s.reviewHeader}>
-                <div class={s.reviewAvatar}>
-                  <Users size={20} />
-                </div>
-                <div>
-                  <div class={s.reviewName}>{createName.trim()}</div>
-                  <div class={s.reviewTag}>@{createTag.trim()}</div>
-                </div>
+          <div class={s.wizardFooter}>
+            {wizardMessage && (
+              <div
+                class={wizardMessage.type === "success" ? s.success : s.error}
+              >
+                {wizardMessage.text}
               </div>
-              {createDescription.trim() && (
-                <div class={s.reviewDescription}>
-                  {createDescription.trim()}
-                </div>
-              )}
-              <div class={s.reviewMeta}>
-                <span class={s.metaChip}>
-                  {createPublic ? <Globe size={11} /> : <Lock size={11} />}{" "}
-                  {createPublic ? "Public" : "Private"}
-                </span>
-              </div>
+            )}
+            <div class={s.wizardFooterActions}>
+              <button
+                class={s.btnPrimary}
+                type="button"
+                onClick={() => {
+                  if (
+                    !createTag.trim() ||
+                    !/^[a-zA-Z0-9]+$/.test(createTag.trim())
+                  ) {
+                    setWizardMessage({
+                      text: "Tag is required and must be alphanumeric.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  if (tagStatus === "taken") {
+                    setWizardMessage({
+                      text: "That tag is already in use.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  if (!createName.trim()) {
+                    setWizardMessage({
+                      text: "Name is required.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  setWizardMessage(null);
+                  setStep(2);
+                }}
+                disabled={tagStatus === "taken" || tagStatus === "checking"}
+              >
+                Continue <ArrowRight size={14} />
+              </button>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div class={s.costBanner}>
-              <Coins size={16} />
+      {step === 2 && (
+        <div class={s.wizardStep}>
+          <div class={s.wizardHeader}>
+            <h3 class={s.wizardTitle}>Review and create</h3>
+            <p class={s.wizardLead}>
+              Creating the group will charge <strong>50 credits</strong> from
+              your balance.
+            </p>
+          </div>
+
+          <div class={s.reviewCard}>
+            <div class={s.reviewHeader}>
+              <div class={s.reviewAvatar}>
+                <Users size={20} />
+              </div>
               <div>
-                <div>
-                  <strong>50 credits</strong> will be deducted from your balance
+                <div class={s.reviewName}>{createName.trim()}</div>
+                <div class={s.reviewTag}>@{createTag.trim()}</div>
+              </div>
+            </div>
+            {createDescription.trim() && (
+              <div class={s.reviewDescription}>{createDescription.trim()}</div>
+            )}
+            <div class={s.reviewMeta}>
+              <span class={s.metaChip}>
+                {createPublic ? <Globe size={11} /> : <Lock size={11} />}{" "}
+                {createPublic ? "Public" : "Private"}
+              </span>
+            </div>
+          </div>
+
+          <div class={s.costBanner}>
+            <Coins size={16} />
+            <div>
+              <div>
+                <strong>50 credits</strong> will be deducted from your balance
+              </div>
+              <small>
+                Current balance: <strong>{balance.toLocaleString()}</strong> ·
+                After: <strong>{(balance - 50).toLocaleString()}</strong>
+              </small>
+            </div>
+          </div>
+
+          <div class={s.wizardFooter}>
+            {createMessage && (
+              <div
+                class={createMessageType === "success" ? s.success : s.error}
+              >
+                {createMessage}
+              </div>
+            )}
+            <div class={s.wizardFooterActions}>
+              <button
+                class={s.btnSecondary}
+                type="button"
+                onClick={() => setStep(1)}
+                disabled={createBusy}
+              >
+                <ArrowLeft size={14} /> Back
+              </button>
+              <button
+                class={s.btnPrimary}
+                type="button"
+                onClick={onCreate}
+                disabled={createBusy || balance < 50}
+              >
+                <Coins size={14} />
+                {createBusy ? "Creating…" : "Create group"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && createdTag && (
+        <div class={s.wizardStep}>
+          <div class={s.wizardHeader}>
+            <h3 class={s.wizardTitle}>Add some personality</h3>
+            <p class={s.wizardLead}>
+              Both are optional. You can always update them from the group page
+              later.
+            </p>
+          </div>
+
+          <div class={s.brandingGrid}>
+            <div class={s.brandCard}>
+              <div class={s.brandCardHeader}>
+                <div class={s.brandCardTitle}>
+                  <ImagePlus size={15} /> Icon
                 </div>
-                <small>
-                  Current balance: <strong>{balance.toLocaleString()}</strong> ·
-                  After: <strong>{(balance - 50).toLocaleString()}</strong>
+                {iconUploaded && (
+                  <span class={s.brandCardDone}>
+                    <Check size={10} /> Done
+                  </span>
+                )}
+              </div>
+              <div class={s.brandCardBody}>
+                <div class={s.iconPreview}>
+                  {iconUrl ? (
+                    <img
+                      src={iconUrl}
+                      alt={createdName}
+                      class={s.iconPreviewImg}
+                    />
+                  ) : (
+                    <div class={s.iconPreviewPlaceholder}>
+                      <ImageIcon size={24} />
+                    </div>
+                  )}
+                </div>
+                <label class={s.fileDrop}>
+                  <ImagePlus size={14} />
+                  <span>
+                    {iconUploading
+                      ? "Uploading…"
+                      : iconUploaded
+                        ? "Replace"
+                        : "Upload image"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={iconUploading}
+                    onChange={(e) => {
+                      const f = (e.target as HTMLInputElement).files?.[0];
+                      if (f) onUploadIcon(f);
+                    }}
+                  />
+                </label>
+                <small class={s.formHint}>
+                  Resized to 256×256 JPEG · max 5MB
                 </small>
               </div>
             </div>
-
-            <div class={s.wizardFooter}>
-              {createMessage && (
-                <div
-                  class={createMessageType === "success" ? s.success : s.error}
-                >
-                  {createMessage}
+            <div class={s.brandCard}>
+              <div class={s.brandCardHeader}>
+                <div class={s.brandCardTitle}>
+                  <ImageIcon size={15} /> Banner
                 </div>
-              )}
-              <div class={s.wizardFooterActions}>
-                <button
-                  class={s.btnSecondary}
-                  type="button"
-                  onClick={() => setStep(1)}
-                  disabled={createBusy}
-                >
-                  <ArrowLeft size={14} /> Back
-                </button>
-                <button
-                  class={s.btnPrimary}
-                  type="button"
-                  onClick={onCreate}
-                  disabled={createBusy || balance < 50}
-                >
-                  <Coins size={14} />
-                  {createBusy ? "Creating…" : "Create group"}
-                </button>
+                {bannerSet && (
+                  <span class={s.brandCardDone}>
+                    <Check size={10} /> Done
+                  </span>
+                )}
+              </div>
+              <div class={s.brandCardBody}>
+                <div class={s.bannerPreview}>
+                  {bannerSet ? (
+                    <div
+                      class={s.bannerPreviewImg}
+                      style={{
+                        backgroundImage: `url(${bannerUrl})`,
+                      }}
+                    />
+                  ) : (
+                    <div class={s.bannerPreviewPlaceholder}>
+                      <ImageIcon size={20} />
+                    </div>
+                  )}
+                </div>
+                <label class={s.fileDrop}>
+                  <ImagePlus size={14} />
+                  <span>
+                    {bannerSetting
+                      ? "Uploading…"
+                      : bannerSet
+                        ? "Replace banner"
+                        : "Upload banner"}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={bannerSetting}
+                    onChange={(e) => {
+                      const f = (e.target as HTMLInputElement).files?.[0];
+                      if (f) onUploadBanner(f);
+                    }}
+                  />
+                </label>
+                <small class={s.formHint}>
+                  Auto-resized to banner dimensions. Max 5MB.
+                </small>
               </div>
             </div>
           </div>
-        )}
 
-        {step === 3 && createdTag && (
-          <div class={s.wizardStep}>
-            <div class={s.wizardHeader}>
-              <h3 class={s.wizardTitle}>Add some personality</h3>
-              <p class={s.wizardLead}>
-                Both are optional. You can always update them from the group
-                page later.
-              </p>
+          {wizardMessage && (
+            <div class={wizardMessage.type === "success" ? s.success : s.error}>
+              {wizardMessage.text}
+            </div>
+          )}
+
+          <div class={s.wizardFooter}>
+            <div class={s.wizardFooterActions}>
+              <button
+                class={s.btnSecondary}
+                type="button"
+                onClick={() => setStep(2)}
+              >
+                <ArrowLeft size={14} /> Back
+              </button>
+              <button
+                class={s.btnPrimary}
+                type="button"
+                onClick={() => setStep(4)}
+              >
+                Continue <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 4 && createdTag && (
+        <div class={s.wizardStep}>
+          <div class={s.wizardHeader}>
+            <h3 class={s.wizardTitle}>How can people join?</h3>
+            <p class={s.wizardLead}>
+              Choose a join policy and an optional entry fee.
+            </p>
+          </div>
+
+          <div class={s.wizardCard}>
+            <div class={s.formGroup}>
+              <label>Join policy</label>
+              <div class={s.policyGrid}>
+                {JOIN_POLICY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    class={`${s.policyCard} ${
+                      createPolicy === opt.value ? s.policyCardActive : ""
+                    }`}
+                    onClick={() => setCreatePolicy(opt.value)}
+                  >
+                    <div class={s.policyCardName}>{opt.label}</div>
+                    <div class={s.policyCardDesc}>{opt.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div class={s.brandingGrid}>
-              <div class={s.brandCard}>
-                <div class={s.brandCardHeader}>
-                  <div class={s.brandCardTitle}>
-                    <ImagePlus size={15} /> Icon
-                  </div>
-                  {iconUploaded && (
-                    <span class={s.brandCardDone}>
-                      <Check size={10} /> Done
-                    </span>
-                  )}
-                </div>
-                <div class={s.brandCardBody}>
-                  <div class={s.iconPreview}>
-                    {iconUrl ? (
-                      <img
-                        src={iconUrl}
-                        alt={createdName}
-                        class={s.iconPreviewImg}
-                      />
-                    ) : (
-                      <div class={s.iconPreviewPlaceholder}>
-                        <ImageIcon size={24} />
-                      </div>
-                    )}
-                  </div>
-                  <label class={s.fileDrop}>
-                    <ImagePlus size={14} />
-                    <span>
-                      {iconUploading
-                        ? "Uploading…"
-                        : iconUploaded
-                          ? "Replace"
-                          : "Upload image"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={iconUploading}
-                      onChange={(e) => {
-                        const f = (e.target as HTMLInputElement).files?.[0];
-                        if (f) onUploadIcon(f);
-                      }}
-                    />
-                  </label>
-                  <small class={s.formHint}>
-                    Resized to 256×256 JPEG · max 5MB
-                  </small>
-                </div>
-              </div>
-              <div class={s.brandCard}>
-                <div class={s.brandCardHeader}>
-                  <div class={s.brandCardTitle}>
-                    <ImageIcon size={15} /> Banner
-                  </div>
-                  {bannerSet && (
-                    <span class={s.brandCardDone}>
-                      <Check size={10} /> Done
-                    </span>
-                  )}
-                </div>
-                <div class={s.brandCardBody}>
-                  <div class={s.bannerPreview}>
-                    {bannerSet ? (
-                      <div
-                        class={s.bannerPreviewImg}
-                        style={{
-                          backgroundImage: `url(${bannerUrl})`,
-                        }}
-                      />
-                    ) : (
-                      <div class={s.bannerPreviewPlaceholder}>
-                        <ImageIcon size={20} />
-                      </div>
-                    )}
-                  </div>
-                  <label class={s.fileDrop}>
-                    <ImagePlus size={14} />
-                    <span>
-                      {bannerSetting
-                        ? "Uploading…"
-                        : bannerSet
-                          ? "Replace banner"
-                          : "Upload banner"}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={bannerSetting}
-                      onChange={(e) => {
-                        const f = (e.target as HTMLInputElement).files?.[0];
-                        if (f) onUploadBanner(f);
-                      }}
-                    />
-                  </label>
-                  <small class={s.formHint}>
-                    Auto-resized to banner dimensions. Max 5MB.
-                  </small>
-                </div>
-              </div>
+            <div class={s.formGroup}>
+              <label for="group-onboard-fee">Entry fee (credits)</label>
+              <input
+                id="group-onboard-fee"
+                type="number"
+                class={s.formInput}
+                placeholder="0"
+                min={0}
+                step="0.01"
+                value={entryFee}
+                onInput={(e) =>
+                  setEntryFee((e.target as HTMLInputElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                0 = free entry. The fee is deducted from the member's balance
+                and added to the group's balance.
+              </small>
             </div>
 
             {wizardMessage && (
@@ -1281,165 +1263,86 @@ function OnboardingWizard({
                 {wizardMessage.text}
               </div>
             )}
+          </div>
 
-            <div class={s.wizardFooter}>
-              <div class={s.wizardFooterActions}>
-                <button
-                  class={s.btnSecondary}
-                  type="button"
-                  onClick={() => setStep(2)}
-                >
-                  <ArrowLeft size={14} /> Back
-                </button>
-                <button
-                  class={s.btnPrimary}
-                  type="button"
-                  onClick={() => setStep(4)}
-                >
-                  Continue <ArrowRight size={14} />
-                </button>
-              </div>
+          <div class={s.wizardFooter}>
+            <div class={s.wizardFooterActions}>
+              <button
+                class={s.btnSecondary}
+                type="button"
+                onClick={() => setStep(3)}
+              >
+                <ArrowLeft size={14} /> Back
+              </button>
+              <button
+                class={s.btnSecondary}
+                type="button"
+                onClick={onSetEntryFee}
+                disabled={entryFeeBusy}
+              >
+                <Save size={14} />
+                {entryFeeBusy ? "Saving…" : "Save"}
+              </button>
+              <button
+                class={s.btnPrimary}
+                type="button"
+                onClick={() => setStep(5)}
+              >
+                Finish <ArrowRight size={14} />
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {step === 4 && createdTag && (
-          <div class={s.wizardStep}>
-            <div class={s.wizardHeader}>
-              <h3 class={s.wizardTitle}>How can people join?</h3>
-              <p class={s.wizardLead}>
-                Choose a join policy and an optional entry fee.
-              </p>
+      {step === 5 && createdTag && (
+        <div class={s.wizardStep}>
+          <div class={s.donePanel}>
+            <div class={s.doneIcon}>
+              <PartyPopper size={36} />
             </div>
-
-            <div class={s.wizardCard}>
-              <div class={s.formGroup}>
-                <label>Join policy</label>
-                <div class={s.policyGrid}>
-                  {JOIN_POLICY_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      class={`${s.policyCard} ${
-                        createPolicy === opt.value ? s.policyCardActive : ""
-                      }`}
-                      onClick={() => setCreatePolicy(opt.value)}
-                    >
-                      <div class={s.policyCardName}>{opt.label}</div>
-                      <div class={s.policyCardDesc}>{opt.description}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div class={s.formGroup}>
-                <label for="group-onboard-fee">Entry fee (credits)</label>
-                <input
-                  id="group-onboard-fee"
-                  type="number"
-                  class={s.formInput}
-                  placeholder="0"
-                  min={0}
-                  step="0.01"
-                  value={entryFee}
-                  onInput={(e) =>
-                    setEntryFee((e.target as HTMLInputElement).value)
-                  }
-                />
-                <small class={s.formHint}>
-                  0 = free entry. The fee is deducted from the member's balance
-                  and added to the group's balance.
-                </small>
-              </div>
-
-              {wizardMessage && (
-                <div
-                  class={wizardMessage.type === "success" ? s.success : s.error}
-                >
-                  {wizardMessage.text}
-                </div>
+            <h3 class={s.doneTitle}>@{createdTag} is live</h3>
+            <p class={s.doneText}>
+              Your group has been created. You can add a readme, rules, roles,
+              and members from the group page.
+            </p>
+            <div class={s.doneSummary}>
+              {iconUploaded && (
+                <span class={s.metaChip}>
+                  <Check size={10} /> Icon
+                </span>
+              )}
+              {bannerSet && (
+                <span class={s.metaChip}>
+                  <Check size={10} /> Banner
+                </span>
+              )}
+              {entryFeeSet && parseFloat(entryFee) > 0 && (
+                <span class={s.metaChip}>
+                  <Coins size={10} /> {entryFee} cr fee
+                </span>
+              )}
+              {createPolicy && (
+                <span class={s.metaChip}>
+                  <Check size={10} /> {createPolicy}
+                </span>
               )}
             </div>
-
-            <div class={s.wizardFooter}>
-              <div class={s.wizardFooterActions}>
-                <button
-                  class={s.btnSecondary}
-                  type="button"
-                  onClick={() => setStep(3)}
-                >
-                  <ArrowLeft size={14} /> Back
-                </button>
-                <button
-                  class={s.btnSecondary}
-                  type="button"
-                  onClick={onSetEntryFee}
-                  disabled={entryFeeBusy}
-                >
-                  <Save size={14} />
-                  {entryFeeBusy ? "Saving…" : "Save"}
-                </button>
-                <button
-                  class={s.btnPrimary}
-                  type="button"
-                  onClick={() => setStep(5)}
-                >
-                  Finish <ArrowRight size={14} />
-                </button>
-              </div>
+            <div class={s.wizardFooterActions}>
+              <a
+                class={s.btnPrimary}
+                href={`/groups/${encodeURIComponent(createdTag)}`}
+              >
+                Open your group <ArrowRight size={14} />
+              </a>
+              <button class={s.btnSecondary} type="button" onClick={onReset}>
+                Create another
+              </button>
             </div>
           </div>
-        )}
-
-        {step === 5 && createdTag && (
-          <div class={s.wizardStep}>
-            <div class={s.donePanel}>
-              <div class={s.doneIcon}>
-                <PartyPopper size={36} />
-              </div>
-              <h3 class={s.doneTitle}>@{createdTag} is live</h3>
-              <p class={s.doneText}>
-                Your group has been created. You can add a readme, rules, roles,
-                and members from the group page.
-              </p>
-              <div class={s.doneSummary}>
-                {iconUploaded && (
-                  <span class={s.metaChip}>
-                    <Check size={10} /> Icon
-                  </span>
-                )}
-                {bannerSet && (
-                  <span class={s.metaChip}>
-                    <Check size={10} /> Banner
-                  </span>
-                )}
-                {entryFeeSet && parseFloat(entryFee) > 0 && (
-                  <span class={s.metaChip}>
-                    <Coins size={10} /> {entryFee} cr fee
-                  </span>
-                )}
-                {createPolicy && (
-                  <span class={s.metaChip}>
-                    <Check size={10} /> {createPolicy}
-                  </span>
-                )}
-              </div>
-              <div class={s.wizardFooterActions}>
-                <a
-                  class={s.btnPrimary}
-                  href={`/groups/${encodeURIComponent(createdTag)}`}
-                >
-                  Open your group <ArrowRight size={14} />
-                </a>
-                <button class={s.btnSecondary} type="button" onClick={onReset}>
-                  Create another
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </AccountSection>
   );
 }
 

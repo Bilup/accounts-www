@@ -1,5 +1,4 @@
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import { PageChrome } from "../components/PageChrome";
 import { useInView } from "../hooks/useInView";
 import s from "./Services.module.css";
 import {
@@ -166,36 +165,36 @@ export function Services() {
   const { ref, inView } = useInView();
 
   return (
-    <div class={s.page}>
-      <Header />
-      <section ref={ref} class={s.section}>
-        <div class={s.bgOrb} />
-        <div class={s.inner}>
-          <div class={`${s.header} ${inView ? s.fadeUp : s.hidden}`}>
-            <h1 class={s.heading}>Rotur Services</h1>
-            <p class={s.sub}>
-              Discover all the services and applications that make up the Rotur
-              ecosystem. Each one is designed to work seamlessly with your Rotur
-              account.
-            </p>
-          </div>
-          {CATEGORY_ORDER.map((category) => {
-            const items = services.filter((svc) => svc.category === category);
-            if (items.length === 0) return null;
-            return (
-              <div key={category} class={s.category}>
-                <h2 class={s.categoryTitle}>{category}</h2>
-                <div class={s.grid}>
-                  {items.map((svc) => (
-                    <ServiceCard key={svc.name} svc={svc} />
-                  ))}
+    <PageChrome>
+      <div class={s.page}>
+        <section ref={ref} class={s.section}>
+          <div class={s.bgOrb} />
+          <div class={s.inner}>
+            <div class={`${s.header} ${inView ? s.fadeUp : s.hidden}`}>
+              <h1 class={s.heading}>Rotur Services</h1>
+              <p class={s.sub}>
+                Discover all the services and applications that make up the
+                Rotur ecosystem. Each one is designed to work seamlessly with
+                your Rotur account.
+              </p>
+            </div>
+            {CATEGORY_ORDER.map((category) => {
+              const items = services.filter((svc) => svc.category === category);
+              if (items.length === 0) return null;
+              return (
+                <div key={category} class={s.category}>
+                  <h2 class={s.categoryTitle}>{category}</h2>
+                  <div class={s.grid}>
+                    {items.map((svc) => (
+                      <ServiceCard key={svc.name} svc={svc} />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-      <Footer />
-    </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+    </PageChrome>
   );
 }

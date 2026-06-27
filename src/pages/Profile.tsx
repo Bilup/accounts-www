@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "preact/hooks";
 import { Search, ArrowRight, UserX } from "lucide-preact";
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import { AccountPage } from "../components/AccountPage";
 import { ProfileCard } from "../components/ProfileCard";
 import { useAuth, usePublicProfile, useBenefits } from "../lib/auth";
 import s from "./Profile.module.css";
@@ -36,43 +35,33 @@ function ProfileLookup() {
   };
 
   return (
-    <div>
-      <Header />
-      <div class={s.page}>
-        <div class={s.layout}>
-          <div class={s.lookup}>
-            <div class={s.lookupIcon}>
-              <Search size={28} />
-            </div>
-            <div class={s.lookupTitle}>Look up a Rotur user</div>
-            <p class={s.lookupText}>
-              Enter a username to view their public profile.
-            </p>
-            <form class={s.lookupForm} onSubmit={onSubmit}>
-              <input
-                type="text"
-                class={s.lookupInput}
-                placeholder="username"
-                value={input}
-                onInput={(e: any) => setInput(e.target.value)}
-                autoFocus
-              />
-              <button
-                class={s.lookupBtn}
-                type="submit"
-                disabled={!input.trim()}
-              >
-                View <ArrowRight size={14} />
-              </button>
-            </form>
-            <div class={s.lookupHint}>
-              You can also go directly to <code>/profile/username</code>
-            </div>
-          </div>
+    <AccountPage>
+      <div class={s.lookup}>
+        <div class={s.lookupIcon}>
+          <Search size={28} />
+        </div>
+        <div class={s.lookupTitle}>Look up a Rotur user</div>
+        <p class={s.lookupText}>
+          Enter a username to view their public profile.
+        </p>
+        <form class={s.lookupForm} onSubmit={onSubmit}>
+          <input
+            type="text"
+            class={s.lookupInput}
+            placeholder="username"
+            value={input}
+            onInput={(e: any) => setInput(e.target.value)}
+            autoFocus
+          />
+          <button class={s.lookupBtn} type="submit" disabled={!input.trim()}>
+            View <ArrowRight size={14} />
+          </button>
+        </form>
+        <div class={s.lookupHint}>
+          You can also go directly to <code>/profile/username</code>
         </div>
       </div>
-      <Footer />
-    </div>
+    </AccountPage>
   );
 }
 
@@ -192,81 +181,66 @@ function ProfileView({ username }: { username: string }) {
 
   if (profile?.["sys.banned"]) {
     return (
-      <div>
-        <Header />
-        <div class={s.page}>
-          <div class={s.layout}>
-            <div class={s.errorState}>
-              <div class={s.errorIcon}>
-                <UserX size={28} />
-              </div>
-              <div class={s.errorTitle}>This user has been banned</div>
-              <p class={s.errorText}>
-                This Rotur account is no longer available.
-              </p>
-              <a
-                href="/profile"
-                class={s.lookupBtn}
-                style={{ display: "inline-flex" }}
-              >
-                <Search size={14} /> Look up another
-              </a>
-            </div>
+      <AccountPage>
+        <div class={s.errorState}>
+          <div class={s.errorIcon}>
+            <UserX size={28} />
           </div>
+          <div class={s.errorTitle}>This user has been banned</div>
+          <p class={s.errorText}>This Rotur account is no longer available.</p>
+          <a
+            href="/profile"
+            class={s.lookupBtn}
+            style={{ display: "inline-flex" }}
+          >
+            <Search size={14} /> Look up another
+          </a>
         </div>
-        <Footer />
-      </div>
+      </AccountPage>
     );
   }
 
   return (
-    <div>
-      <Header />
-      <div class={s.page}>
-        <div class={s.layout}>
-          {loading ? (
-            <div class={s.spinner} aria-label="Loading" />
-          ) : !profile || error === "not_found" ? (
-            <div class={s.errorState}>
-              <div class={s.errorIcon}>
-                <UserX size={28} />
-              </div>
-              <div class={s.errorTitle}>User not found</div>
-              <p class={s.errorText}>
-                We couldn't find a Rotur user named <strong>@{username}</strong>
-                .
-              </p>
-              <a
-                href="/profile"
-                class={s.lookupBtn}
-                style={{ display: "inline-flex" }}
-              >
-                <Search size={14} /> Look up another
-              </a>
-            </div>
-          ) : (
-            <ProfileCard
-              user={profile}
-              editable={false}
-              isSelf={isSelf}
-              isFollowing={isFollowing}
-              isBlocked={isBlocked}
-              friendState={friendState}
-              viewerBalance={me ? (me["sys.currency"] ?? 0) : null}
-              benefits={benefits?.benefits ?? null}
-              viewerNotes={viewerNotes}
-              onFollowToggle={onFollowToggle}
-              onFriendAction={onFriendAction}
-              onBlockToggle={onBlockToggle}
-              onNoteUpdate={onNoteUpdate}
-              onTransferComplete={() => {
-                reload();
-              }}
-            />
-          )}
+    <AccountPage>
+      {loading ? (
+        <div class={s.spinner} aria-label="Loading" />
+      ) : !profile || error === "not_found" ? (
+        <div class={s.errorState}>
+          <div class={s.errorIcon}>
+            <UserX size={28} />
+          </div>
+          <div class={s.errorTitle}>User not found</div>
+          <p class={s.errorText}>
+            We couldn't find a Rotur user named <strong>@{username}</strong>.
+          </p>
+          <a
+            href="/profile"
+            class={s.lookupBtn}
+            style={{ display: "inline-flex" }}
+          >
+            <Search size={14} /> Look up another
+          </a>
         </div>
-      </div>
-      <Footer />
-    </div>
+      ) : (
+        <ProfileCard
+          user={profile}
+          editable={false}
+          isSelf={isSelf}
+          isFollowing={isFollowing}
+          isBlocked={isBlocked}
+          friendState={friendState}
+          viewerBalance={me ? (me["sys.currency"] ?? 0) : null}
+          benefits={benefits?.benefits ?? null}
+          viewerNotes={viewerNotes}
+          onFollowToggle={onFollowToggle}
+          onFriendAction={onFriendAction}
+          onBlockToggle={onBlockToggle}
+          onNoteUpdate={onNoteUpdate}
+          onTransferComplete={() => {
+            reload();
+          }}
+        />
+      )}
+    </AccountPage>
   );
 }

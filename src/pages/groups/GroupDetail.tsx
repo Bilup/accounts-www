@@ -33,8 +33,12 @@ import {
   ScrollText,
   ImagePlus,
 } from "lucide-preact";
-import { Header } from "../../components/Header";
-import { Footer } from "../../components/Footer";
+import {
+  AccountPage,
+  AccountSection,
+  AccountTabPanel,
+  AccountTabs,
+} from "../../components/AccountPage";
 import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, getToken, formatRelativeTime } from "../../lib/auth";
 import s from "./GroupDetail.module.css";
@@ -544,7 +548,9 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
         await loadGroup();
       } else {
         setActionMessage({
-          text: data.error || `${kind === "icon" ? "Icon" : "Banner"} upload failed`,
+          text:
+            data.error ||
+            `${kind === "icon" ? "Icon" : "Banner"} upload failed`,
           type: "error",
         });
       }
@@ -555,40 +561,28 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
 
   if (loading) {
     return (
-      <div>
-        <Header />
-        <div class={s.page}>
-          <div class={s.layout}>
-            <div class={s.loading}>Loading group…</div>
-          </div>
-        </div>
-        <Footer />
-      </div>
+      <AccountPage layoutClassName={s.wideLayout}>
+        <div class={s.loading}>Loading group…</div>
+      </AccountPage>
     );
   }
 
   if (error || !group) {
     return (
-      <div>
-        <Header />
-        <div class={s.page}>
-          <div class={s.layout}>
-            <a class={s.backBtn} href="/groups">
-              <ArrowLeft size={14} /> Back to Groups
-            </a>
-            <div class={s.notFound}>
-              <div class={s.notFoundIcon}>
-                <Info size={32} />
-              </div>
-              <div class={s.notFoundTitle}>{error || "Group not found"}</div>
-              <div class={s.notFoundText}>
-                The group you are looking for does not exist or is private.
-              </div>
-            </div>
+      <AccountPage layoutClassName={s.wideLayout}>
+        <a class={s.backBtn} href="/groups">
+          <ArrowLeft size={14} /> Back to Groups
+        </a>
+        <div class={s.notFound}>
+          <div class={s.notFoundIcon}>
+            <Info size={32} />
+          </div>
+          <div class={s.notFoundTitle}>{error || "Group not found"}</div>
+          <div class={s.notFoundText}>
+            The group you are looking for does not exist or is private.
           </div>
         </div>
-        <Footer />
-      </div>
+      </AccountPage>
     );
   }
 
@@ -609,299 +603,272 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   if (canAdmin) {
     tabs.push({ id: "admin", label: "Admin", icon: Shield });
   }
-  const canEditBrand =
-    hasPerm("groups.group.edit") || hasPerm("groups.manage");
+  const canEditBrand = hasPerm("groups.group.edit") || hasPerm("groups.manage");
 
   return (
-    <div>
-      <Header />
-      <div class={s.page}>
-        <div class={s.layout}>
-          <a class={s.backBtn} href="/groups">
-            <ArrowLeft size={14} /> Back to Groups
-          </a>
+    <AccountPage layoutClassName={s.wideLayout}>
+      <a class={s.backBtn} href="/groups">
+        <ArrowLeft size={14} /> Back to Groups
+      </a>
 
-          <div class={s.headerCard}>
-            <div class={s.bannerFrame}>
-              {group.banner_url ? (
-                <div
-                  class={s.banner}
-                  style={{ backgroundImage: `url(${group.banner_url})` }}
-                />
+      <div class={s.headerCard}>
+        <div class={s.bannerFrame}>
+          {group.banner_url ? (
+            <div
+              class={s.banner}
+              style={{ backgroundImage: `url(${group.banner_url})` }}
+            />
+          ) : (
+            <div class={s.bannerPlaceholder}>
+              <Megaphone size={36} />
+            </div>
+          )}
+          {canEditBrand && (
+            <label class={s.bannerUpload} title="Update banner">
+              <ImagePlus size={14} />
+              <span>Update banner</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const input = e.target as HTMLInputElement;
+                  uploadHeaderImage("banner", input.files?.[0]);
+                  input.value = "";
+                }}
+              />
+            </label>
+          )}
+        </div>
+        <div class={s.headerBody}>
+          <div class={s.headerTop}>
+            <div class={s.iconFrame}>
+              {group.icon_url ? (
+                <img src={group.icon_url} alt={group.name} class={s.icon} />
               ) : (
-                <div class={s.bannerPlaceholder}>
-                  <Megaphone size={36} />
+                <div class={s.iconPlaceholder}>
+                  <Users size={28} />
                 </div>
               )}
               {canEditBrand && (
-                <label class={s.bannerUpload} title="Update banner">
+                <label class={s.iconUpload} title="Update icon">
                   <ImagePlus size={14} />
-                  <span>Update banner</span>
+                  <span>Update icon</span>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={(e) => {
                       const input = e.target as HTMLInputElement;
-                      uploadHeaderImage("banner", input.files?.[0]);
+                      uploadHeaderImage("icon", input.files?.[0]);
                       input.value = "";
                     }}
                   />
                 </label>
               )}
             </div>
-            <div class={s.headerBody}>
-              <div class={s.headerTop}>
-                <div class={s.iconFrame}>
-                  {group.icon_url ? (
-                    <img
-                      src={group.icon_url}
-                      alt={group.name}
-                      class={s.icon}
-                    />
-                  ) : (
-                    <div class={s.iconPlaceholder}>
-                      <Users size={28} />
-                    </div>
-                  )}
-                  {canEditBrand && (
-                    <label class={s.iconUpload} title="Update icon">
-                      <ImagePlus size={14} />
-                      <span>Update icon</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const input = e.target as HTMLInputElement;
-                          uploadHeaderImage("icon", input.files?.[0]);
-                          input.value = "";
-                        }}
-                      />
-                    </label>
-                  )}
-                </div>
-                <div class={s.headerTitles}>
-                <div class={s.groupNameHeader}>
-                  <h1 class={s.groupName}>{group.name}</h1>
-                  <div class={s.groupTag}>@{group.tag}</div>
-                  </div>
-                  <div class={s.headerMeta}>
-                    <span class={s.metaChip}>
-                      {group.public ? <Globe size={11} /> : <Lock size={11} />}{" "}
-                      {group.public ? "Public" : "Private"}
-                    </span>
-                    <span class={s.metaChip}>
-                      <Users size={11} /> {group.member_count} members
-                    </span>
-                    <span class={s.metaChip}>
-                      <Crown size={11} /> {group.owner_user_id}
-                    </span>
-                    <span class={s.metaChip}>
-                      <Calendar size={11} /> {formatDate(group.created_at)}
-                    </span>
-                    {group.entry_fee > 0 && (
-                      <span class={s.metaChip}>
-                        <Coins size={11} /> {group.entry_fee.toLocaleString()}{" "}
-                        to join
-                      </span>
-                    )}
-                    {group.credits_balance_visible &&
-                      group.credits_balance > 0 && (
-                      <span class={s.metaChip}>
-                        <Coins size={11} />{" "}
-                        {group.credits_balance.toLocaleString()} balance
-                      </span>
-                    )}
-                  </div>
-                </div>
+            <div class={s.headerTitles}>
+              <div class={s.groupNameHeader}>
+                <h1 class={s.groupName}>{group.name}</h1>
+                <div class={s.groupTag}>@{group.tag}</div>
               </div>
-
-              {group.description && (
-                <div class={s.description}>{group.description}</div>
-              )}
-
-              {actionMessage && (
-                <div
-                  class={actionMessage.type === "success" ? s.success : s.error}
-                >
-                  {actionMessage.text}
-                </div>
-              )}
-
-              <div class={s.headerActions}>
-                <button class={s.btnSecondary} onClick={copyLink}>
-                  <Copy size={13} /> Copy Link
-                </button>
-
-                {!isLoggedIn && (
-                  <a
-                    class={s.btnPrimary}
-                    href={`/auth?return_to=${encodeURIComponent(
-                      window.location.origin + window.location.pathname,
-                    )}`}
-                  >
-                    <UserPlus size={13} /> Sign in to Join
-                  </a>
+              <div class={s.headerMeta}>
+                <span class={s.metaChip}>
+                  {group.public ? <Globe size={11} /> : <Lock size={11} />}{" "}
+                  {group.public ? "Public" : "Private"}
+                </span>
+                <span class={s.metaChip}>
+                  <Users size={11} /> {group.member_count} members
+                </span>
+                <span class={s.metaChip}>
+                  <Crown size={11} /> {group.owner_user_id}
+                </span>
+                <span class={s.metaChip}>
+                  <Calendar size={11} /> {formatDate(group.created_at)}
+                </span>
+                {group.entry_fee > 0 && (
+                  <span class={s.metaChip}>
+                    <Coins size={11} /> {group.entry_fee.toLocaleString()} to
+                    join
+                  </span>
                 )}
-
-                {isLoggedIn && !isMember && group.public && (
-                  <button class={s.btnPrimary} onClick={joinGroup}>
-                    <UserPlus size={13} />{" "}
-                    {group.join_policy === "REQUEST"
-                      ? "Request to Join"
-                      : group.entry_fee > 0
-                        ? `Join (${group.entry_fee} credits)`
-                        : group.join_policy === "INVITE"
-                          ? "Join with Invite"
-                          : "Join Group"}
-                  </button>
-                )}
-
-                {isLoggedIn && isMember && !isOwner && (
-                  <button class={s.btnDanger} onClick={leaveGroup}>
-                    <LogOut size={13} /> Leave
-                  </button>
-                )}
-
-                {isLoggedIn && isMember && (
-                  <>
-                    {representing ? (
-                      <button
-                        class={s.btnSecondary}
-                        onClick={disrepresentGroup}
-                      >
-                        <BellOff size={13} /> Stop Representing
-                      </button>
-                    ) : (
-                      <button class={s.btnPrimary} onClick={representGroup}>
-                        <Sparkles size={13} /> Show on profile
-                      </button>
-                    )}
-                  </>
-                )}
-
-                {isLoggedIn && (
-                  <button class={s.btnSecondary} onClick={reportGroup}>
-                    Report
-                  </button>
+                {group.credits_balance_visible && group.credits_balance > 0 && (
+                  <span class={s.metaChip}>
+                    <Coins size={11} /> {group.credits_balance.toLocaleString()}{" "}
+                    balance
+                  </span>
                 )}
               </div>
             </div>
           </div>
 
-          <div class={s.tabsBar} role="tablist" aria-label="Group sections">
-            <div class={s.tabs}>
-              {tabs.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  role="tab"
-                  aria-selected={activeTab === id}
-                  class={`${s.tab} ${activeTab === id ? s.tabActive : ""}`}
-                  onClick={() => setActiveTab(id)}
-                >
-                  <Icon size={15} />
-                  <span>{label}</span>
-                </button>
-              ))}
+          {group.description && (
+            <div class={s.description}>{group.description}</div>
+          )}
+
+          {actionMessage && (
+            <div class={actionMessage.type === "success" ? s.success : s.error}>
+              {actionMessage.text}
             </div>
-          </div>
+          )}
 
-          <div role="tabpanel" class={s.tabPanel}>
-            {activeTab === "overview" && (
-              <OverviewTab
-                group={group}
-                isMember={isMember}
-                myRoles={myRoles}
-                hasPerm={hasPerm}
-                onUpdated={() => {
-                  loadGroup();
-                  setActionMessage({
-                    text: "Group updated.",
-                    type: "success",
-                  });
-                }}
-                onMessage={setActionMessage}
-              />
+          <div class={s.headerActions}>
+            <button class={s.btnSecondary} onClick={copyLink}>
+              <Copy size={13} /> Copy Link
+            </button>
+
+            {!isLoggedIn && (
+              <a
+                class={s.btnPrimary}
+                href={`/auth?return_to=${encodeURIComponent(
+                  window.location.origin + window.location.pathname,
+                )}`}
+              >
+                <UserPlus size={13} /> Sign in to Join
+              </a>
             )}
 
-            {activeTab === "announcements" && (
-              <AnnouncementsTab
-                tag={tag}
-                canPost={hasPerm("groups.announcements.send")}
-                isMember={isMember}
-              />
+            {isLoggedIn && !isMember && group.public && (
+              <button class={s.btnPrimary} onClick={joinGroup}>
+                <UserPlus size={13} />{" "}
+                {group.join_policy === "REQUEST"
+                  ? "Request to Join"
+                  : group.entry_fee > 0
+                    ? `Join (${group.entry_fee} credits)`
+                    : group.join_policy === "INVITE"
+                      ? "Join with Invite"
+                      : "Join Group"}
+              </button>
             )}
 
-            {activeTab === "members" && (
-              <MembersTab
-                tag={tag}
-                groupRoles={groupRoles}
-                myRoles={myRoles}
-                myPermissions={myPermissions}
-                isOwner={isOwner}
-                isMember={isMember}
-              />
+            {isLoggedIn && isMember && !isOwner && (
+              <button class={s.btnDanger} onClick={leaveGroup}>
+                <LogOut size={13} /> Leave
+              </button>
             )}
 
-            {activeTab === "roles" && (
-              <RolesTab
-                tag={tag}
-                groupRoles={groupRoles}
-                onRolesChanged={loadGroupRoles}
-                canManage={hasPerm("groups.roles.manage")}
-                isMember={isMember}
-                onMembershipChanged={() => {
-                  loadMyMembership();
-                  loadGroup();
-                  loadGroupRoles();
-                }}
-              />
+            {isLoggedIn && isMember && (
+              <>
+                {representing ? (
+                  <button class={s.btnSecondary} onClick={disrepresentGroup}>
+                    <BellOff size={13} /> Stop Representing
+                  </button>
+                ) : (
+                  <button class={s.btnPrimary} onClick={representGroup}>
+                    <Sparkles size={13} /> Show on profile
+                  </button>
+                )}
+              </>
             )}
 
-            {activeTab === "events" && (
-              <EventsTab
-                tag={tag}
-                canManage={hasPerm("groups.events.manage")}
-                canPublish={hasPerm("groups.events.publish")}
-                isMember={isMember}
-                isPublic={group.public}
-              />
-            )}
-
-            {activeTab === "tips" && (
-              <TipsTab
-                tag={tag}
-                isMember={isMember}
-                isPublic={group.public}
-                groupBalance={group.credits_balance}
-                balanceVisible={!!group.credits_balance_visible}
-                onSent={() => {
-                  loadGroup();
-                  setActionMessage({
-                    text: "Tip sent!",
-                    type: "success",
-                  });
-                }}
-              />
-            )}
-
-            {activeTab === "admin" && canAdmin && (
-              <AdminTab
-                tag={tag}
-                group={group}
-                isOwner={isOwner}
-                canInvite={hasPerm("groups.members.invite")}
-                canRemove={hasPerm("groups.members.remove")}
-                canBan={hasPerm("groups.members.ban")}
-                canWithdraw={hasPerm("groups.tips.withdraw")}
-                canViewMembers={hasPerm("groups.members.view")}
-                onGroupChanged={loadGroup}
-              />
+            {isLoggedIn && (
+              <button class={s.btnSecondary} onClick={reportGroup}>
+                Report
+              </button>
             )}
           </div>
         </div>
       </div>
-      <Footer />
-    </div>
+
+      <AccountTabs
+        tabs={tabs}
+        active={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Group sections"
+      />
+
+      <AccountTabPanel>
+        {activeTab === "overview" && (
+          <OverviewTab
+            group={group}
+            isMember={isMember}
+            myRoles={myRoles}
+            hasPerm={hasPerm}
+            onUpdated={() => {
+              loadGroup();
+              setActionMessage({
+                text: "Group updated.",
+                type: "success",
+              });
+            }}
+            onMessage={setActionMessage}
+          />
+        )}
+
+        {activeTab === "announcements" && (
+          <AnnouncementsTab
+            tag={tag}
+            canPost={hasPerm("groups.announcements.send")}
+            isMember={isMember}
+          />
+        )}
+
+        {activeTab === "members" && (
+          <MembersTab
+            tag={tag}
+            groupRoles={groupRoles}
+            myRoles={myRoles}
+            myPermissions={myPermissions}
+            isOwner={isOwner}
+            isMember={isMember}
+          />
+        )}
+
+        {activeTab === "roles" && (
+          <RolesTab
+            tag={tag}
+            groupRoles={groupRoles}
+            onRolesChanged={loadGroupRoles}
+            canManage={hasPerm("groups.roles.manage")}
+            isMember={isMember}
+            onMembershipChanged={() => {
+              loadMyMembership();
+              loadGroup();
+              loadGroupRoles();
+            }}
+          />
+        )}
+
+        {activeTab === "events" && (
+          <EventsTab
+            tag={tag}
+            canManage={hasPerm("groups.events.manage")}
+            canPublish={hasPerm("groups.events.publish")}
+            isMember={isMember}
+            isPublic={group.public}
+          />
+        )}
+
+        {activeTab === "tips" && (
+          <TipsTab
+            tag={tag}
+            isMember={isMember}
+            isPublic={group.public}
+            groupBalance={group.credits_balance}
+            balanceVisible={!!group.credits_balance_visible}
+            onSent={() => {
+              loadGroup();
+              setActionMessage({
+                text: "Tip sent!",
+                type: "success",
+              });
+            }}
+          />
+        )}
+
+        {activeTab === "admin" && canAdmin && (
+          <AdminTab
+            tag={tag}
+            group={group}
+            isOwner={isOwner}
+            canInvite={hasPerm("groups.members.invite")}
+            canRemove={hasPerm("groups.members.remove")}
+            canBan={hasPerm("groups.members.ban")}
+            canWithdraw={hasPerm("groups.tips.withdraw")}
+            canViewMembers={hasPerm("groups.members.view")}
+            onGroupChanged={loadGroup}
+          />
+        )}
+      </AccountTabPanel>
+    </AccountPage>
   );
 }
 
@@ -1026,301 +993,276 @@ function OverviewTab({
   return (
     <div class={s.tabColumn}>
       {isMember && myRoles.length > 0 && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <KeyRound size={18} />
+        <AccountSection
+          icon={<KeyRound size={18} />}
+          title="Your Roles"
+          subtitle={`${myRoles.length} role${myRoles.length === 1 ? "" : "s"}`}
+        >
+          <div class={s.rolesList}>
+            {myRoles.map((r) => (
+              <div key={r.id} class={s.roleCard}>
+                <div class={s.roleName}>{r.name}</div>
+                {r.description && (
+                  <div class={s.roleDescription}>{r.description}</div>
+                )}
+                {r.permissions.length > 0 && (
+                  <div class={s.rolePermissions}>
+                    {r.permissions.map((p) => (
+                      <span key={p} class={s.permTag}>
+                        {PERMISSION_LABELS[p] || p}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {r.benefits && r.benefits.length > 0 && (
+                  <div class={s.rolePermissions}>
+                    {r.benefits.map((b) => (
+                      <span key={b} class={s.permTag}>
+                        <Sparkles size={10} /> {b}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div>
-                <h2 class={s.sectionTitle}>Your Roles</h2>
-                <p class={s.sectionSubtitle}>
-                  {myRoles.length} role{myRoles.length === 1 ? "" : "s"}
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
-          <div class={s.sectionBody}>
-            <div class={s.rolesList}>
-              {myRoles.map((r) => (
-                <div key={r.id} class={s.roleCard}>
-                  <div class={s.roleName}>{r.name}</div>
-                  {r.description && (
-                    <div class={s.roleDescription}>{r.description}</div>
-                  )}
-                  {r.permissions.length > 0 && (
-                    <div class={s.rolePermissions}>
-                      {r.permissions.map((p) => (
-                        <span key={p} class={s.permTag}>
-                          {PERMISSION_LABELS[p] || p}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {r.benefits && r.benefits.length > 0 && (
-                    <div class={s.rolePermissions}>
-                      {r.benefits.map((b) => (
-                        <span key={b} class={s.permTag}>
-                          <Sparkles size={10} /> {b}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        </AccountSection>
       )}
 
-      <div class={s.section}>
-        <div class={s.sectionHeader}>
-          <div class={s.sectionTitleGroup}>
-            <div class={s.sectionIcon}>
-              <Info size={18} />
+      <AccountSection
+        icon={<Info size={18} />}
+        title="About"
+        subtitle="Group information and settings"
+        actions={
+          (hasPerm("groups.group.edit") || hasPerm("groups.manage")) &&
+          !editing && (
+            <>
+              {hasPerm("groups.group.edit") && (
+                <button class={s.btnSecondary} onClick={() => setEditing(true)}>
+                  <Edit3 size={13} /> Edit
+                </button>
+              )}
+              {hasPerm("groups.manage") && (
+                <button class={s.btnDanger} onClick={deleteGroup}>
+                  <Trash2 size={13} /> Delete
+                </button>
+              )}
+            </>
+          )
+        }
+      >
+        {editing ? (
+          <div>
+            <div class={s.formRow}>
+              <div class={s.formGroup}>
+                <label>Name</label>
+                <input
+                  type="text"
+                  class={s.formInput}
+                  maxlength={50}
+                  value={name}
+                  onInput={(e) => setName((e.target as HTMLInputElement).value)}
+                />
+              </div>
+              <div class={s.formGroup}>
+                <label>Tag</label>
+                <input
+                  type="text"
+                  class={s.formInput}
+                  maxlength={10}
+                  value={groupTag}
+                  onInput={(e) =>
+                    setGroupTag((e.target as HTMLInputElement).value)
+                  }
+                />
+                <small class={s.formHint}>
+                  Alphanumeric only. Changing it updates the group URL.
+                </small>
+              </div>
             </div>
-            <div>
-              <h2 class={s.sectionTitle}>About</h2>
-              <p class={s.sectionSubtitle}>Group information and settings</p>
+            <div class={s.formGroup}>
+              <label>Description</label>
+              <textarea
+                class={s.formInput}
+                rows={4}
+                maxlength={500}
+                value={description}
+                onInput={(e) =>
+                  setDescription((e.target as HTMLTextAreaElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                {description.length} / 500 characters.
+              </small>
+            </div>
+            <div class={s.formGroup}>
+              <label>Readme</label>
+              <textarea
+                class={s.formInput}
+                rows={6}
+                maxlength={10000}
+                placeholder="Long-form description. Supports markdown."
+                value={readme}
+                onInput={(e) =>
+                  setReadme((e.target as HTMLTextAreaElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                {readme.length} / 10,000 characters.
+              </small>
+            </div>
+            <div class={s.formGroup}>
+              <label>Rules</label>
+              <textarea
+                class={s.formInput}
+                rows={4}
+                maxlength={5000}
+                placeholder="Shown before users join."
+                value={rules}
+                onInput={(e) =>
+                  setRules((e.target as HTMLTextAreaElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                {rules.length} / 5,000 characters.
+              </small>
+            </div>
+            <div class={s.formGroup}>
+              <label>Entry Fee (credits)</label>
+              <input
+                type="number"
+                class={s.formInput}
+                min={0}
+                step="0.01"
+                value={entryFee}
+                onInput={(e) =>
+                  setEntryFee((e.target as HTMLInputElement).value)
+                }
+              />
+              <small class={s.formHint}>
+                Credits required to join. Set to 0 for free entry.
+              </small>
+            </div>
+            <div class={s.formGroup}>
+              <div class={s.checkboxGroup}>
+                <input
+                  type="checkbox"
+                  id="overview-public"
+                  checked={isPublic}
+                  onChange={(e) =>
+                    setIsPublic((e.target as HTMLInputElement).checked)
+                  }
+                />
+                <label for="overview-public">Public group</label>
+              </div>
+            </div>
+            <div class={s.formGroup}>
+              <label>Join Policy</label>
+              <select
+                class={s.formInput}
+                value={policy}
+                onChange={(e) =>
+                  setPolicy((e.target as HTMLSelectElement).value as JoinPolicy)
+                }
+              >
+                {JOIN_POLICY_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div class={s.formActions}>
+              <button class={s.btnPrimary} onClick={save} disabled={busy}>
+                <Save size={13} /> {busy ? "Saving…" : "Save Changes"}
+              </button>
+              <button
+                class={s.btnSecondary}
+                onClick={() => {
+                  setEditing(false);
+                  setName(group.name);
+                  setGroupTag(group.tag);
+                  setDescription(group.description);
+                  setReadme(group.readme || "");
+                  setRules(group.rules || "");
+                  setEntryFee(String(group.entry_fee || 0));
+                  setIsPublic(group.public);
+                  setPolicy(group.join_policy);
+                }}
+              >
+                <X size={13} /> Cancel
+              </button>
             </div>
           </div>
-          {(hasPerm("groups.group.edit") || hasPerm("groups.manage")) &&
-            !editing && (
-              <div class={s.sectionActions}>
-                {hasPerm("groups.group.edit") && (
-                  <button
-                    class={s.btnSecondary}
-                    onClick={() => setEditing(true)}
-                  >
-                    <Edit3 size={13} /> Edit
-                  </button>
-                )}
-                {hasPerm("groups.manage") && (
-                  <button class={s.btnDanger} onClick={deleteGroup}>
-                    <Trash2 size={13} /> Delete
-                  </button>
-                )}
+        ) : (
+          <div>
+            <div class={s.detailGrid}>
+              <div class={s.detailItem}>
+                <h4>Description</h4>
+                <div class={s.detailValue}>
+                  {group.description || "No description provided."}
+                </div>
+              </div>
+              <div class={s.detailItem}>
+                <h4>Visibility</h4>
+                <div class={s.detailValue}>
+                  {group.public ? "Public" : "Private"}
+                </div>
+              </div>
+              <div class={s.detailItem}>
+                <h4>Join Policy</h4>
+                <div class={s.detailValue}>
+                  {JOIN_POLICY_OPTIONS.find(
+                    (o) => o.value === group.join_policy,
+                  )?.label || group.join_policy}
+                </div>
+              </div>
+              <div class={s.detailItem}>
+                <h4>Entry Fee</h4>
+                <div class={s.detailValue}>
+                  {group.entry_fee > 0
+                    ? `${group.entry_fee.toLocaleString()} credits`
+                    : "Free"}
+                </div>
+              </div>
+              <div class={s.detailItem}>
+                <h4>Owner</h4>
+                <div class={s.detailValue}>{group.owner_user_id}</div>
+              </div>
+              <div class={s.detailItem}>
+                <h4>Members</h4>
+                <div class={s.detailValue}>{group.member_count}</div>
+              </div>
+              {group.credits_balance_visible && (
+                <div class={s.detailItem}>
+                  <h4>Credit Balance</h4>
+                  <div class={s.detailValue}>
+                    {group.credits_balance.toLocaleString()}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {group.readme && group.readme.trim() && (
+              <div class={s.readmeBlock}>
+                <h3 class={s.readmeTitle}>
+                  <BookOpen size={14} /> Readme
+                </h3>
+                <pre class={s.readmeContent}>{group.readme}</pre>
               </div>
             )}
-        </div>
-        <div class={s.sectionBody}>
-          {editing ? (
-            <div>
-              <div class={s.formRow}>
-                <div class={s.formGroup}>
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    class={s.formInput}
-                    maxlength={50}
-                    value={name}
-                    onInput={(e) =>
-                      setName((e.target as HTMLInputElement).value)
-                    }
-                  />
-                </div>
-                <div class={s.formGroup}>
-                  <label>Tag</label>
-                  <input
-                    type="text"
-                    class={s.formInput}
-                    maxlength={10}
-                    value={groupTag}
-                    onInput={(e) =>
-                      setGroupTag((e.target as HTMLInputElement).value)
-                    }
-                  />
-                  <small class={s.formHint}>
-                    Alphanumeric only. Changing it updates the group URL.
-                  </small>
-                </div>
-              </div>
-              <div class={s.formGroup}>
-                <label>Description</label>
-                <textarea
-                  class={s.formInput}
-                  rows={4}
-                  maxlength={500}
-                  value={description}
-                  onInput={(e) =>
-                    setDescription((e.target as HTMLTextAreaElement).value)
-                  }
-                />
-                <small class={s.formHint}>
-                  {description.length} / 500 characters.
-                </small>
-              </div>
-              <div class={s.formGroup}>
-                <label>Readme</label>
-                <textarea
-                  class={s.formInput}
-                  rows={6}
-                  maxlength={10000}
-                  placeholder="Long-form description. Supports markdown."
-                  value={readme}
-                  onInput={(e) =>
-                    setReadme((e.target as HTMLTextAreaElement).value)
-                  }
-                />
-                <small class={s.formHint}>
-                  {readme.length} / 10,000 characters.
-                </small>
-              </div>
-              <div class={s.formGroup}>
-                <label>Rules</label>
-                <textarea
-                  class={s.formInput}
-                  rows={4}
-                  maxlength={5000}
-                  placeholder="Shown before users join."
-                  value={rules}
-                  onInput={(e) =>
-                    setRules((e.target as HTMLTextAreaElement).value)
-                  }
-                />
-                <small class={s.formHint}>
-                  {rules.length} / 5,000 characters.
-                </small>
-              </div>
-              <div class={s.formGroup}>
-                <label>Entry Fee (credits)</label>
-                <input
-                  type="number"
-                  class={s.formInput}
-                  min={0}
-                  step="0.01"
-                  value={entryFee}
-                  onInput={(e) =>
-                    setEntryFee((e.target as HTMLInputElement).value)
-                  }
-                />
-                <small class={s.formHint}>
-                  Credits required to join. Set to 0 for free entry.
-                </small>
-              </div>
-              <div class={s.formGroup}>
-                <div class={s.checkboxGroup}>
-                  <input
-                    type="checkbox"
-                    id="overview-public"
-                    checked={isPublic}
-                    onChange={(e) =>
-                      setIsPublic((e.target as HTMLInputElement).checked)
-                    }
-                  />
-                  <label for="overview-public">Public group</label>
-                </div>
-              </div>
-              <div class={s.formGroup}>
-                <label>Join Policy</label>
-                <select
-                  class={s.formInput}
-                  value={policy}
-                  onChange={(e) =>
-                    setPolicy(
-                      (e.target as HTMLSelectElement).value as JoinPolicy,
-                    )
-                  }
-                >
-                  {JOIN_POLICY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div class={s.formActions}>
-                <button class={s.btnPrimary} onClick={save} disabled={busy}>
-                  <Save size={13} /> {busy ? "Saving…" : "Save Changes"}
-                </button>
-                <button
-                  class={s.btnSecondary}
-                  onClick={() => {
-                    setEditing(false);
-                    setName(group.name);
-                    setGroupTag(group.tag);
-                    setDescription(group.description);
-                    setReadme(group.readme || "");
-                    setRules(group.rules || "");
-                    setEntryFee(String(group.entry_fee || 0));
-                    setIsPublic(group.public);
-                    setPolicy(group.join_policy);
-                  }}
-                >
-                  <X size={13} /> Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div class={s.detailGrid}>
-                <div class={s.detailItem}>
-                  <h4>Description</h4>
-                  <div class={s.detailValue}>
-                    {group.description || "No description provided."}
-                  </div>
-                </div>
-                <div class={s.detailItem}>
-                  <h4>Visibility</h4>
-                  <div class={s.detailValue}>
-                    {group.public ? "Public" : "Private"}
-                  </div>
-                </div>
-                <div class={s.detailItem}>
-                  <h4>Join Policy</h4>
-                  <div class={s.detailValue}>
-                    {JOIN_POLICY_OPTIONS.find(
-                      (o) => o.value === group.join_policy,
-                    )?.label || group.join_policy}
-                  </div>
-                </div>
-                <div class={s.detailItem}>
-                  <h4>Entry Fee</h4>
-                  <div class={s.detailValue}>
-                    {group.entry_fee > 0
-                      ? `${group.entry_fee.toLocaleString()} credits`
-                      : "Free"}
-                  </div>
-                </div>
-                <div class={s.detailItem}>
-                  <h4>Owner</h4>
-                  <div class={s.detailValue}>{group.owner_user_id}</div>
-                </div>
-                <div class={s.detailItem}>
-                  <h4>Members</h4>
-                  <div class={s.detailValue}>{group.member_count}</div>
-                </div>
-                {group.credits_balance_visible && (
-                  <div class={s.detailItem}>
-                    <h4>Credit Balance</h4>
-                    <div class={s.detailValue}>
-                      {group.credits_balance.toLocaleString()}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {group.readme && group.readme.trim() && (
-                <div class={s.readmeBlock}>
-                  <h3 class={s.readmeTitle}>
-                    <BookOpen size={14} /> Readme
-                  </h3>
-                  <pre class={s.readmeContent}>{group.readme}</pre>
-                </div>
-              )}
-
-              {group.rules && group.rules.trim() && (
-                <div class={s.rulesBlock}>
-                  <h3 class={s.readmeTitle}>
-                    <ScrollText size={14} /> Group Rules
-                  </h3>
-                  <pre class={s.readmeContent}>{group.rules}</pre>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+            {group.rules && group.rules.trim() && (
+              <div class={s.rulesBlock}>
+                <h3 class={s.readmeTitle}>
+                  <ScrollText size={14} /> Group Rules
+                </h3>
+                <pre class={s.readmeContent}>{group.rules}</pre>
+              </div>
+            )}
+          </div>
+        )}
+      </AccountSection>
     </div>
   );
 }
@@ -1456,157 +1398,129 @@ function AnnouncementsTab({
   return (
     <div class={s.tabColumn}>
       {isMember && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>Notifications</h2>
-                <p class={s.sectionSubtitle}>
-                  {muted
-                    ? "You will not receive announcements"
-                    : "You receive announcements for this group"}
-                </p>
-              </div>
-            </div>
+        <AccountSection
+          icon={muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          title="Notifications"
+          subtitle={
+            muted
+              ? "You will not receive announcements"
+              : "You receive announcements for this group"
+          }
+          actions={
             <button class={s.btnSecondary} onClick={toggleMute}>
               {muted ? <Volume2 size={13} /> : <VolumeX size={13} />}
               {muted ? "Unmute" : "Mute"}
             </button>
-          </div>
-        </div>
+          }
+        />
       )}
 
       {canPost && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <Plus size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>New Announcement</h2>
-                <p class={s.sectionSubtitle}>
-                  Share an update with all members
-                </p>
-              </div>
-            </div>
+        <AccountSection
+          icon={<Plus size={18} />}
+          title="New Announcement"
+          subtitle="Share an update with all members"
+        >
+          <div class={s.formGroup}>
+            <label>Title</label>
+            <input
+              type="text"
+              class={s.formInput}
+              placeholder="Announcement title"
+              maxlength={100}
+              value={title}
+              onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
+            />
           </div>
-          <div class={s.sectionBody}>
-            <div class={s.formGroup}>
-              <label>Title</label>
+          <div class={s.formGroup}>
+            <label>Body</label>
+            <textarea
+              class={s.formInput}
+              rows={4}
+              maxlength={2000}
+              placeholder="Write your announcement…"
+              value={body}
+              onInput={(e) => setBody((e.target as HTMLTextAreaElement).value)}
+            />
+          </div>
+          <div class={s.formGroup}>
+            <div class={s.checkboxGroup}>
               <input
-                type="text"
-                class={s.formInput}
-                placeholder="Announcement title"
-                maxlength={100}
-                value={title}
-                onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
-              />
-            </div>
-            <div class={s.formGroup}>
-              <label>Body</label>
-              <textarea
-                class={s.formInput}
-                rows={4}
-                maxlength={2000}
-                placeholder="Write your announcement…"
-                value={body}
-                onInput={(e) =>
-                  setBody((e.target as HTMLTextAreaElement).value)
+                type="checkbox"
+                id="ann-ping"
+                checked={pingMembers}
+                onChange={(e) =>
+                  setPingMembers((e.target as HTMLInputElement).checked)
                 }
               />
-            </div>
-            <div class={s.formGroup}>
-              <div class={s.checkboxGroup}>
-                <input
-                  type="checkbox"
-                  id="ann-ping"
-                  checked={pingMembers}
-                  onChange={(e) =>
-                    setPingMembers((e.target as HTMLInputElement).checked)
-                  }
-                />
-                <label for="ann-ping">
-                  <Bell size={12} style={{ verticalAlign: "middle" }} /> Ping
-                  members with a notification
-                </label>
-              </div>
-            </div>
-            <div class={s.formActions}>
-              <button class={s.btnPrimary} onClick={post} disabled={busy}>
-                <Send size={13} /> {busy ? "Posting…" : "Post Announcement"}
-              </button>
-            </div>
-            {msg && (
-              <div class={msg.type === "success" ? s.success : s.error}>
-                {msg.text}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div class={s.section}>
-        <div class={s.sectionHeader}>
-          <div class={s.sectionTitleGroup}>
-            <div class={s.sectionIcon}>
-              <Megaphone size={18} />
-            </div>
-            <div>
-              <h2 class={s.sectionTitle}>All Announcements</h2>
-              <p class={s.sectionSubtitle}>{items.length} total</p>
+              <label for="ann-ping">
+                <Bell size={12} style={{ verticalAlign: "middle" }} /> Ping
+                members with a notification
+              </label>
             </div>
           </div>
-        </div>
-        <div class={s.sectionBody}>
-          {loading && <div class={s.loading}>Loading…</div>}
-          {!loading && items.length === 0 && (
-            <div class={s.empty}>
-              <div class={s.emptyIcon}>
-                <Megaphone size={24} />
-              </div>
-              <div class={s.emptyTitle}>No announcements yet</div>
-              <div class={s.emptyText}>
-                {canPost
-                  ? "Post the first announcement above."
-                  : "Check back later for updates."}
-              </div>
+          <div class={s.formActions}>
+            <button class={s.btnPrimary} onClick={post} disabled={busy}>
+              <Send size={13} /> {busy ? "Posting…" : "Post Announcement"}
+            </button>
+          </div>
+          {msg && (
+            <div class={msg.type === "success" ? s.success : s.error}>
+              {msg.text}
             </div>
           )}
-          <div class={s.announcementList}>
-            {items.map((a) => (
-              <div key={a.id} class={s.announcementCard}>
-                <div class={s.announcementHeader}>
-                  <h3 class={s.announcementTitle}>{a.title}</h3>
-                  {a.ping_members && (
-                    <span class={s.pingBadge}>
-                      <Bell size={10} /> Ping
-                    </span>
-                  )}
-                </div>
-                {a.body && <div class={s.announcementBody}>{a.body}</div>}
-                <div class={s.announcementMeta}>
-                  <span>by {a.author_username || a.author_user_id || ""}</span>
-                  <span>•</span>
-                  <span title={formatDateTime(a.created_at)}>
-                    {formatRelativeTime(a.created_at * 1000)}
+        </AccountSection>
+      )}
+
+      <AccountSection
+        icon={<Megaphone size={18} />}
+        title="All Announcements"
+        subtitle={`${items.length} total`}
+      >
+        {loading && <div class={s.loading}>Loading…</div>}
+        {!loading && items.length === 0 && (
+          <div class={s.empty}>
+            <div class={s.emptyIcon}>
+              <Megaphone size={24} />
+            </div>
+            <div class={s.emptyTitle}>No announcements yet</div>
+            <div class={s.emptyText}>
+              {canPost
+                ? "Post the first announcement above."
+                : "Check back later for updates."}
+            </div>
+          </div>
+        )}
+        <div class={s.announcementList}>
+          {items.map((a) => (
+            <div key={a.id} class={s.announcementCard}>
+              <div class={s.announcementHeader}>
+                <h3 class={s.announcementTitle}>{a.title}</h3>
+                {a.ping_members && (
+                  <span class={s.pingBadge}>
+                    <Bell size={10} /> Ping
                   </span>
-                </div>
-                {canPost && (
-                  <div class={s.announcementActions}>
-                    <button class={s.btnDanger} onClick={() => del(a.id)}>
-                      <Trash2 size={12} /> Delete
-                    </button>
-                  </div>
                 )}
               </div>
-            ))}
-          </div>
+              {a.body && <div class={s.announcementBody}>{a.body}</div>}
+              <div class={s.announcementMeta}>
+                <span>by {a.author_username || a.author_user_id || ""}</span>
+                <span>•</span>
+                <span title={formatDateTime(a.created_at)}>
+                  {formatRelativeTime(a.created_at * 1000)}
+                </span>
+              </div>
+              {canPost && (
+                <div class={s.announcementActions}>
+                  <button class={s.btnDanger} onClick={() => del(a.id)}>
+                    <Trash2 size={12} /> Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      </div>
+      </AccountSection>
     </div>
   );
 }
@@ -1817,244 +1731,211 @@ function MembersTab({
 
   return (
     <div class={s.tabColumn}>
-      <div class={s.section}>
-        <div class={s.sectionHeader}>
-          <div class={s.sectionTitleGroup}>
-            <div class={s.sectionIcon}>
-              <Users size={18} />
-            </div>
-            <div>
-              <h2 class={s.sectionTitle}>Your Membership</h2>
-              <p class={s.sectionSubtitle}>
-                {isMember ? "You are a member" : "You are not a member"}
-              </p>
+      <AccountSection
+        icon={<Users size={18} />}
+        title="Your Membership"
+        subtitle={isMember ? "You are a member" : "You are not a member"}
+      >
+        {!isMember ? (
+          <div class={s.empty}>
+            <div class={s.emptyText}>
+              Join this group to see your roles here.
             </div>
           </div>
-        </div>
-        <div class={s.sectionBody}>
-          {!isMember ? (
-            <div class={s.empty}>
-              <div class={s.emptyText}>
-                Join this group to see your roles here.
+        ) : myRoles.length === 0 ? (
+          <div class={s.empty}>
+            <div class={s.emptyText}>
+              You have no roles assigned. Contact an owner.
+            </div>
+          </div>
+        ) : (
+          <div class={s.rolesList}>
+            {myRoles.map((r) => (
+              <div key={r.id} class={s.roleCard}>
+                <div class={s.roleName}>{r.name}</div>
+                {r.description && (
+                  <div class={s.roleDescription}>{r.description}</div>
+                )}
               </div>
-            </div>
-          ) : myRoles.length === 0 ? (
-            <div class={s.empty}>
-              <div class={s.emptyText}>
-                You have no roles assigned. Contact an owner.
-              </div>
-            </div>
-          ) : (
-            <div class={s.rolesList}>
-              {myRoles.map((r) => (
-                <div key={r.id} class={s.roleCard}>
-                  <div class={s.roleName}>{r.name}</div>
-                  {r.description && (
-                    <div class={s.roleDescription}>{r.description}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+            ))}
+          </div>
+        )}
+      </AccountSection>
 
       {canViewMembers && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <Users size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>Members</h2>
-                <p class={s.sectionSubtitle}>
-                  {membersTotal} member{membersTotal === 1 ? "" : "s"}
-                </p>
-              </div>
-            </div>
+        <AccountSection
+          icon={<Users size={18} />}
+          title="Members"
+          subtitle={`${membersTotal} member${membersTotal === 1 ? "" : "s"}`}
+        >
+          <div class={s.actionRow}>
+            <input
+              type="text"
+              class={s.formInput}
+              placeholder="Search members…"
+              value={memberSearch}
+              onInput={(e) =>
+                setMemberSearch((e.target as HTMLInputElement).value)
+              }
+              onKeyDown={(e) => {
+                if ((e as KeyboardEvent).key === "Enter") searchMembers();
+              }}
+            />
+            <button class={s.btnSecondary} onClick={searchMembers}>
+              <Search size={13} /> Search
+            </button>
           </div>
-          <div class={s.sectionBody}>
-            <div class={s.actionRow}>
-              <input
-                type="text"
-                class={s.formInput}
-                placeholder="Search members…"
-                value={memberSearch}
-                onInput={(e) =>
-                  setMemberSearch((e.target as HTMLInputElement).value)
-                }
-                onKeyDown={(e) => {
-                  if ((e as KeyboardEvent).key === "Enter") searchMembers();
-                }}
-              />
-              <button class={s.btnSecondary} onClick={searchMembers}>
-                <Search size={13} /> Search
-              </button>
+          {membersLoading ? (
+            <div class={s.empty}>
+              <div class={s.emptyText}>Loading members…</div>
             </div>
-            {membersLoading ? (
-              <div class={s.empty}>
-                <div class={s.emptyText}>Loading members…</div>
-              </div>
-            ) : members.length === 0 ? (
-              <div class={s.empty}>
-                <div class={s.emptyText}>No members found.</div>
-              </div>
-            ) : (
-              <>
-                <div class={s.memberList}>
-                  {members.map((m) => (
-                    <div key={m.id} class={s.memberRow}>
-                      <a
-                        class={s.memberProfileLink}
-                        href={`/profile/${encodeURIComponent(m.username)}`}
-                      >
-                        <UserAvatar
-                          username={m.username}
-                          size={32}
-                          showOverlay={false}
-                        />
-                        <div class={s.memberInfo}>
-                          <div class={s.memberName}>{m.username}</div>
-                          {m.role_ids.length > 0 && (
-                            <div class={s.memberRoles}>
-                              {m.role_ids.map((rid) => (
-                                <span key={rid} class={s.miniTag}>
-                                  {getRoleName(rid)}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </a>
-                      <span class={s.memberJoined}>
-                        {formatRelativeTime(m.joined_at * 1000)}
-                      </span>
-                      {canAssign && (
-                        <button
-                          class={s.btnSecondary}
-                          onClick={() => openRoleModal(m)}
-                        >
-                          <Edit3 size={12} /> Edit roles
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {membersPages > 1 && (
-                  <div class={s.pagination}>
-                    <button
-                      class={s.btnSecondary}
-                      disabled={membersPage <= 1}
-                      onClick={() => setMembersPage((p) => p - 1)}
+          ) : members.length === 0 ? (
+            <div class={s.empty}>
+              <div class={s.emptyText}>No members found.</div>
+            </div>
+          ) : (
+            <>
+              <div class={s.memberList}>
+                {members.map((m) => (
+                  <div key={m.id} class={s.memberRow}>
+                    <a
+                      class={s.memberProfileLink}
+                      href={`/profile/${encodeURIComponent(m.username)}`}
                     >
-                      Prev
-                    </button>
-                    <span class={s.pageIndicator}>
-                      Page {membersPage} of {membersPages}
+                      <UserAvatar
+                        username={m.username}
+                        size={32}
+                        showOverlay={false}
+                      />
+                      <div class={s.memberInfo}>
+                        <div class={s.memberName}>{m.username}</div>
+                        {m.role_ids.length > 0 && (
+                          <div class={s.memberRoles}>
+                            {m.role_ids.map((rid) => (
+                              <span key={rid} class={s.miniTag}>
+                                {getRoleName(rid)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </a>
+                    <span class={s.memberJoined}>
+                      {formatRelativeTime(m.joined_at * 1000)}
                     </span>
-                    <button
-                      class={s.btnSecondary}
-                      disabled={membersPage >= membersPages}
-                      onClick={() => setMembersPage((p) => p + 1)}
-                    >
-                      Next
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {canAssign && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <UserPlus size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>Manage Member Roles</h2>
-                <p class={s.sectionSubtitle}>
-                  Look up a member by username to assign or remove roles
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class={s.sectionBody}>
-            <div class={s.actionRow}>
-              <input
-                type="text"
-                class={s.formInput}
-                placeholder="Username"
-                value={targetUser}
-                onInput={(e) =>
-                  setTargetUser((e.target as HTMLInputElement).value)
-                }
-              />
-              <button
-                class={s.btnPrimary}
-                onClick={lookup}
-                disabled={busy || !targetUser.trim()}
-              >
-                <Search size={13} /> {busy ? "Looking up…" : "Lookup"}
-              </button>
-            </div>
-            {lookupMsg && (
-              <div class={lookupMsg.type === "success" ? s.success : s.error}>
-                {lookupMsg.text}
-              </div>
-            )}
-
-            {targetUser && targetRoles.length > 0 && (
-              <div class={s.manageList}>
-                <h4 class={s.manageListTitle}>Roles for {targetUser}</h4>
-                {targetRoles.map((r) => (
-                  <div key={r.id} class={s.manageRow}>
-                    <div>
-                      <div class={s.roleName}>{r.name}</div>
-                      {r.description && (
-                        <div class={s.roleDescription}>{r.description}</div>
-                      )}
-                    </div>
-                    {canAssign && r.name !== "Owner" && (
+                    {canAssign && (
                       <button
-                        class={s.btnDanger}
-                        onClick={() => removeRole(targetUser, r.id)}
+                        class={s.btnSecondary}
+                        onClick={() => openRoleModal(m)}
                       >
-                        <UserMinus size={12} /> Remove
+                        <Edit3 size={12} /> Edit roles
                       </button>
                     )}
                   </div>
                 ))}
               </div>
-            )}
+              {membersPages > 1 && (
+                <div class={s.pagination}>
+                  <button
+                    class={s.btnSecondary}
+                    disabled={membersPage <= 1}
+                    onClick={() => setMembersPage((p) => p - 1)}
+                  >
+                    Prev
+                  </button>
+                  <span class={s.pageIndicator}>
+                    Page {membersPage} of {membersPages}
+                  </span>
+                  <button
+                    class={s.btnSecondary}
+                    disabled={membersPage >= membersPages}
+                    onClick={() => setMembersPage((p) => p + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </AccountSection>
+      )}
 
-            {targetUser && availableToAssign.length > 0 && (
-              <div class={s.manageList}>
-                <h4 class={s.manageListTitle}>Available to assign</h4>
-                {availableToAssign.map((r) => (
-                  <div key={r.id} class={s.manageRow}>
-                    <div>
-                      <div class={s.roleName}>{r.name}</div>
-                      {r.description && (
-                        <div class={s.roleDescription}>{r.description}</div>
-                      )}
-                    </div>
-                    <button
-                      class={s.btnSecondary}
-                      onClick={() => assignRole(targetUser, r.id)}
-                    >
-                      <UserPlus size={12} /> Assign
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+      {canAssign && (
+        <AccountSection
+          icon={<UserPlus size={18} />}
+          title="Manage Member Roles"
+          subtitle="Look up a member by username to assign or remove roles"
+        >
+          <div class={s.actionRow}>
+            <input
+              type="text"
+              class={s.formInput}
+              placeholder="Username"
+              value={targetUser}
+              onInput={(e) =>
+                setTargetUser((e.target as HTMLInputElement).value)
+              }
+            />
+            <button
+              class={s.btnPrimary}
+              onClick={lookup}
+              disabled={busy || !targetUser.trim()}
+            >
+              <Search size={13} /> {busy ? "Looking up…" : "Lookup"}
+            </button>
           </div>
-        </div>
+          {lookupMsg && (
+            <div class={lookupMsg.type === "success" ? s.success : s.error}>
+              {lookupMsg.text}
+            </div>
+          )}
+
+          {targetUser && targetRoles.length > 0 && (
+            <div class={s.manageList}>
+              <h4 class={s.manageListTitle}>Roles for {targetUser}</h4>
+              {targetRoles.map((r) => (
+                <div key={r.id} class={s.manageRow}>
+                  <div>
+                    <div class={s.roleName}>{r.name}</div>
+                    {r.description && (
+                      <div class={s.roleDescription}>{r.description}</div>
+                    )}
+                  </div>
+                  {canAssign && r.name !== "Owner" && (
+                    <button
+                      class={s.btnDanger}
+                      onClick={() => removeRole(targetUser, r.id)}
+                    >
+                      <UserMinus size={12} /> Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {targetUser && availableToAssign.length > 0 && (
+            <div class={s.manageList}>
+              <h4 class={s.manageListTitle}>Available to assign</h4>
+              {availableToAssign.map((r) => (
+                <div key={r.id} class={s.manageRow}>
+                  <div>
+                    <div class={s.roleName}>{r.name}</div>
+                    {r.description && (
+                      <div class={s.roleDescription}>{r.description}</div>
+                    )}
+                  </div>
+                  <button
+                    class={s.btnSecondary}
+                    onClick={() => assignRole(targetUser, r.id)}
+                  >
+                    <UserPlus size={12} /> Assign
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </AccountSection>
       )}
 
       {roleModalMember && (
@@ -2072,10 +1953,10 @@ function MembersTab({
           >
             <div class={s.modalHeader}>
               <div>
-                <h2 id="role-modal-title" class={s.sectionTitle}>
+                <h2 id="role-modal-title" class={s.modalTitle}>
                   Edit Roles
                 </h2>
-                <p class={s.sectionSubtitle}>{roleModalMember.username}</p>
+                <p class={s.modalSubtitle}>{roleModalMember.username}</p>
               </div>
               <button
                 class={s.iconButton}
@@ -2134,7 +2015,9 @@ function MembersTab({
                     </div>
                     <button
                       class={s.btnSecondary}
-                      onClick={() => assignRole(roleModalMember.user_id, role.id)}
+                      onClick={() =>
+                        assignRole(roleModalMember.user_id, role.id)
+                      }
                     >
                       <UserPlus size={12} /> Assign
                     </button>
@@ -2449,25 +2332,20 @@ function RolesTab({
   return (
     <div class={s.tabColumn}>
       {canManage && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <Plus size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>New Role</h2>
-                <p class={s.sectionSubtitle}>Create a new role for members</p>
-              </div>
-            </div>
-            {!creating && (
+        <AccountSection
+          icon={<Plus size={18} />}
+          title="New Role"
+          subtitle="Create a new role for members"
+          actions={
+            !creating && (
               <button class={s.btnPrimary} onClick={() => setCreating(true)}>
                 <Plus size={13} /> New Role
               </button>
-            )}
-          </div>
+            )
+          }
+        >
           {creating && (
-            <div class={s.sectionBody}>
+            <>
               <div class={s.formRow}>
                 <div class={s.formGroup}>
                   <label>Name</label>
@@ -2555,9 +2433,9 @@ function RolesTab({
                   Cancel
                 </button>
               </div>
-            </div>
+            </>
           )}
-        </div>
+        </AccountSection>
       )}
 
       {msg && (
@@ -2566,404 +2444,374 @@ function RolesTab({
         </div>
       )}
 
-      <div class={s.section}>
-        <div class={s.sectionHeader}>
-          <div class={s.sectionTitleGroup}>
-            <div class={s.sectionIcon}>
-              <Coins size={18} />
-            </div>
-            <div>
-              <h2 class={s.sectionTitle}>Role Shop</h2>
-              <p class={s.sectionSubtitle}>
-                Buy roles with credits or manage role products
-              </p>
-            </div>
-          </div>
-          {canManage && !creatingProduct && (
+      <AccountSection
+        icon={<Coins size={18} />}
+        title="Role Shop"
+        subtitle="Buy roles with credits or manage role products"
+        actions={
+          canManage &&
+          !creatingProduct && (
             <button
               class={s.btnPrimary}
               onClick={() => setCreatingProduct(true)}
             >
               <Plus size={13} /> Sell Role
             </button>
-          )}
-        </div>
-        <div class={s.sectionBody}>
-          {canManage && creatingProduct && (
-            <div class={s.roleCard}>
-              <div class={s.formRow}>
-                <div class={s.formGroup}>
-                  <label>Product name</label>
-                  <input
-                    class={s.formInput}
-                    maxlength={50}
-                    value={productName}
-                    onInput={(e) =>
-                      setProductName((e.target as HTMLInputElement).value)
-                    }
-                  />
-                </div>
-                <div class={s.formGroup}>
-                  <label>Price</label>
-                  <input
-                    class={s.formInput}
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={productPrice}
-                    onInput={(e) =>
-                      setProductPrice((e.target as HTMLInputElement).value)
-                    }
-                  />
-                </div>
-              </div>
+          )
+        }
+      >
+        {canManage && creatingProduct && (
+          <div class={s.roleCard}>
+            <div class={s.formRow}>
               <div class={s.formGroup}>
-                <label>Role granted</label>
-                <select
-                  class={s.formInput}
-                  value={productRoleId}
-                  onChange={(e) =>
-                    setProductRoleId((e.target as HTMLSelectElement).value)
-                  }
-                >
-                  <option value="">Choose a role</option>
-                  {groupRoles
-                    .filter((role) => role.name !== "Owner")
-                    .map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div class={s.formGroup}>
-                <div class={s.checkboxGroup}>
-                  <input
-                    type="checkbox"
-                    id="product-subscription"
-                    checked={productSubscription}
-                    onChange={(e) =>
-                      setProductSubscription(
-                        (e.target as HTMLInputElement).checked,
-                      )
-                    }
-                  />
-                  <label for="product-subscription">Recurring subscription</label>
-                </div>
-              </div>
-              {productSubscription && (
-                <div class={s.formRow}>
-                  <div class={s.formGroup}>
-                    <label>Frequency</label>
-                    <input
-                      class={s.formInput}
-                      type="number"
-                      min={1}
-                      value={productFrequency}
-                      onInput={(e) =>
-                        setProductFrequency(
-                          (e.target as HTMLInputElement).value,
-                        )
-                      }
-                    />
-                  </div>
-                  <div class={s.formGroup}>
-                    <label>Period</label>
-                    <select
-                      class={s.formInput}
-                      value={productPeriod}
-                      onChange={(e) =>
-                        setProductPeriod(
-                          (e.target as HTMLSelectElement).value as
-                            | "day"
-                            | "week"
-                            | "month"
-                            | "year",
-                        )
-                      }
-                    >
-                      <option value="day">Day(s)</option>
-                      <option value="week">Week(s)</option>
-                      <option value="month">Month(s)</option>
-                      <option value="year">Year(s)</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-              <div class={s.formGroup}>
-                <label>Description</label>
+                <label>Product name</label>
                 <input
                   class={s.formInput}
-                  maxlength={200}
-                  value={productDescription}
+                  maxlength={50}
+                  value={productName}
                   onInput={(e) =>
-                    setProductDescription(
-                      (e.target as HTMLInputElement).value,
-                    )
+                    setProductName((e.target as HTMLInputElement).value)
                   }
                 />
               </div>
+              <div class={s.formGroup}>
+                <label>Price</label>
+                <input
+                  class={s.formInput}
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={productPrice}
+                  onInput={(e) =>
+                    setProductPrice((e.target as HTMLInputElement).value)
+                  }
+                />
+              </div>
+            </div>
+            <div class={s.formGroup}>
+              <label>Role granted</label>
+              <select
+                class={s.formInput}
+                value={productRoleId}
+                onChange={(e) =>
+                  setProductRoleId((e.target as HTMLSelectElement).value)
+                }
+              >
+                <option value="">Choose a role</option>
+                {groupRoles
+                  .filter((role) => role.name !== "Owner")
+                  .map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div class={s.formGroup}>
+              <div class={s.checkboxGroup}>
+                <input
+                  type="checkbox"
+                  id="product-subscription"
+                  checked={productSubscription}
+                  onChange={(e) =>
+                    setProductSubscription(
+                      (e.target as HTMLInputElement).checked,
+                    )
+                  }
+                />
+                <label for="product-subscription">Recurring subscription</label>
+              </div>
+            </div>
+            {productSubscription && (
+              <div class={s.formRow}>
+                <div class={s.formGroup}>
+                  <label>Frequency</label>
+                  <input
+                    class={s.formInput}
+                    type="number"
+                    min={1}
+                    value={productFrequency}
+                    onInput={(e) =>
+                      setProductFrequency((e.target as HTMLInputElement).value)
+                    }
+                  />
+                </div>
+                <div class={s.formGroup}>
+                  <label>Period</label>
+                  <select
+                    class={s.formInput}
+                    value={productPeriod}
+                    onChange={(e) =>
+                      setProductPeriod(
+                        (e.target as HTMLSelectElement).value as
+                          | "day"
+                          | "week"
+                          | "month"
+                          | "year",
+                      )
+                    }
+                  >
+                    <option value="day">Day(s)</option>
+                    <option value="week">Week(s)</option>
+                    <option value="month">Month(s)</option>
+                    <option value="year">Year(s)</option>
+                  </select>
+                </div>
+              </div>
+            )}
+            <div class={s.formGroup}>
+              <label>Description</label>
+              <input
+                class={s.formInput}
+                maxlength={200}
+                value={productDescription}
+                onInput={(e) =>
+                  setProductDescription((e.target as HTMLInputElement).value)
+                }
+              />
+            </div>
+            <div class={s.formActions}>
+              <button class={s.btnPrimary} onClick={createProduct}>
+                <Save size={13} /> Create Product
+              </button>
+              <button
+                class={s.btnSecondary}
+                onClick={() => {
+                  setCreatingProduct(false);
+                  setProductName("");
+                  setProductDescription("");
+                  setProductPrice("");
+                  setProductRoleId("");
+                  setProductSubscription(false);
+                  setProductFrequency("1");
+                  setProductPeriod("month");
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {productsLoading && <div class={s.loading}>Loading role shop…</div>}
+        {!productsLoading && products.length === 0 && (
+          <div class={s.empty}>
+            <div class={s.emptyText}>No purchasable roles yet.</div>
+          </div>
+        )}
+        <div class={s.rolesList}>
+          {products.map((product) => (
+            <div key={product.id} class={s.roleCard}>
+              <div class={s.roleCardHeader}>
+                <div>
+                  <div class={s.roleName}>{product.name}</div>
+                  <div class={s.roleDescription}>
+                    Grants {product.role_name || product.role_granted_id}
+                    {product.subscription &&
+                      ` · every ${product.frequency || 1} ${product.period || "month"}${(product.frequency || 1) > 1 ? "s" : ""}`}
+                  </div>
+                </div>
+                <div class={s.bigBalance}>
+                  <Coins size={14} />
+                  <span>{product.price_credits.toLocaleString()}</span>
+                </div>
+              </div>
+              {product.description && (
+                <div class={s.roleDescription}>{product.description}</div>
+              )}
               <div class={s.formActions}>
-                <button class={s.btnPrimary} onClick={createProduct}>
-                  <Save size={13} /> Create Product
-                </button>
-                <button
-                  class={s.btnSecondary}
-                  onClick={() => {
-                    setCreatingProduct(false);
-                    setProductName("");
-                    setProductDescription("");
-                    setProductPrice("");
-                    setProductRoleId("");
-                    setProductSubscription(false);
-                    setProductFrequency("1");
-                    setProductPeriod("month");
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          {productsLoading && <div class={s.loading}>Loading role shop…</div>}
-          {!productsLoading && products.length === 0 && (
-            <div class={s.empty}>
-              <div class={s.emptyText}>No purchasable roles yet.</div>
-            </div>
-          )}
-          <div class={s.rolesList}>
-            {products.map((product) => (
-              <div key={product.id} class={s.roleCard}>
-                <div class={s.roleCardHeader}>
-                  <div>
-                    <div class={s.roleName}>{product.name}</div>
-                    <div class={s.roleDescription}>
-                      Grants {product.role_name || product.role_granted_id}
-                      {product.subscription &&
-                        ` · every ${product.frequency || 1} ${product.period || "month"}${(product.frequency || 1) > 1 ? "s" : ""}`}
-                    </div>
-                  </div>
-                  <div class={s.bigBalance}>
-                    <Coins size={14} />
-                    <span>{product.price_credits.toLocaleString()}</span>
-                  </div>
-                </div>
-                {product.description && (
-                  <div class={s.roleDescription}>{product.description}</div>
+                {isMember && (
+                  <button
+                    class={s.btnPrimary}
+                    onClick={() => purchaseProduct(product)}
+                  >
+                    <Coins size={13} /> Buy Role
+                  </button>
                 )}
-                <div class={s.formActions}>
-                  {isMember && (
-                    <button
-                      class={s.btnPrimary}
-                      onClick={() => purchaseProduct(product)}
-                    >
-                      <Coins size={13} /> Buy Role
-                    </button>
-                  )}
-                  {canManage && (
-                    <button
-                      class={s.btnDanger}
-                      onClick={() => deleteProduct(product)}
-                    >
-                      <Trash2 size={12} /> Delete
-                    </button>
-                  )}
-                </div>
+                {canManage && (
+                  <button
+                    class={s.btnDanger}
+                    onClick={() => deleteProduct(product)}
+                  >
+                    <Trash2 size={12} /> Delete
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      </div>
+      </AccountSection>
 
-      <div class={s.section}>
-        <div class={s.sectionHeader}>
-          <div class={s.sectionTitleGroup}>
-            <div class={s.sectionIcon}>
-              <Shield size={18} />
-            </div>
-            <div>
-              <h2 class={s.sectionTitle}>All Roles</h2>
-              <p class={s.sectionSubtitle}>{groupRoles.length} role(s)</p>
-            </div>
+      <AccountSection
+        icon={<Shield size={18} />}
+        title="All Roles"
+        subtitle={`${groupRoles.length} role(s)`}
+      >
+        {groupRoles.length === 0 && (
+          <div class={s.empty}>
+            <div class={s.emptyText}>No roles defined yet.</div>
           </div>
-        </div>
-        <div class={s.sectionBody}>
-          {groupRoles.length === 0 && (
-            <div class={s.empty}>
-              <div class={s.emptyText}>No roles defined yet.</div>
-            </div>
-          )}
-          <div class={s.rolesList}>
-            {groupRoles.map((r) => {
-              const isProtected = r.name === "Owner";
-              const isEditing = editingId === r.id;
-              return (
-                <div key={r.id} class={s.roleCard}>
-                  {isEditing ? (
-                    <div>
-                      <div class={s.formRow}>
-                        <div class={s.formGroup}>
-                          <label>Name</label>
-                          <input
-                            type="text"
-                            class={s.formInput}
-                            value={editName}
-                            onInput={(e) =>
-                              setEditName((e.target as HTMLInputElement).value)
-                            }
-                          />
-                        </div>
-                        <div class={s.formGroup}>
-                          <label>Description</label>
-                          <input
-                            type="text"
-                            class={s.formInput}
-                            value={editDesc}
-                            onInput={(e) =>
-                              setEditDesc((e.target as HTMLInputElement).value)
-                            }
-                          />
-                        </div>
-                      </div>
+        )}
+        <div class={s.rolesList}>
+          {groupRoles.map((r) => {
+            const isProtected = r.name === "Owner";
+            const isEditing = editingId === r.id;
+            return (
+              <div key={r.id} class={s.roleCard}>
+                {isEditing ? (
+                  <div>
+                    <div class={s.formRow}>
                       <div class={s.formGroup}>
-                        <div class={s.checkboxGroup}>
-                          <input
-                            type="checkbox"
-                            id={`edit-join-${r.id}`}
-                            checked={editAssignOnJoin}
-                            onChange={(e) =>
-                              setEditAssignOnJoin(
-                                (e.target as HTMLInputElement).checked,
-                              )
-                            }
-                          />
-                          <label for={`edit-join-${r.id}`}>
-                            Assign on join
-                          </label>
-                        </div>
-                      </div>
-                      <div class={s.formGroup}>
-                        <div class={s.checkboxGroup}>
-                          <input
-                            type="checkbox"
-                            id={`edit-self-${r.id}`}
-                            checked={editSelfAssignable}
-                            onChange={(e) =>
-                              setEditSelfAssignable(
-                                (e.target as HTMLInputElement).checked,
-                              )
-                            }
-                          />
-                          <label for={`edit-self-${r.id}`}>
-                            Self-assignable
-                          </label>
-                        </div>
-                      </div>
-                      <div class={s.formGroup}>
-                        <label>Permissions</label>
-                        <div class={s.permGrid}>
-                          {ALL_PERMISSIONS.map((p) => (
-                            <label key={p} class={s.permCheck}>
-                              <input
-                                type="checkbox"
-                                checked={editPerms.has(p)}
-                                onChange={() =>
-                                  setEditPerms(togglePerm(editPerms, p))
-                                }
-                              />
-                              {PERMISSION_LABELS[p] || p}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      <div class={s.formGroup}>
-                        <label>Benefits</label>
+                        <label>Name</label>
                         <input
                           type="text"
                           class={s.formInput}
-                          placeholder="custom_color, priority_access"
-                          value={editBenefits}
+                          value={editName}
                           onInput={(e) =>
-                            setEditBenefits(
-                              (e.target as HTMLInputElement).value,
+                            setEditName((e.target as HTMLInputElement).value)
+                          }
+                        />
+                      </div>
+                      <div class={s.formGroup}>
+                        <label>Description</label>
+                        <input
+                          type="text"
+                          class={s.formInput}
+                          value={editDesc}
+                          onInput={(e) =>
+                            setEditDesc((e.target as HTMLInputElement).value)
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div class={s.formGroup}>
+                      <div class={s.checkboxGroup}>
+                        <input
+                          type="checkbox"
+                          id={`edit-join-${r.id}`}
+                          checked={editAssignOnJoin}
+                          onChange={(e) =>
+                            setEditAssignOnJoin(
+                              (e.target as HTMLInputElement).checked,
                             )
                           }
                         />
-                        <small class={s.formHint}>
-                          Comma-separated benefit identifiers.
-                        </small>
+                        <label for={`edit-join-${r.id}`}>Assign on join</label>
                       </div>
+                    </div>
+                    <div class={s.formGroup}>
+                      <div class={s.checkboxGroup}>
+                        <input
+                          type="checkbox"
+                          id={`edit-self-${r.id}`}
+                          checked={editSelfAssignable}
+                          onChange={(e) =>
+                            setEditSelfAssignable(
+                              (e.target as HTMLInputElement).checked,
+                            )
+                          }
+                        />
+                        <label for={`edit-self-${r.id}`}>Self-assignable</label>
+                      </div>
+                    </div>
+                    <div class={s.formGroup}>
+                      <label>Permissions</label>
+                      <div class={s.permGrid}>
+                        {ALL_PERMISSIONS.map((p) => (
+                          <label key={p} class={s.permCheck}>
+                            <input
+                              type="checkbox"
+                              checked={editPerms.has(p)}
+                              onChange={() =>
+                                setEditPerms(togglePerm(editPerms, p))
+                              }
+                            />
+                            {PERMISSION_LABELS[p] || p}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div class={s.formGroup}>
+                      <label>Benefits</label>
+                      <input
+                        type="text"
+                        class={s.formInput}
+                        placeholder="custom_color, priority_access"
+                        value={editBenefits}
+                        onInput={(e) =>
+                          setEditBenefits((e.target as HTMLInputElement).value)
+                        }
+                      />
+                      <small class={s.formHint}>
+                        Comma-separated benefit identifiers.
+                      </small>
+                    </div>
+                    <div class={s.formActions}>
+                      <button class={s.btnPrimary} onClick={() => saveEdit(r)}>
+                        <Save size={13} /> Save
+                      </button>
+                      <button
+                        class={s.btnSecondary}
+                        onClick={() => setEditingId(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div class={s.roleCardHeader}>
+                      <div class={s.roleName}>{r.name}</div>
+                      <div class={s.roleBadges}>
+                        {r.assign_on_join && (
+                          <span class={s.miniTag}>on join</span>
+                        )}
+                        {r.self_assignable && (
+                          <span class={s.miniTag}>self-assign</span>
+                        )}
+                      </div>
+                    </div>
+                    {r.description && (
+                      <div class={s.roleDescription}>{r.description}</div>
+                    )}
+                    {r.permissions.length > 0 && (
+                      <div class={s.rolePermissions}>
+                        {r.permissions.map((p) => (
+                          <span key={p} class={s.permTag}>
+                            {PERMISSION_LABELS[p] || p}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {r.benefits && r.benefits.length > 0 && (
+                      <div class={s.rolePermissions}>
+                        {r.benefits.map((b) => (
+                          <span key={b} class={s.permTag}>
+                            <Sparkles size={10} /> {b}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {canManage && !isProtected && (
                       <div class={s.formActions}>
                         <button
-                          class={s.btnPrimary}
-                          onClick={() => saveEdit(r)}
-                        >
-                          <Save size={13} /> Save
-                        </button>
-                        <button
                           class={s.btnSecondary}
-                          onClick={() => setEditingId(null)}
+                          onClick={() => startEdit(r)}
                         >
-                          Cancel
+                          <Edit3 size={12} /> Edit
+                        </button>
+                        <button class={s.btnDanger} onClick={() => del(r)}>
+                          <Trash2 size={12} /> Delete
                         </button>
                       </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div class={s.roleCardHeader}>
-                        <div class={s.roleName}>{r.name}</div>
-                        <div class={s.roleBadges}>
-                          {r.assign_on_join && (
-                            <span class={s.miniTag}>on join</span>
-                          )}
-                          {r.self_assignable && (
-                            <span class={s.miniTag}>self-assign</span>
-                          )}
-                        </div>
-                      </div>
-                      {r.description && (
-                        <div class={s.roleDescription}>{r.description}</div>
-                      )}
-                      {r.permissions.length > 0 && (
-                        <div class={s.rolePermissions}>
-                          {r.permissions.map((p) => (
-                            <span key={p} class={s.permTag}>
-                              {PERMISSION_LABELS[p] || p}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {r.benefits && r.benefits.length > 0 && (
-                        <div class={s.rolePermissions}>
-                          {r.benefits.map((b) => (
-                            <span key={b} class={s.permTag}>
-                              <Sparkles size={10} /> {b}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {canManage && !isProtected && (
-                        <div class={s.formActions}>
-                          <button
-                            class={s.btnSecondary}
-                            onClick={() => startEdit(r)}
-                          >
-                            <Edit3 size={12} /> Edit
-                          </button>
-                          <button class={s.btnDanger} onClick={() => del(r)}>
-                            <Trash2 size={12} /> Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      </div>
+      </AccountSection>
     </div>
   );
 }
@@ -3134,25 +2982,20 @@ function EventsTab({
   return (
     <div class={s.tabColumn}>
       {canManage && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <Plus size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>New Event</h2>
-                <p class={s.sectionSubtitle}>Schedule an event for members</p>
-              </div>
-            </div>
-            {!creating && (
+        <AccountSection
+          icon={<Plus size={18} />}
+          title="New Event"
+          subtitle="Schedule an event for members"
+          actions={
+            !creating && (
               <button class={s.btnPrimary} onClick={() => setCreating(true)}>
                 <Plus size={13} /> New Event
               </button>
-            )}
-          </div>
+            )
+          }
+        >
           {creating && (
-            <div class={s.sectionBody}>
+            <>
               <div class={s.formGroup}>
                 <label>Title</label>
                 <input
@@ -3261,9 +3104,9 @@ function EventsTab({
                   Cancel
                 </button>
               </div>
-            </div>
+            </>
           )}
-        </div>
+        </AccountSection>
       )}
 
       {msg && (
@@ -3272,82 +3115,73 @@ function EventsTab({
         </div>
       )}
 
-      <div class={s.section}>
-        <div class={s.sectionHeader}>
-          <div class={s.sectionTitleGroup}>
-            <div class={s.sectionIcon}>
-              <Calendar size={18} />
+      <AccountSection
+        icon={<Calendar size={18} />}
+        title="Events"
+        subtitle={`${visible.length} event(s)`}
+      >
+        {loading && <div class={s.loading}>Loading…</div>}
+        {!loading && visible.length === 0 && (
+          <div class={s.empty}>
+            <div class={s.emptyIcon}>
+              <Calendar size={24} />
             </div>
-            <div>
-              <h2 class={s.sectionTitle}>Events</h2>
-              <p class={s.sectionSubtitle}>{visible.length} event(s)</p>
+            <div class={s.emptyTitle}>No events scheduled</div>
+            <div class={s.emptyText}>
+              {canManage
+                ? "Create the first event above."
+                : "Check back later."}
             </div>
           </div>
-        </div>
-        <div class={s.sectionBody}>
-          {loading && <div class={s.loading}>Loading…</div>}
-          {!loading && visible.length === 0 && (
-            <div class={s.empty}>
-              <div class={s.emptyIcon}>
-                <Calendar size={24} />
-              </div>
-              <div class={s.emptyTitle}>No events scheduled</div>
-              <div class={s.emptyText}>
-                {canManage
-                  ? "Create the first event above."
-                  : "Check back later."}
-              </div>
-            </div>
-          )}
-          <div class={s.eventList}>
-            {visible.map((e) => (
-              <div key={e.id} class={s.eventCard}>
-                <div class={s.eventHeader}>
-                  <h3 class={s.eventTitle}>{e.title}</h3>
-                  <div class={s.eventBadges}>
-                    {!e.published && <span class={s.miniTag}>draft</span>}
-                    <span class={s.miniTag}>
-                      {e.visibility === "PUBLIC" ? "public" : "members"}
-                    </span>
-                  </div>
-                </div>
-                {e.description && (
-                  <div class={s.eventDescription}>{e.description}</div>
-                )}
-                <div class={s.eventMeta}>
-                  <span>
-                    <Calendar size={11} /> {formatDateTime(e.start_time)}
+        )}
+        <div class={s.eventList}>
+          {visible.map((e) => (
+            <div key={e.id} class={s.eventCard}>
+              <div class={s.eventHeader}>
+                <h3 class={s.eventTitle}>{e.title}</h3>
+                <div class={s.eventBadges}>
+                  {!e.published && <span class={s.miniTag}>draft</span>}
+                  <span class={s.miniTag}>
+                    {e.visibility === "PUBLIC" ? "public" : "members"}
                   </span>
-                  <span>•</span>
-                  <span>{formatDateTime(e.end_time)}</span>
-                  {e.location && (
-                    <>
-                      <span>•</span>
-                      <span>
-                        <MapPin size={11} /> {e.location}
-                      </span>
-                    </>
-                  )}
                 </div>
-                {canManage && (
-                  <div class={s.formActions}>
-                    <button
-                      class={s.btnSecondary}
-                      onClick={() => updateEvent(e, !e.published)}
-                      disabled={!canPublish && !e.published}
-                    >
-                      <Save size={12} /> {e.published ? "Make Draft" : "Publish"}
-                    </button>
-                    <button class={s.btnDanger} onClick={() => deleteEvent(e)}>
-                      <Trash2 size={12} /> Delete
-                    </button>
-                  </div>
+              </div>
+              {e.description && (
+                <div class={s.eventDescription}>{e.description}</div>
+              )}
+              <div class={s.eventMeta}>
+                <span>
+                  <Calendar size={11} /> {formatDateTime(e.start_time)}
+                </span>
+                <span>•</span>
+                <span>{formatDateTime(e.end_time)}</span>
+                {e.location && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      <MapPin size={11} /> {e.location}
+                    </span>
+                  </>
                 )}
               </div>
-            ))}
-          </div>
+              {canManage && (
+                <div class={s.formActions}>
+                  <button
+                    class={s.btnSecondary}
+                    onClick={() => updateEvent(e, !e.published)}
+                    disabled={!canPublish && !e.published}
+                  >
+                    <Save size={12} /> {e.published ? "Make Draft" : "Publish"}
+                  </button>
+                  <button class={s.btnDanger} onClick={() => deleteEvent(e)}>
+                    <Trash2 size={12} /> Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
-      </div>
+      </AccountSection>
     </div>
   );
 }
@@ -3411,7 +3245,8 @@ function AdminTab({
         ]);
         const inviteData = await inviteRes.json();
         const requestData = await requestRes.json();
-        if (inviteRes.ok) setInvites(Array.isArray(inviteData) ? inviteData : []);
+        if (inviteRes.ok)
+          setInvites(Array.isArray(inviteData) ? inviteData : []);
         if (requestRes.ok) {
           setRequests(Array.isArray(requestData) ? requestData : []);
         }
@@ -3563,281 +3398,228 @@ function AdminTab({
 
       {canInvite && (
         <>
-          <div class={s.section}>
-            <div class={s.sectionHeader}>
-              <div class={s.sectionTitleGroup}>
-                <div class={s.sectionIcon}>
-                  <UserPlus size={18} />
-                </div>
-                <div>
-                  <h2 class={s.sectionTitle}>Invites</h2>
-                  <p class={s.sectionSubtitle}>
-                    Send and revoke pending invitations
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class={s.sectionBody}>
-              <div class={s.actionRow}>
-                <input
-                  class={s.formInput}
-                  value={inviteUsername}
-                  placeholder="Username"
-                  onInput={(e) =>
-                    setInviteUsername((e.target as HTMLInputElement).value)
-                  }
-                />
-                <button
-                  class={s.btnPrimary}
-                  onClick={invite}
-                  disabled={!inviteUsername.trim()}
-                >
-                  <UserPlus size={13} /> Invite
-                </button>
-              </div>
-              <div class={s.manageList}>
-                {invites.length === 0 && (
-                  <div class={s.emptyText}>No pending invites.</div>
-                )}
-                {invites.map((inviteItem) => (
-                  <div key={inviteItem.id} class={s.manageRow}>
-                    <div>
-                      <div class={s.roleName}>{inviteItem.to_username}</div>
-                      <div class={s.roleDescription}>
-                        Invited by {inviteItem.from_username}{" "}
-                        {formatRelativeTime(inviteItem.created_at * 1000)}
-                      </div>
-                    </div>
-                    <button
-                      class={s.btnDanger}
-                      onClick={() => revokeInvite(inviteItem.id)}
-                    >
-                      <Trash2 size={12} /> Revoke
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div class={s.section}>
-            <div class={s.sectionHeader}>
-              <div class={s.sectionTitleGroup}>
-                <div class={s.sectionIcon}>
-                  <LogIn size={18} />
-                </div>
-                <div>
-                  <h2 class={s.sectionTitle}>Join Requests</h2>
-                  <p class={s.sectionSubtitle}>
-                    Approve or decline requested access
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class={s.sectionBody}>
-              <div class={s.manageList}>
-                {requests.length === 0 && (
-                  <div class={s.emptyText}>No pending join requests.</div>
-                )}
-                {requests.map((request) => (
-                  <div key={request.id} class={s.manageRow}>
-                    <div>
-                      <div class={s.roleName}>{request.username}</div>
-                      {request.message && (
-                        <div class={s.roleDescription}>{request.message}</div>
-                      )}
-                    </div>
-                    <div class={s.rowActions}>
-                      <button
-                        class={s.btnSecondary}
-                        onClick={() => handleRequest(request.id, "decline")}
-                      >
-                        <X size={12} /> Decline
-                      </button>
-                      <button
-                        class={s.btnPrimary}
-                        onClick={() => handleRequest(request.id, "accept")}
-                      >
-                        <UserPlus size={12} /> Accept
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {(canRemove || canBan || isOwner) && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <UserMinus size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>Member Actions</h2>
-                <p class={s.sectionSubtitle}>
-                  Remove members, ban accounts, or transfer ownership
-                </p>
-              </div>
-            </div>
-            <button class={s.btnSecondary} onClick={loadAdminData} disabled={busy}>
-              <Search size={13} /> Refresh
-            </button>
-          </div>
-          <div class={s.sectionBody}>
-            {canBan && (
-              <div class={s.formGroup}>
-                <label>Ban reason</label>
-                <input
-                  class={s.formInput}
-                  maxlength={200}
-                  value={banReason}
-                  placeholder="Optional reason used for the next ban"
-                  onInput={(e) =>
-                    setBanReason((e.target as HTMLInputElement).value)
-                  }
-                />
-              </div>
-            )}
-            <div class={s.manageList}>
-              {manageableMembers.length === 0 && (
-                <div class={s.emptyText}>No manageable members found.</div>
-              )}
-              {manageableMembers.map((member) => (
-                <div key={member.id} class={s.manageRow}>
-                  <div>
-                    <div class={s.roleName}>{member.username}</div>
-                    <div class={s.roleDescription}>
-                      Joined {formatRelativeTime(member.joined_at * 1000)}
-                    </div>
-                  </div>
-                  <div class={s.rowActions}>
-                    {isOwner && (
-                      <button
-                        class={s.btnSecondary}
-                        onClick={() => transfer(member)}
-                      >
-                        <Crown size={12} /> Transfer
-                      </button>
-                    )}
-                    {canRemove && (
-                      <button
-                        class={s.btnDanger}
-                        onClick={() => kick(member)}
-                      >
-                        <UserMinus size={12} /> Remove
-                      </button>
-                    )}
-                    {canBan && (
-                      <button class={s.btnDanger} onClick={() => ban(member)}>
-                        <Shield size={12} /> Ban
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {canBan && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <Shield size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>Bans</h2>
-                <p class={s.sectionSubtitle}>Review and remove group bans</p>
-              </div>
-            </div>
-          </div>
-          <div class={s.sectionBody}>
-            <div class={s.manageList}>
-              {bans.length === 0 && <div class={s.emptyText}>No bans.</div>}
-              {bans.map((banItem) => (
-                <div key={banItem.id} class={s.manageRow}>
-                  <div>
-                    <div class={s.roleName}>{banItem.username}</div>
-                    <div class={s.roleDescription}>
-                      By {banItem.banned_by}
-                      {banItem.reason ? `: ${banItem.reason}` : ""}
-                    </div>
-                  </div>
-                  <button
-                    class={s.btnSecondary}
-                    onClick={() => unban(banItem)}
-                  >
-                    <UserPlus size={12} /> Unban
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {canWithdraw && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <Coins size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>Tip Jar</h2>
-                <p class={s.sectionSubtitle}>
-                  Group balance: {group.credits_balance.toLocaleString()} credits
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class={s.sectionBody}>
+          <AccountSection
+            icon={<UserPlus size={18} />}
+            title="Invites"
+            subtitle="Send and revoke pending invitations"
+          >
             <div class={s.actionRow}>
               <input
-                type="number"
-                min={0}
-                step="0.01"
                 class={s.formInput}
-                value={withdrawAmount}
-                placeholder="Amount to withdraw"
+                value={inviteUsername}
+                placeholder="Username"
                 onInput={(e) =>
-                  setWithdrawAmount((e.target as HTMLInputElement).value)
+                  setInviteUsername((e.target as HTMLInputElement).value)
                 }
               />
               <button
                 class={s.btnPrimary}
-                onClick={withdraw}
-                disabled={!withdrawAmount}
+                onClick={invite}
+                disabled={!inviteUsername.trim()}
               >
-                <Coins size={13} /> Withdraw
+                <UserPlus size={13} /> Invite
               </button>
             </div>
             <div class={s.manageList}>
-              {withdrawals.length === 0 && (
-                <div class={s.emptyText}>No recent withdrawals.</div>
+              {invites.length === 0 && (
+                <div class={s.emptyText}>No pending invites.</div>
               )}
-              {withdrawals.map((withdrawal) => (
-                <div key={withdrawal.id} class={s.manageRow}>
+              {invites.map((inviteItem) => (
+                <div key={inviteItem.id} class={s.manageRow}>
                   <div>
-                    <div class={s.roleName}>{withdrawal.to_username}</div>
+                    <div class={s.roleName}>{inviteItem.to_username}</div>
                     <div class={s.roleDescription}>
-                      {formatRelativeTime(withdrawal.created_at * 1000)}
+                      Invited by {inviteItem.from_username}{" "}
+                      {formatRelativeTime(inviteItem.created_at * 1000)}
                     </div>
                   </div>
-                  <div class={s.tipAmount}>
-                    -{withdrawal.amount_credits.toLocaleString()}
+                  <button
+                    class={s.btnDanger}
+                    onClick={() => revokeInvite(inviteItem.id)}
+                  >
+                    <Trash2 size={12} /> Revoke
+                  </button>
+                </div>
+              ))}
+            </div>
+          </AccountSection>
+
+          <AccountSection
+            icon={<LogIn size={18} />}
+            title="Join Requests"
+            subtitle="Approve or decline requested access"
+          >
+            <div class={s.manageList}>
+              {requests.length === 0 && (
+                <div class={s.emptyText}>No pending join requests.</div>
+              )}
+              {requests.map((request) => (
+                <div key={request.id} class={s.manageRow}>
+                  <div>
+                    <div class={s.roleName}>{request.username}</div>
+                    {request.message && (
+                      <div class={s.roleDescription}>{request.message}</div>
+                    )}
+                  </div>
+                  <div class={s.rowActions}>
+                    <button
+                      class={s.btnSecondary}
+                      onClick={() => handleRequest(request.id, "decline")}
+                    >
+                      <X size={12} /> Decline
+                    </button>
+                    <button
+                      class={s.btnPrimary}
+                      onClick={() => handleRequest(request.id, "accept")}
+                    >
+                      <UserPlus size={12} /> Accept
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
+          </AccountSection>
+        </>
+      )}
+
+      {(canRemove || canBan || isOwner) && (
+        <AccountSection
+          icon={<UserMinus size={18} />}
+          title="Member Actions"
+          subtitle="Remove members, ban accounts, or transfer ownership"
+          actions={
+            <button
+              class={s.btnSecondary}
+              onClick={loadAdminData}
+              disabled={busy}
+            >
+              <Search size={13} /> Refresh
+            </button>
+          }
+        >
+          {canBan && (
+            <div class={s.formGroup}>
+              <label>Ban reason</label>
+              <input
+                class={s.formInput}
+                maxlength={200}
+                value={banReason}
+                placeholder="Optional reason used for the next ban"
+                onInput={(e) =>
+                  setBanReason((e.target as HTMLInputElement).value)
+                }
+              />
+            </div>
+          )}
+          <div class={s.manageList}>
+            {manageableMembers.length === 0 && (
+              <div class={s.emptyText}>No manageable members found.</div>
+            )}
+            {manageableMembers.map((member) => (
+              <div key={member.id} class={s.manageRow}>
+                <div>
+                  <div class={s.roleName}>{member.username}</div>
+                  <div class={s.roleDescription}>
+                    Joined {formatRelativeTime(member.joined_at * 1000)}
+                  </div>
+                </div>
+                <div class={s.rowActions}>
+                  {isOwner && (
+                    <button
+                      class={s.btnSecondary}
+                      onClick={() => transfer(member)}
+                    >
+                      <Crown size={12} /> Transfer
+                    </button>
+                  )}
+                  {canRemove && (
+                    <button class={s.btnDanger} onClick={() => kick(member)}>
+                      <UserMinus size={12} /> Remove
+                    </button>
+                  )}
+                  {canBan && (
+                    <button class={s.btnDanger} onClick={() => ban(member)}>
+                      <Shield size={12} /> Ban
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        </AccountSection>
+      )}
+
+      {canBan && (
+        <AccountSection
+          icon={<Shield size={18} />}
+          title="Bans"
+          subtitle="Review and remove group bans"
+        >
+          <div class={s.manageList}>
+            {bans.length === 0 && <div class={s.emptyText}>No bans.</div>}
+            {bans.map((banItem) => (
+              <div key={banItem.id} class={s.manageRow}>
+                <div>
+                  <div class={s.roleName}>{banItem.username}</div>
+                  <div class={s.roleDescription}>
+                    By {banItem.banned_by}
+                    {banItem.reason ? `: ${banItem.reason}` : ""}
+                  </div>
+                </div>
+                <button class={s.btnSecondary} onClick={() => unban(banItem)}>
+                  <UserPlus size={12} /> Unban
+                </button>
+              </div>
+            ))}
+          </div>
+        </AccountSection>
+      )}
+
+      {canWithdraw && (
+        <AccountSection
+          icon={<Coins size={18} />}
+          title="Tip Jar"
+          subtitle={`Group balance: ${group.credits_balance.toLocaleString()} credits`}
+        >
+          <div class={s.actionRow}>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              class={s.formInput}
+              value={withdrawAmount}
+              placeholder="Amount to withdraw"
+              onInput={(e) =>
+                setWithdrawAmount((e.target as HTMLInputElement).value)
+              }
+            />
+            <button
+              class={s.btnPrimary}
+              onClick={withdraw}
+              disabled={!withdrawAmount}
+            >
+              <Coins size={13} /> Withdraw
+            </button>
+          </div>
+          <div class={s.manageList}>
+            {withdrawals.length === 0 && (
+              <div class={s.emptyText}>No recent withdrawals.</div>
+            )}
+            {withdrawals.map((withdrawal) => (
+              <div key={withdrawal.id} class={s.manageRow}>
+                <div>
+                  <div class={s.roleName}>{withdrawal.to_username}</div>
+                  <div class={s.roleDescription}>
+                    {formatRelativeTime(withdrawal.created_at * 1000)}
+                  </div>
+                </div>
+                <div class={s.tipAmount}>
+                  -{withdrawal.amount_credits.toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </AccountSection>
       )}
     </div>
   );
@@ -3931,138 +3713,110 @@ function TipsTab({
   return (
     <div class={s.tabColumn}>
       {balanceVisible && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <Coins size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>Group Balance</h2>
-                <p class={s.sectionSubtitle}>
-                  Total tips received by this group
-                </p>
-              </div>
-            </div>
+        <AccountSection
+          icon={<Coins size={18} />}
+          title="Group Balance"
+          subtitle="Total tips received by this group"
+          actions={
             <div class={s.bigBalance}>
               <Coins size={18} />
               <span>{groupBalance.toLocaleString()}</span>
             </div>
-          </div>
-        </div>
+          }
+        />
       )}
 
       {canTip && (
-        <div class={s.section}>
-          <div class={s.sectionHeader}>
-            <div class={s.sectionTitleGroup}>
-              <div class={s.sectionIcon}>
-                <Send size={18} />
-              </div>
-              <div>
-                <h2 class={s.sectionTitle}>Send a Tip</h2>
-                <p class={s.sectionSubtitle}>Support the group with credits</p>
-              </div>
-            </div>
+        <AccountSection
+          icon={<Send size={18} />}
+          title="Send a Tip"
+          subtitle="Support the group with credits"
+        >
+          <div class={s.actionRow}>
+            <input
+              type="number"
+              class={s.formInput}
+              min={0}
+              step="0.01"
+              placeholder="Amount in credits"
+              value={amount}
+              onInput={(e) => setAmount((e.target as HTMLInputElement).value)}
+            />
+            <button
+              class={s.btnPrimary}
+              onClick={send}
+              disabled={busy || !amount}
+            >
+              <Send size={13} /> {busy ? "Sending…" : "Send Tip"}
+            </button>
           </div>
-          <div class={s.sectionBody}>
-            <div class={s.actionRow}>
-              <input
-                type="number"
-                class={s.formInput}
-                min={0}
-                step="0.01"
-                placeholder="Amount in credits"
-                value={amount}
-                onInput={(e) => setAmount((e.target as HTMLInputElement).value)}
-              />
-              <button
-                class={s.btnPrimary}
-                onClick={send}
-                disabled={busy || !amount}
-              >
-                <Send size={13} /> {busy ? "Sending…" : "Send Tip"}
-              </button>
-            </div>
-            <div class={s.formGroup} style={{ marginTop: "0.75rem" }}>
-              <label>Note</label>
-              <input
-                type="text"
-                class={s.formInput}
-                maxlength={200}
-                placeholder="Optional message with your tip"
-                value={note}
-                onInput={(e) => setNote((e.target as HTMLInputElement).value)}
-              />
-              <small class={s.formHint}>{note.length} / 200 characters.</small>
-            </div>
-            {user && (
-              <small class={s.formHint}>
-                Your balance: {(user["sys.currency"] ?? 0).toLocaleString()}{" "}
-                credits
-              </small>
-            )}
-            {msg && (
-              <div
-                class={msg.type === "success" ? s.success : s.error}
-                style={{ marginTop: "0.5rem" }}
-              >
-                {msg.text}
-              </div>
-            )}
+          <div class={s.formGroup} style={{ marginTop: "0.75rem" }}>
+            <label>Note</label>
+            <input
+              type="text"
+              class={s.formInput}
+              maxlength={200}
+              placeholder="Optional message with your tip"
+              value={note}
+              onInput={(e) => setNote((e.target as HTMLInputElement).value)}
+            />
+            <small class={s.formHint}>{note.length} / 200 characters.</small>
           </div>
-        </div>
-      )}
-
-      <div class={s.section}>
-        <div class={s.sectionHeader}>
-          <div class={s.sectionTitleGroup}>
-            <div class={s.sectionIcon}>
-              <Coins size={18} />
-            </div>
-            <div>
-              <h2 class={s.sectionTitle}>Recent Tips</h2>
-              <p class={s.sectionSubtitle}>
-                {tips.length} tip{tips.length === 1 ? "" : "s"}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class={s.sectionBody}>
-          {loading && <div class={s.loading}>Loading…</div>}
-          {!loading && tips.length === 0 && (
-            <div class={s.empty}>
-              <div class={s.emptyIcon}>
-                <Coins size={24} />
-              </div>
-              <div class={s.emptyTitle}>No tips yet</div>
-              <div class={s.emptyText}>
-                {canTip
-                  ? "Be the first to support the group!"
-                  : "Join the group to send a tip."}
-              </div>
+          {user && (
+            <small class={s.formHint}>
+              Your balance: {(user["sys.currency"] ?? 0).toLocaleString()}{" "}
+              credits
+            </small>
+          )}
+          {msg && (
+            <div
+              class={msg.type === "success" ? s.success : s.error}
+              style={{ marginTop: "0.5rem" }}
+            >
+              {msg.text}
             </div>
           )}
-          <div class={s.tipList}>
-            {tips.map((t) => (
-              <div key={t.id} class={s.tipCard}>
-                <div class={s.tipLeft}>
-                  <div class={s.tipFrom}>
-                    {t.from_username || t.from_user_id || ""}
-                  </div>
-                  <div class={s.tipDate}>
-                    {formatRelativeTime(t.created_at * 1000)}
-                  </div>
-                  {t.note && <div class={s.tipNote}>{t.note}</div>}
-                </div>
-                <div class={s.tipAmount}>
-                  +{t.amount_credits.toLocaleString()}
-                </div>
-              </div>
-            ))}
+        </AccountSection>
+      )}
+
+      <AccountSection
+        icon={<Coins size={18} />}
+        title="Recent Tips"
+        subtitle={`${tips.length} tip${tips.length === 1 ? "" : "s"}`}
+      >
+        {loading && <div class={s.loading}>Loading…</div>}
+        {!loading && tips.length === 0 && (
+          <div class={s.empty}>
+            <div class={s.emptyIcon}>
+              <Coins size={24} />
+            </div>
+            <div class={s.emptyTitle}>No tips yet</div>
+            <div class={s.emptyText}>
+              {canTip
+                ? "Be the first to support the group!"
+                : "Join the group to send a tip."}
+            </div>
           </div>
+        )}
+        <div class={s.tipList}>
+          {tips.map((t) => (
+            <div key={t.id} class={s.tipCard}>
+              <div class={s.tipLeft}>
+                <div class={s.tipFrom}>
+                  {t.from_username || t.from_user_id || ""}
+                </div>
+                <div class={s.tipDate}>
+                  {formatRelativeTime(t.created_at * 1000)}
+                </div>
+                {t.note && <div class={s.tipNote}>{t.note}</div>}
+              </div>
+              <div class={s.tipAmount}>
+                +{t.amount_credits.toLocaleString()}
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      </AccountSection>
     </div>
   );
 }

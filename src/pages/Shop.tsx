@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "preact/hooks";
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import { PageChrome } from "../components/PageChrome";
 import { UserAvatar } from "../components/UserAvatar";
 import { useAuth, getToken } from "../lib/auth";
 import s from "./Shop.module.css";
@@ -413,116 +412,118 @@ export function Shop() {
   const hasActiveFilters = !!typeFilter || !!searchQuery || showFeatured;
 
   return (
-    <div class={s.page}>
-      <Header />
-      <div class={s.shopContainer}>
-        <div class={s.shopHeader}>
-          <div class={s.shopTitleRow}>
-            <div class={s.shopIcon}>
-              <ShoppingBag size={24} />
+    <PageChrome>
+      <div class={s.page}>
+        <div class={s.shopContainer}>
+          <div class={s.shopHeader}>
+            <div class={s.shopTitleRow}>
+              <div class={s.shopIcon}>
+                <ShoppingBag size={24} />
+              </div>
+              <div>
+                <h2 class={s.shopTitle}>Cosmetics Shop</h2>
+                <p class={s.shopSubtitle}>
+                  {total > 0
+                    ? `${total} cosmetics available`
+                    : "Browse and collect cosmetics for your profile"}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 class={s.shopTitle}>Cosmetics Shop</h2>
-              <p class={s.shopSubtitle}>
-                {total > 0
-                  ? `${total} cosmetics available`
-                  : "Browse and collect cosmetics for your profile"}
-              </p>
-            </div>
+            {user && (
+              <div class={s.balance}>
+                <Coins size={16} />
+                <span>
+                  {(user["sys.currency"] ?? 0).toLocaleString()} credits
+                </span>
+              </div>
+            )}
           </div>
-          {user && (
-            <div class={s.balance}>
-              <Coins size={16} />
-              <span>{(user["sys.currency"] ?? 0).toLocaleString()} credits</span>
-            </div>
+
+          <div class={s.tabs} role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "shop"}
+              class={`${s.tab} ${tab === "shop" ? s.tabActive : ""}`}
+              onClick={() => setTab("shop")}
+            >
+              <ShoppingBag size={14} /> Browse Shop
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "owned"}
+              class={`${s.tab} ${tab === "owned" ? s.tabActive : ""}`}
+              onClick={() => setTab("owned")}
+            >
+              <UserIcon size={14} /> My Cosmetics
+              {ownedItems.length > 0 && (
+                <span class={s.tabBadge}>{ownedItems.length}</span>
+              )}
+            </button>
+          </div>
+
+          {tab === "shop" ? (
+            <ShopTab
+              allItems={allItems}
+              filteredItems={filteredItems}
+              featuredItems={featuredItems}
+              regularItems={regularItems}
+              loading={loading}
+              error={error}
+              total={total}
+              typeFilter={typeFilter}
+              searchQuery={searchQuery}
+              sortBy={sortBy}
+              showFeatured={showFeatured}
+              hasActiveFilters={hasActiveFilters}
+              user={user}
+              isOwned={isOwned}
+              onItemClick={handleItemClick}
+              onTypeFilterChange={setTypeFilter}
+              onSearchQueryChange={setSearchQuery}
+              onSortByChange={setSortBy}
+              onShowFeaturedToggle={() => setShowFeatured((v) => !v)}
+              onClearFilters={() => {
+                setTypeFilter("");
+                setSearchQuery("");
+                setShowFeatured(false);
+              }}
+              onRetry={fetchCosmetics}
+            />
+          ) : (
+            <OwnedTab
+              user={user}
+              loading={myLoading}
+              ownedItems={ownedItems}
+              activeItems={activeItems}
+              isEquipped={isEquipped}
+              equipping={equipping}
+              username={user?.username ?? "none"}
+              onItemClick={handleItemClick}
+              onEquip={handleEquip}
+              onUnequip={handleUnequip}
+            />
+          )}
+
+          {selectedItem && (
+            <ItemModal
+              item={selectedItem}
+              user={user}
+              owned={isOwned(selectedItem.id)}
+              equipped={isEquipped(selectedItem)}
+              purchasing={purchasing}
+              equipping={equipping}
+              onClose={closeModal}
+              onPurchase={handlePurchase}
+              onEquip={handleEquip}
+              onUnequip={handleUnequip}
+            />
           )}
         </div>
-
-        <div class={s.tabs} role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "shop"}
-            class={`${s.tab} ${tab === "shop" ? s.tabActive : ""}`}
-            onClick={() => setTab("shop")}
-          >
-            <ShoppingBag size={14} /> Browse Shop
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "owned"}
-            class={`${s.tab} ${tab === "owned" ? s.tabActive : ""}`}
-            onClick={() => setTab("owned")}
-          >
-            <UserIcon size={14} /> My Cosmetics
-            {ownedItems.length > 0 && (
-              <span class={s.tabBadge}>{ownedItems.length}</span>
-            )}
-          </button>
-        </div>
-
-        {tab === "shop" ? (
-          <ShopTab
-            allItems={allItems}
-            filteredItems={filteredItems}
-            featuredItems={featuredItems}
-            regularItems={regularItems}
-            loading={loading}
-            error={error}
-            total={total}
-            typeFilter={typeFilter}
-            searchQuery={searchQuery}
-            sortBy={sortBy}
-            showFeatured={showFeatured}
-            hasActiveFilters={hasActiveFilters}
-            user={user}
-            isOwned={isOwned}
-            onItemClick={handleItemClick}
-            onTypeFilterChange={setTypeFilter}
-            onSearchQueryChange={setSearchQuery}
-            onSortByChange={setSortBy}
-            onShowFeaturedToggle={() => setShowFeatured((v) => !v)}
-            onClearFilters={() => {
-              setTypeFilter("");
-              setSearchQuery("");
-              setShowFeatured(false);
-            }}
-            onRetry={fetchCosmetics}
-          />
-        ) : (
-          <OwnedTab
-            user={user}
-            loading={myLoading}
-            ownedItems={ownedItems}
-            activeItems={activeItems}
-            isEquipped={isEquipped}
-            equipping={equipping}
-            username={user?.username ?? "none"}
-            onItemClick={handleItemClick}
-            onEquip={handleEquip}
-            onUnequip={handleUnequip}
-          />
-        )}
-
-        {selectedItem && (
-          <ItemModal
-            item={selectedItem}
-            user={user}
-            owned={isOwned(selectedItem.id)}
-            equipped={isEquipped(selectedItem)}
-            purchasing={purchasing}
-            equipping={equipping}
-            onClose={closeModal}
-            onPurchase={handlePurchase}
-            onEquip={handleEquip}
-            onUnequip={handleUnequip}
-          />
-        )}
+        <ToastStack toasts={toasts} onDismiss={dismiss} />
       </div>
-      <Footer />
-      <ToastStack toasts={toasts} onDismiss={dismiss} />
-    </div>
+    </PageChrome>
   );
 }
 

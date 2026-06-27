@@ -1,5 +1,4 @@
-import { Header } from "../components/Header";
-import { Footer } from "../components/Footer";
+import { PageChrome } from "../components/PageChrome";
 import s from "./Premium.module.css";
 
 const plans = [
@@ -54,57 +53,58 @@ const plans = [
 
 export function Premium() {
   return (
-    <div class={s.page}>
-      <Header />
-      <div class={s.wrapper}>
-        <div class={s.hero}>
-          <h1>rotur Premium</h1>
-          <p>
-            Choose the plan that fits your needs. Upgrade or downgrade anytime.
-          </p>
-        </div>
-        <div class={s.grid}>
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              class={`${s.card} ${plan.featured ? s.featured : ""}`}
-            >
-              {plan.featured && <span class={s.badge}>Most Popular</span>}
-              <div class={s.tierName}>{plan.name}</div>
-              <div class={s.tierDesc}>{plan.desc}</div>
-              <div class={s.price}>{plan.price}</div>
-              <div class={s.pricePeriod}>{plan.period}</div>
-              <div class={s.features}>
-                <h3>
-                  {plan.name === "Free"
-                    ? "What's Included"
-                    : `Everything in Free, plus`}
-                </h3>
-                <ul>
-                  {plan.features.map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                </ul>
+    <PageChrome>
+      <div class={s.page}>
+        <div class={s.wrapper}>
+          <div class={s.hero}>
+            <h1>rotur Premium</h1>
+            <p>
+              Choose the plan that fits your needs. Upgrade or downgrade
+              anytime.
+            </p>
+          </div>
+          <div class={s.grid}>
+            {plans.map((plan) => (
+              <div
+                key={plan.name}
+                class={`${s.card} ${plan.featured ? s.featured : ""}`}
+              >
+                {plan.featured && <span class={s.badge}>Most Popular</span>}
+                <div class={s.tierName}>{plan.name}</div>
+                <div class={s.tierDesc}>{plan.desc}</div>
+                <div class={s.price}>{plan.price}</div>
+                <div class={s.pricePeriod}>{plan.period}</div>
+                <div class={s.features}>
+                  <h3>
+                    {plan.name === "Free"
+                      ? "What's Included"
+                      : `Everything in Free, plus`}
+                  </h3>
+                  <ul>
+                    {plan.features.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                </div>
+                {plan.href ? (
+                  <a
+                    href={plan.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class={s.ctaBtn}
+                  >
+                    Get Started
+                  </a>
+                ) : (
+                  <button class={s.ctaBtn} disabled>
+                    Current Plan
+                  </button>
+                )}
               </div>
-              {plan.href ? (
-                <a
-                  href={plan.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class={s.ctaBtn}
-                >
-                  Get Started
-                </a>
-              ) : (
-                <button class={s.ctaBtn} disabled>
-                  Current Plan
-                </button>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-      <Footer />
-    </div>
+    </PageChrome>
   );
 }
