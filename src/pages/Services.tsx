@@ -15,6 +15,7 @@ import {
   Mail,
   Blocks,
   Palette,
+  GitBranch,
 } from "lucide-preact";
 import type { LucideProps } from "lucide-preact";
 import type React from "preact/compat";
@@ -80,6 +81,14 @@ const services: Service[] = [
     href: "https://embed.rotur.dev",
     label: "embed.rotur.dev",
     icon: Blocks,
+    category: "Apps",
+  },
+  {
+    name: "roturGIT",
+    desc: "A Rotur-integrated GitHub alternative for hosting your code, managing repositories, and collaborating.",
+    href: "https://git.rotur.dev",
+    label: "git.rotur.dev",
+    icon: GitBranch,
     category: "Apps",
   },
   {

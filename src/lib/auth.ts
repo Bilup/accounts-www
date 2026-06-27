@@ -304,6 +304,9 @@ export function setToken(token: string | null) {
 
 export function captureTokenFromUrl() {
   if (typeof window === "undefined") return;
+  // The /reset_password page owns its own ?token= (a password-reset token, not
+  // an auth token). Don't consume or store it here.
+  if (window.location.pathname === "/reset_password") return;
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
   if (token) {
