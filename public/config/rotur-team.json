@@ -93,7 +93,13 @@
               "link": "https://github.com/b1j2754",
               "name": "Github"
             },
-            "alts": []
+            "alts": [
+              {
+                "link": "https://scratch.mit.edu/users/B1j2754/",
+                "icon": "assets/icons/scratch.svg",
+                "name": "Scratch"
+              }
+            ]
           }
         },
         {
