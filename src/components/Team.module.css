@@ -3,18 +3,6 @@
   position: relative;
 }
 
-.bgOrb {
-  position: absolute;
-  left: 0;
-  top: 33%;
-  width: 16rem;
-  height: 16rem;
-  background-color: var(--accent-3);
-  border-radius: 50%;
-  filter: blur(100px);
-  pointer-events: none;
-}
-
 .inner {
   composes: sectionInner from "./shared.module.css";
   position: relative;

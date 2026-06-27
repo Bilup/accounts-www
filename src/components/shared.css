@@ -28,18 +28,6 @@
   }
 }
 
-@keyframes pulseGlow {
-  0%,
-  100% {
-    box-shadow: 0 0 20px var(--accent-glow);
-  }
-  50% {
-    box-shadow:
-      0 0 40px var(--accent-glow),
-      0 0 80px var(--accent-glow-2);
-  }
-}
-
 @keyframes bounce {
   0%,
   100% {

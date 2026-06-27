@@ -3,18 +3,6 @@
   position: relative;
 }
 
-.ctaBg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(194, 153, 207, 0.03),
-    transparent
-  );
-}
-
 .inner {
   max-width: 48rem;
   margin: 0 auto;

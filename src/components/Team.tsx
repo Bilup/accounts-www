@@ -87,7 +87,6 @@ export function Team({ data }: { data: TeamData | null }) {
 
   return (
     <section ref={ref} class={s.team}>
-      <div class={s.bgOrb} />
       <div class={s.inner}>
         <div class={`${s.header} ${inView ? s.fadeUp : s.hidden}`}>
           <h2 class={s.heading}>The people behind Rotur</h2>

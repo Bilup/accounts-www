@@ -31,16 +31,8 @@ export function About() {
         </div>
         <div class={s.visual}>
           <div class={s.logoWrapper}>
-            <div class={s.logoGlow} />
             <div class={s.logoCard}>
               <img src="/Rotur%20Logo.png" alt="Rotur Logo" class={s.logoImg} />
-            </div>
-            <div class={`${s.floatCard} ${s.floatCard1}`}>
-              <span class={s.accent}>wss://</span> connected
-            </div>
-            <div class={`${s.floatCard} ${s.floatCard2}`}>
-              <span class={s.accent}>1</span> account →{" "}
-              <span class={s.accent}>∞</span> platforms
             </div>
           </div>
         </div>

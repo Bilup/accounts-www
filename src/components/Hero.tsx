@@ -5,8 +5,6 @@ export function Hero() {
   return (
     <section class={s.hero}>
       <div class={s.bg}>
-        <div class={s.orb1} />
-        <div class={s.orb2} />
         <div class={s.dots} />
       </div>
 

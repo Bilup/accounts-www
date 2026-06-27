@@ -15,7 +15,6 @@ export function Features({ data }: { data: FeatureList[] | null }) {
 
   return (
     <section ref={ref} class={s.features}>
-      <div class={s.bgOrb} />
       <div class={s.inner}>
         <div class={`${s.header} ${inView ? s.fadeUp : s.hidden}`}>
           <h2 class={s.heading}>Built for what matters</h2>

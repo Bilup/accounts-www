@@ -33,9 +33,12 @@ export function Contributors({ data }: { data: Contributor[] | null }) {
       lastTime = now;
       if (!pausedRef.current) {
         offsetRef.current -= (dt / 1000) * 40;
-        const halfWidth = el.scrollWidth / 2;
-        if (Math.abs(offsetRef.current) >= halfWidth) {
-          offsetRef.current += halfWidth;
+        // Loop distance = start of the duplicated set (Nth child), excludes
+        // the trailing gap that scrollWidth/2 would wrongly include.
+        const loopChild = el.children[data.length] as HTMLElement | undefined;
+        const loopWidth = loopChild?.offsetLeft ?? el.scrollWidth / 2;
+        if (Math.abs(offsetRef.current) >= loopWidth) {
+          offsetRef.current += loopWidth;
         }
       }
       el.style.transform = `translateX(${offsetRef.current}px)`;
@@ -63,8 +66,6 @@ export function Contributors({ data }: { data: Contributor[] | null }) {
         </p>
       </div>
       <div class={s.carouselOuter}>
-        <div class={s.fadeLeft} />
-        <div class={s.fadeRight} />
         <div class={s.carouselInner}>
           <div ref={carouselRef} class={s.track}>
             {items.map((c, i) => (

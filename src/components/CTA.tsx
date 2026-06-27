@@ -7,7 +7,6 @@ export function CTA() {
 
   return (
     <section ref={ref} class={s.cta}>
-      <div class={s.ctaBg} />
       <div class={s.inner}>
         <div class={`${s.card} ${inView ? s.fadeUp : s.hidden}`}>
           <div class={s.accentLine} />
