@@ -1327,6 +1327,25 @@ export function Auth() {
     return groups;
   }, [permSchema]);
 
+  const requiredGrouped = useMemo(() => {
+    const groups: Record<string, string[]> = {};
+    const all = permSchema?.permissions || [];
+    for (const p of all) {
+      if (!requiredPermsRef.current.has(p)) continue;
+      const cat = p.split(":")[0];
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
+    }
+    return groups;
+  }, [permSchema]);
+
+  const [showAllPerms, setShowAllPerms] = useState(false);
+  const hasRequiredPerms = requiredPermsRef.current.size > 0;
+  const showAllPermsEffective = showAllPerms || !hasRequiredPerms;
+  const displayedGroups = showAllPermsEffective
+    ? groupedVisible
+    : requiredGrouped;
+
   const matchingSubTokens = useMemo(
     () =>
       subTokens.filter((t) => {
@@ -1627,7 +1646,7 @@ export function Auth() {
                 {!permSchema ? (
                   <div class={s.permLoading}>Loading permissions…</div>
                 ) : (
-                  Object.entries(groupedVisible).map(([cat, perms]) => (
+                  Object.entries(displayedGroups).map(([cat, perms]) => (
                     <div key={cat} class={s.dpermCat}>
                       <div class={s.dpermCatLabel}>
                         <i class={`fas ${permIcon(perms[0])}`} /> {cat}
@@ -1666,6 +1685,20 @@ export function Auth() {
                   ))
                 )}
               </div>
+              {hasRequiredPerms && (
+                <button
+                  type="button"
+                  class={s.dpermToggleAll}
+                  onClick={() => setShowAllPerms((v) => !v)}
+                >
+                  <i
+                    class={`fas fa-chevron-${showAllPermsEffective ? "up" : "down"}`}
+                  />
+                  {showAllPermsEffective
+                    ? "Show only requested permissions"
+                    : "Show all permissions"}
+                </button>
+              )}
             </div>
 
             <label
