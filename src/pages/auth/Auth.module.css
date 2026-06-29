@@ -1888,3 +1888,176 @@
   accent-color: var(--accent);
   cursor: pointer;
 }
+
+.fullWarningArea {
+  gap: 0.25rem;
+}
+
+.fullWarningBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin-bottom: 1.25rem;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #f87171;
+  font-size: 1.5rem;
+  box-shadow: 0 0 24px rgba(248, 113, 113, 0.25);
+}
+
+.fullWarningTitle {
+  color: #f87171 !important;
+}
+
+.fullWarningList {
+  list-style: none;
+  margin: 0 0 1.25rem 0;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  border-radius: 0.5rem;
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.fullWarningList li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.825rem;
+  color: var(--text);
+}
+
+.fullWarningList li > i {
+  width: 1rem;
+  text-align: center;
+  color: #f87171;
+}
+
+.fullWarningNote {
+  font-size: 0.8rem !important;
+  color: var(--text-subtle) !important;
+}
+
+.btnWelcomeDanger {
+  background-color: #f87171;
+}
+
+.permRequestList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.permRequestListHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.825rem;
+  color: var(--text-muted);
+}
+
+.permRequestListHead > i {
+  color: var(--accent);
+}
+
+.permRequestListHead strong {
+  color: var(--text);
+}
+
+.permRequestItems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.permRequestItem {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.25rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.permRequestItem:last-child {
+  border-bottom: none;
+}
+
+.permRequestItemIcon {
+  width: 1.1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.permRequestItemText {
+  flex: 1;
+}
+
+.permRequestItemState {
+  font-size: 0.7rem;
+  color: #4ade80;
+}
+
+.permRequestItemMissing .permRequestItemText {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.permRequestItemMissing .permRequestItemState {
+  color: #f87171;
+}
+
+.permGiveAllBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  margin-top: 0.25rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: var(--accent);
+  color: var(--void);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  transition:
+    filter 0.2s,
+    transform 0.1s;
+}
+
+.permGiveAllBtn:hover {
+  filter: brightness(1.1);
+}
+
+.permGiveAllBtn:active {
+  transform: scale(0.99);
+}
+
+.permGiveAllBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

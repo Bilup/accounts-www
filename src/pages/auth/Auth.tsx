@@ -66,6 +66,94 @@ const FORBIDDEN_PERMISSIONS = new Set(["tokens:manage", "account:delete"]);
 
 const AUTO_LOGIN_HOSTNAMES = new Set(["rotur.dev", "originchats.com"]);
 
+const PERMISSION_DESCRIPTIONS: Record<string, string> = {
+  "account:delete": "Delete your account",
+  "account:profile": "Edit your profile",
+  "account:settings": "Change your account settings",
+  "account:view": "View your profile",
+  "blocked:manage": "Manage your blocked users",
+  "blocked:view": "See who you've blocked",
+  "cosmetics:buy": "Buy cosmetics for you",
+  "cosmetics:equip": "Equip cosmetics on your profile",
+  "cosmetics:view": "View your cosmetics",
+  "credits:daily": "Claim your daily credits",
+  "credits:manage": "Spend and manage your credits",
+  "credits:transfer": "Transfer your credits",
+  "credits:view": "View your credit balance",
+  "files:delete": "Delete your files",
+  "files:manage": "Upload and manage your files",
+  "files:view": "View your files",
+  "following:follow": "Follow people for you",
+  "following:unfollow": "Unfollow people for you",
+  "following:view": "See who you follow",
+  "friends:accept": "Accept friend requests for you",
+  "friends:cancel": "Cancel your friend requests",
+  "friends:manage": "Manage your friends",
+  "friends:remove": "Remove your friends",
+  "friends:request": "Send friend requests for you",
+  "friends:view": "View your friends list",
+  "gifts:cancel": "Cancel your gifts",
+  "gifts:claim": "Claim gifts for you",
+  "gifts:create": "Create gifts on your behalf",
+  "gifts:view": "View your gifts",
+  "groups:ban": "Ban members from your groups",
+  "groups:invite": "Manage your group invites",
+  "groups:join": "Join groups for you",
+  "groups:leave": "Leave groups for you",
+  "groups:manage": "Manage your groups",
+  "groups:members.view": "View members of your groups",
+  "groups:view": "View your groups",
+  "items:buy": "Buy marketplace items for you",
+  "items:manage": "Manage your marketplace items",
+  "items:sell": "Sell your marketplace items",
+  "items:view": "View marketplace items",
+  "keys:manage": "Manage your keys",
+  "keys:view": "View your keys",
+  "notifications:send": "Send notifications on your behalf",
+  "notifications:view": "View your notifications",
+  "posts:create": "Create posts for you",
+  "posts:delete": "Delete your posts",
+  "posts:like": "Like posts for you",
+  "posts:manage": "Manage your posts",
+  "posts:reply": "Reply to posts for you",
+  "posts:repost": "Repost for you",
+  "posts:view": "View posts",
+  "tokens:manage": "Manage your access tokens",
+  "validators:generate": "Generate validators for you",
+};
+
+const PERMISSION_CATEGORY_ICONS: Record<string, string> = {
+  account: "fa-user",
+  blocked: "fa-ban",
+  cosmetics: "fa-palette",
+  credits: "fa-coins",
+  files: "fa-folder-open",
+  following: "fa-user-plus",
+  friends: "fa-user-group",
+  gifts: "fa-gift",
+  groups: "fa-users",
+  items: "fa-store",
+  keys: "fa-key",
+  notifications: "fa-bell",
+  posts: "fa-comment",
+  tokens: "fa-key",
+  validators: "fa-shield-halved",
+};
+
+function describePerm(p: string): string {
+  if (PERMISSION_DESCRIPTIONS[p]) return PERMISSION_DESCRIPTIONS[p];
+  // Fallback: humanize "namespace:action" → "Action namespace"
+  const [ns, action = ""] = p.split(":");
+  const verb = action.split(".")[0].replace(/_/g, " ");
+  const noun = ns.replace(/_/g, " ");
+  const phrase = `${verb} ${noun}`.trim();
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+}
+
+function permIcon(p: string): string {
+  return PERMISSION_CATEGORY_ICONS[p.split(":")[0]] || "fa-shield-halved";
+}
+
 function parseReturnUrl(url: string): URL | null {
   try {
     return new URL(url, location.origin);
@@ -483,6 +571,7 @@ export function Auth() {
       } else {
         setSelectedPerms(new Set(requiredPermsRef.current));
       }
+      setUseFullAccess(requiresFullRef.current);
       setPermSearch("");
       setScopeError("");
       setView("permissions");
@@ -1243,9 +1332,11 @@ export function Auth() {
 
   const [showMissingWarn, setShowMissingWarn] = useState(false);
 
-  const handleAllowScopedAccess = useCallback(async () => {
+  const handleAllowScopedAccess = useCallback(
+    async (permsOverride?: Set<string>) => {
     if (!account?.key) return;
-    if (selectedPerms.size === 0) {
+    const perms = permsOverride ?? selectedPerms;
+    if (perms.size === 0) {
       setScopeError("Pick at least one permission, or use Full access above.");
       return;
     }
@@ -1254,7 +1345,7 @@ export function Auth() {
     try {
       const body: any = {
         name: requestor || "Third-party app",
-        permissions: Array.from(selectedPerms),
+        permissions: Array.from(perms),
         origin: requestor,
         description: `Scoped access for ${requestor}`,
         websites: [returnToRef.current],
@@ -1281,7 +1372,7 @@ export function Auth() {
             type: "rotur-auth-token",
             token: subToken,
             scope: "scoped",
-            permissions: Array.from(selectedPerms),
+            permissions: Array.from(perms),
             id: data.id,
           },
           "*",
@@ -1293,7 +1384,7 @@ export function Auth() {
             type: "rotur-auth-token",
             token: subToken,
             scope: "scoped",
-            permissions: Array.from(selectedPerms),
+            permissions: Array.from(perms),
             id: data.id,
           },
           "*",
@@ -1306,7 +1397,9 @@ export function Auth() {
       setScopeBtn(errorBtn(e?.message || "Network error"));
       setTimeout(() => setScopeBtn(defaultBtn("Continue")), 3000);
     }
-  }, [account, selectedPerms, requestor]);
+    },
+    [account, selectedPerms, requestor],
+  );
 
   const attemptSubmit = useCallback(() => {
     if (missingRequired.length > 0) {
@@ -1315,6 +1408,16 @@ export function Auth() {
     }
     handleAllowScopedAccess();
   }, [missingRequired, handleAllowScopedAccess]);
+
+  const giveAllRequired = useCallback(() => {
+    const next = new Set<string>();
+    for (const r of requiredPermsRef.current) {
+      if (!FORBIDDEN_PERMISSIONS.has(r)) next.add(r);
+    }
+    setSelectedPerms(next);
+    setShowMissingWarn(false);
+    handleAllowScopedAccess(next);
+  }, [handleAllowScopedAccess]);
 
   const visiblePerms = useMemo(() => {
     const all = permSchema?.permissions || [];
@@ -1569,44 +1672,63 @@ export function Auth() {
             </AuthSubheading>
           </div>
 
+          {requiresFullRef.current && !useFullAccess && (
+            <div class={s.permMissingWarn}>
+              <div class={s.permMissingWarnHead}>
+                <i class="fas fa-triangle-exclamation" />
+                <strong>{requestor} asked for full access</strong>
+              </div>
+              <p class={s.permMissingWarnText}>
+                You're only granting some permissions. Some features on this app
+                may not work as expected. Re-enable <strong>Full account
+                access</strong> below to grant everything.
+              </p>
+            </div>
+          )}
+
           {requiredPermsRef.current.size > 0 && !useFullAccess && (
-            <div class={s.permRequiredNotice}>
-              <div class={s.permRequiredHead}>
-                <i class="fas fa-circle-exclamation" />
-                <strong>Requested by {requestor}</strong>
+            <div class={s.permRequestList}>
+              <div class={s.permRequestListHead}>
+                <i class="fas fa-circle-info" />
+                <span>
+                  <strong>{requestor}</strong> would like permission to:
+                </span>
               </div>
-              <div class={s.permRequiredTags}>
-                {Array.from(requiredPermsRef.current).map((p) => (
-                  <span
-                    key={p}
-                    class={`${s.permRequiredTag} ${
-                      !selectedPerms.has(p) ? s.permRequiredTagMissing : ""
-                    }`}
-                  >
-                    <i
-                      class={`fas ${selectedPerms.has(p) ? "fa-check" : "fa-xmark"}`}
-                    />
-                    {p}
-                  </span>
-                ))}
-              </div>
+              <ul class={s.permRequestItems}>
+                {Array.from(requiredPermsRef.current).map((p) => {
+                  const granted = selectedPerms.has(p);
+                  return (
+                    <li
+                      key={p}
+                      class={`${s.permRequestItem} ${granted ? "" : s.permRequestItemMissing}`}
+                      title={p}
+                    >
+                      <i class={`fas ${permIcon(p)} ${s.permRequestItemIcon}`} />
+                      <span class={s.permRequestItemText}>{describePerm(p)}</span>
+                      <i
+                        class={`fas ${granted ? "fa-check" : "fa-xmark"} ${s.permRequestItemState}`}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+              <button
+                type="button"
+                class={s.permGiveAllBtn}
+                onClick={giveAllRequired}
+                disabled={scopeBtn.disabled}
+              >
+                <i class="fas fa-check-double" /> Give all required permissions
+              </button>
               {missingRequired.length > 0 && (
-                <div class={s.permRequiredMissing}>
-                  <i class="fas fa-triangle-exclamation" />
-                  <span>
-                    {missingRequired.length} of {requiredPermsRef.current.size}{" "}
-                    requested permission
-                    {requiredPermsRef.current.size !== 1 ? "s" : ""} not
-                    selected
-                  </span>
-                  <button
-                    type="button"
-                    class={s.permRequiredMissingBtn}
-                    onClick={addMissingRequired}
-                  >
-                    <i class="fas fa-plus" /> Add requested
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  class={s.permRequiredMissingBtn}
+                  onClick={addMissingRequired}
+                >
+                  <i class="fas fa-plus" /> Add the {missingRequired.length} you
+                  removed back
+                </button>
               )}
             </div>
           )}
@@ -1999,26 +2121,44 @@ export function Auth() {
           </AuthTosLinks>
         </div>
       ) : view === "full_warning" ? (
-        <div class={s.welcomeArea}>
-          <div class={s.welcomeLogo}>
-            <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
+        <div class={`${s.welcomeArea} ${s.fullWarningArea}`}>
+          <div class={s.fullWarningBadge}>
+            <i class="fas fa-triangle-exclamation" />
           </div>
           <div class={s.welcomeContent}>
-            <h1>Full Account Access Requested</h1>
+            <h1 class={s.fullWarningTitle}>Full account access requested</h1>
             <p>
-              The site <strong>{requestor}</strong> is requesting{" "}
-              <strong>full access</strong> to your Rotur account. This means it
-              will be able to perform any action on your behalf, including
-              deleting your account and managing your tokens.
+              <strong>{requestor}</strong> is asking for{" "}
+              <strong>full access</strong> to your Rotur account. That lets it do
+              anything you can, including:
             </p>
-            <p style={{ fontSize: "0.8rem", color: "var(--text-subtle)" }}>
-              Only proceed if you fully trust {requestor}. You will be asked to
-              sign in and confirm on the next screen.
+            <ul class={s.fullWarningList}>
+              <li>
+                <i class="fas fa-id-card" /> Read and change everything in your
+                account
+              </li>
+              <li>
+                <i class="fas fa-coins" /> Spend and transfer your credits
+              </li>
+              <li>
+                <i class="fas fa-folder-open" /> Read, upload, and delete your
+                files
+              </li>
+              <li>
+                <i class="fas fa-key" /> View and manage your keys
+              </li>
+            </ul>
+            <p class={s.fullWarningNote}>
+              Only continue if you fully trust {requestor}. If an app asks for
+              full access it probably needs it to work — but on the next screen
+              you can sign in and choose to grant only some permissions instead.
+              If you do, <strong>some features on this app may not work as
+              expected.</strong>
             </p>
           </div>
           <div class={s.welcomeButtons}>
             <button
-              class={s.btnWelcomePrimary}
+              class={`${s.btnWelcomePrimary} ${s.btnWelcomeDanger}`}
               onClick={handleFullWarningProceed}
             >
               <i class="fas fa-arrow-right" /> Continue to sign in
