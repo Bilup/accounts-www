@@ -1,7 +1,3 @@
-.hidden {
-  display: none !important;
-}
-
 .signinForm {
   max-width: 480px;
   width: 100%;
@@ -143,14 +139,6 @@
   color: var(--text-subtle);
 }
 
-.confirmBtns {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
-}
-
 .welcomeArea {
   flex: 1;
   padding: 3rem 2.5rem;
@@ -158,6 +146,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1.5rem;
   max-width: none;
   width: 100%;
   margin: 0 auto;
@@ -167,13 +156,13 @@
   width: 56px;
   height: 56px;
   border-radius: 1rem;
-  margin-bottom: 1.25rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .welcomeContent {
   text-align: center;
   width: 100%;
+  max-width: 380px;
 }
 
 .welcomeContent h1 {
@@ -187,9 +176,9 @@
 
 .welcomeContent p {
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
-  margin: 0 0 1.75rem 0;
+  margin: 0;
   line-height: 1.6;
 }
 
@@ -199,6 +188,7 @@
   align-items: stretch;
   gap: 0.625rem;
   width: 100%;
+  max-width: 380px;
 }
 
 .btnWelcomePrimary {
@@ -329,51 +319,10 @@
   min-width: 0;
 }
 
-.permViewHeader {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  text-align: center;
-  flex-shrink: 0;
-}
-
 .permViewActions {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-}
-
-.permActionFull {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-heading);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    border-color 0.2s;
-  text-align: left;
-  width: 100%;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.permActionFull:hover {
-  background-color: var(--surface-3);
-  border-color: var(--accent);
-}
-
-.permActionFull > i {
-  color: var(--accent);
-  font-size: 0.95rem;
-  flex-shrink: 0;
 }
 
 .permActionExisting {
@@ -413,134 +362,6 @@
   flex-shrink: 0;
 }
 
-.permGroupGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-  width: 100%;
-}
-
-.permGroupCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.85rem 1rem;
-  border-radius: 0.5rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s,
-    transform 0.1s;
-  text-align: left;
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.permGroupCard:hover {
-  background-color: var(--surface-3);
-  border-color: var(--border);
-}
-
-.permGroupCard:active {
-  transform: scale(0.98);
-}
-
-.permGroupCardActive {
-  background-color: var(--accent-3);
-  border-color: var(--accent);
-}
-
-.permGroupCardActive:hover {
-  background-color: var(--accent-10);
-}
-
-.permGroupCardHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.15rem;
-}
-
-.permGroupCardIcon {
-  font-size: 1rem;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.permGroupCardActive .permGroupCardIcon {
-  color: var(--accent);
-}
-
-.permGroupCardCheck {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  color: var(--text-subtle);
-  transition:
-    background-color 0.15s,
-    border-color 0.15s,
-    color 0.15s;
-  flex-shrink: 0;
-}
-
-.permGroupCardActive .permGroupCardCheck {
-  background-color: var(--accent);
-  border-color: var(--accent);
-  color: var(--void);
-}
-
-.permGroupCardName {
-  font-family: var(--font-heading);
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.2;
-}
-
-.permGroupCardDesc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-  flex: 1;
-}
-
-.permGroupCardMeta {
-  font-size: 0.7rem;
-  color: var(--text-subtle);
-  font-family: var(--font-body);
-  margin-top: 0.15rem;
-}
-
-.permCustomizeToggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.5rem;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: color 0.15s;
-  width: 100%;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.permCustomizeToggle:hover {
-  color: var(--text);
-}
-
 .permActionTitle {
   font-weight: 600;
   font-size: 0.85rem;
@@ -573,314 +394,12 @@
   background: var(--border-subtle);
 }
 
-.permAllowAllBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
-  padding: 0.7rem 0.9rem;
-  border-radius: 0.5rem;
-  background: var(--accent-10);
-  border: 1px solid var(--accent);
-  color: var(--text);
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition:
-    background-color 0.2s,
-    border-color 0.2s,
-    transform 0.1s;
-  text-align: left;
-  width: 100%;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.permAllowAllBtn:hover {
-  background-color: var(--accent-20, var(--accent-10));
-  filter: brightness(1.1);
-}
-
-.permAllowAllBtn:active {
-  transform: scale(0.99);
-}
-
-.permAllowAllBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.permAllowAllBtn > i {
-  color: var(--accent);
-  font-size: 0.9rem;
-  margin-bottom: 0.1rem;
-}
-
-.permAllowAllTitle {
-  font-family: var(--font-heading);
-  font-size: 0.85rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.permAllowAllSub {
-  font-size: 0.72rem;
-  color: var(--text-subtle);
-  line-height: 1.4;
-}
-
-.permPickerInline {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-  min-height: 0;
-}
-
-.permPickerHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-}
-
-.permPickerTitle {
-  font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: 0.8rem;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.permPickerTitle > i {
-  color: var(--accent);
-  font-size: 0.75rem;
-}
-
-.permPickerControls {
-  display: flex;
-  gap: 0.3rem;
-  align-items: center;
-}
-
-.permGroupSelect {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.25rem 0.4rem;
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  padding-right: 1.25rem;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%2394959b' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 0.4rem center;
-}
-
-.permGroupSelect:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.permLinkBtn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  transition:
-    color 0.15s,
-    background-color 0.15s;
-}
-
-.permLinkBtn:hover {
-  color: var(--accent);
-  background: var(--surface);
-}
-
-.permSearch {
-  width: 100%;
-  padding: 0.45rem 2rem 0.45rem 2rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface);
-  color: var(--text);
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  flex-shrink: 0;
-  box-sizing: border-box;
-}
-
-.permSearch:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-glow);
-}
-
-.permSearch::placeholder {
-  color: var(--text-subtle);
-}
-
-.permListScroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-  background: var(--surface);
-  padding: 0.4rem;
-}
-
-.permListScroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.permListScroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.permListScroll::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 2px;
-}
-
-.permListScroll::-webkit-scrollbar-thumb:hover {
-  background: var(--text-subtle);
-}
-
 .permLoading {
   text-align: center;
   color: var(--text-subtle);
   font-size: 0.75rem;
   padding: 1rem 0;
   font-family: var(--font-body);
-}
-
-.permCategory {
-  margin-bottom: 0.4rem;
-}
-
-.permCategoryHeader {
-  font-family: var(--font-heading);
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-subtle);
-  padding: 0.2rem 0.3rem;
-  margin-bottom: 0.15rem;
-}
-
-.permList {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.1rem;
-}
-
-.permItem {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0.4rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.7rem;
-  font-family: monospace;
-  color: var(--text-muted);
-  transition:
-    background-color 0.1s,
-    color 0.1s;
-  user-select: none;
-  min-width: 0;
-}
-
-.permItem:hover {
-  background-color: var(--surface-3);
-  color: var(--text);
-}
-
-.permItem input[type="checkbox"] {
-  margin: 0;
-  accent-color: var(--accent);
-  cursor: pointer;
-  flex-shrink: 0;
-  width: 12px;
-  height: 12px;
-}
-
-.permItemChecked {
-  background-color: var(--accent-glow);
-  color: var(--text);
-}
-
-.permItemForbidden {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.permItemForbidden input {
-  cursor: not-allowed;
-}
-
-.permItemLabel {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.permBadge {
-  font-size: 0.55rem;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: var(--surface);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-subtle);
-  font-family: var(--font-body);
-  flex-shrink: 0;
-}
-
-.permPickerFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
-}
-
-.permPickerActions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.permCount {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-}
-
-.permCount strong {
-  color: var(--accent);
-  font-weight: 600;
 }
 
 .permAllowBtn {
@@ -912,14 +431,6 @@
 .permAllowBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.permAllowBtnDanger {
-  background: #f87171;
-}
-
-.permAllowBtnDanger:hover:not(:disabled) {
-  filter: brightness(1.05);
 }
 
 .permError {
@@ -1106,31 +617,6 @@
   font-weight: 600;
 }
 
-.permDangerWarningList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.permDangerWarningList li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.permDangerWarningList li > i {
-  color: #f87171;
-  font-size: 0.7rem;
-  margin-top: 0.3rem;
-  flex-shrink: 0;
-}
-
 .permDangerWarningNote {
   margin: 0.25rem 0 0;
   padding-top: 0.5rem;
@@ -1215,18 +701,6 @@
     display: none;
   }
 
-  .permPickerFooter {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-
-  .permPickerActions {
-    display: flex;
-    flex-direction: row;
-    gap: 0.5rem;
-  }
-
   .permAllowBtn,
   .permCancelBtn {
     flex: 1;
@@ -1280,35 +754,6 @@
   }
 }
 
-.permRequiredNotice {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.85rem 1rem;
-  border-radius: 0.5rem;
-  background: rgba(250, 204, 21, 0.06);
-  border: 1px solid rgba(250, 204, 21, 0.3);
-  margin-bottom: 1rem;
-  width: 100%;
-}
-
-.permRequiredHead {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-heading);
-  font-size: 0.8rem;
-  color: #fbbf24;
-}
-
-.permRequiredHead > i {
-  font-size: 0.9rem;
-}
-
-.permRequiredHead strong {
-  font-weight: 600;
-}
-
 .permRequiredTags {
   display: flex;
   flex-wrap: wrap;
@@ -1340,25 +785,6 @@
 
 .permRequiredTagMissing > i {
   color: #f87171;
-}
-
-.permRequiredSub {
-  margin: 0;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.permItemRequested .permItemLabel {
-  color: var(--text);
-}
-
-.permItemRequested {
-  border-left: 2px solid rgba(250, 204, 21, 0.6);
-}
-
-.permItemRequestedMissing {
-  border-left-color: rgba(248, 113, 113, 0.6);
 }
 
 .permMissingWarn {
@@ -1438,314 +864,6 @@
   .btnWelcomeSecondary {
     padding: 0.625rem 1rem;
   }
-}
-
-/* ── Selected permission chips ── */
-.permChips {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 0.85rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-}
-
-.permChipsHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.permChipsTitle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-family: var(--font-heading);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.permChipsTitle > i {
-  color: var(--accent);
-  font-size: 0.75rem;
-}
-
-.permChipsCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.4rem;
-  height: 1.3rem;
-  padding: 0 0.4rem;
-  border-radius: 999px;
-  background: var(--accent-3);
-  color: var(--accent);
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  font-weight: 600;
-  border: 1px solid var(--accent-10);
-}
-
-.permChipsList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-
-.permChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.3rem 0.25rem 0.55rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-family: monospace;
-  font-size: 0.7rem;
-  color: var(--text);
-  max-width: 100%;
-  min-width: 0;
-}
-
-.permChipRequired {
-  border-color: rgba(250, 204, 21, 0.45);
-  background: rgba(250, 204, 21, 0.06);
-}
-
-.permChipReqIcon {
-  font-size: 0.5rem;
-  color: #fbbf24;
-  flex-shrink: 0;
-}
-
-.permChipLabel {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-.permChipRemove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 0.6rem;
-  padding: 0;
-  flex-shrink: 0;
-  transition:
-    background-color 0.15s,
-    color 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.permChipRemove:hover {
-  background: var(--auth-danger, #f87171);
-  color: var(--void);
-}
-
-.permChipsEmpty {
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  color: var(--text-subtle);
-  line-height: 1.4;
-}
-
-.permChipsMore {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.65rem;
-  background: transparent;
-  border: 1px dashed var(--border);
-  border-radius: 999px;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  cursor: pointer;
-  transition:
-    color 0.15s,
-    border-color 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.permChipsMore:hover {
-  color: var(--accent);
-  border-color: var(--accent-10);
-}
-
-/* ── Group card partial / required states ── */
-.permGroupCardHeadLeft {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-width: 0;
-}
-
-.permGroupCardReq {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: rgba(250, 204, 21, 0.12);
-  color: #fbbf24;
-  font-size: 0.5rem;
-  flex-shrink: 0;
-}
-
-.permGroupCardPartial {
-  border-color: var(--accent-10);
-  background-color: var(--surface-3);
-}
-
-.permGroupCardPartial:hover {
-  background-color: var(--surface-3);
-  border-color: var(--accent-10);
-}
-
-.permGroupCardPartial .permGroupCardCheck {
-  background-color: var(--surface);
-  border-color: var(--accent-10);
-  color: var(--accent);
-}
-
-.permGroupCardMetaReq {
-  margin-left: 0.25rem;
-  color: #fbbf24;
-}
-
-/* ── Live missing-required feedback ── */
-.permRequiredMissing {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem 0.65rem;
-  background: rgba(248, 113, 113, 0.06);
-  border: 1px solid rgba(248, 113, 113, 0.25);
-  border-radius: 4px;
-  font-family: var(--font-body);
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.permRequiredMissing > i {
-  color: #f87171;
-  font-size: 0.8rem;
-  flex-shrink: 0;
-}
-
-.permRequiredMissing > span {
-  flex: 1;
-  min-width: 0;
-}
-
-.permRequiredMissingBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.6rem;
-  background: rgba(248, 113, 113, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  border-radius: 4px;
-  color: #f87171;
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background-color 0.15s,
-    border-color 0.15s;
-  -webkit-tap-highlight-color: transparent;
-  flex-shrink: 0;
-}
-
-.permRequiredMissingBtn:hover {
-  background: rgba(248, 113, 113, 0.2);
-  border-color: #f87171;
-}
-
-/* ── Search wrap with icon + clear ── */
-.permSearchWrap {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-.permSearchIcon {
-  position: absolute;
-  left: 0.6rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-subtle);
-  font-size: 0.75rem;
-  pointer-events: none;
-}
-
-.permSearchClear {
-  position: absolute;
-  right: 0.35rem;
-  top: 50%;
-  transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: none;
-  background: var(--surface-3);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 0.6rem;
-  padding: 0;
-  transition:
-    background-color 0.15s,
-    color 0.15s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.permSearchClear:hover {
-  background: var(--auth-danger, #f87171);
-  color: var(--void);
-}
-
-.permSearchCount {
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  color: var(--text-subtle);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* ── Superseded (dimmed) when full account access is on ── */
-.permSuperseded {
-  opacity: 0.4;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-/* ── TOS inline content ── */
-.tosFrameWrap {
-  width: 100%;
-  flex: 1 1 0;
-  min-height: 0;
-  border: 1px solid var(--border, #e1e5e9);
-  border-radius: 0.5rem;
-  overflow: hidden;
-  margin-bottom: 0.75rem;
 }
 
 .tosFrameContent {
@@ -1889,175 +1007,405 @@
   cursor: pointer;
 }
 
-.fullWarningArea {
-  gap: 0.25rem;
+.dpermHead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.1rem;
+  flex-shrink: 0;
 }
 
-.fullWarningBadge {
+.dpermIcons {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.dpermIconBox {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  margin-bottom: 1.25rem;
-  background: rgba(248, 113, 113, 0.12);
-  border: 1px solid rgba(248, 113, 113, 0.4);
-  color: #f87171;
-  font-size: 1.5rem;
-  box-shadow: 0 0 24px rgba(248, 113, 113, 0.25);
-}
-
-.fullWarningTitle {
-  color: #f87171 !important;
-}
-
-.fullWarningList {
-  list-style: none;
-  margin: 0 0 1.25rem 0;
-  padding: 0.85rem 1rem;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  border-radius: 0.5rem;
-  background: rgba(248, 113, 113, 0.06);
-  border: 1px solid rgba(248, 113, 113, 0.3);
-}
-
-.fullWarningList li {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-family: var(--font-body);
-  font-size: 0.825rem;
-  color: var(--text);
-}
-
-.fullWarningList li > i {
-  width: 1rem;
-  text-align: center;
-  color: #f87171;
-}
-
-.fullWarningNote {
-  font-size: 0.8rem !important;
-  color: var(--text-subtle) !important;
-}
-
-.btnWelcomeDanger {
-  background-color: #f87171;
-}
-
-.permRequestList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.85rem 1rem;
-  border-radius: 0.5rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  margin-bottom: 1rem;
-  width: 100%;
-}
-
-.permRequestListHead {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-body);
-  font-size: 0.825rem;
-  color: var(--text-muted);
-}
-
-.permRequestListHead > i {
-  color: var(--accent);
-}
-
-.permRequestListHead strong {
-  color: var(--text);
-}
-
-.permRequestItems {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.permRequestItem {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.45rem 0.25rem;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  color: var(--text);
-  border-bottom: 1px solid var(--border);
-}
-
-.permRequestItem:last-child {
-  border-bottom: none;
-}
-
-.permRequestItemIcon {
-  width: 1.1rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.permRequestItemText {
-  flex: 1;
-}
-
-.permRequestItemState {
-  font-size: 0.7rem;
-  color: #4ade80;
-}
-
-.permRequestItemMissing .permRequestItemText {
-  color: var(--text-muted);
-  text-decoration: line-through;
-}
-
-.permRequestItemMissing .permRequestItemState {
-  color: #f87171;
-}
-
-.permGiveAllBtn {
+  background: var(--surface-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.7rem 1rem;
-  margin-top: 0.25rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dpermIconBox img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
+
+.dpermIconBox > i {
+  font-size: 1.4rem;
+  color: var(--text-muted);
+}
+
+.dpermDots {
+  color: var(--text-subtle);
+  font-size: 1rem;
+}
+
+.dpermTitle {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  word-break: break-word;
+}
+
+.dpermSub {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0.15rem 0 0;
+}
+
+.dpermSignedIn {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+  margin: 0.55rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dpermSignedIn strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.dpermSwitch {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dpermSwitch:hover {
+  text-decoration: underline;
+}
+
+.dpermPanel {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  padding: 1rem 0 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dpermConfirm {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 1.1rem 0.85rem;
+  line-height: 1.45;
+}
+
+.dpermConfirm strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.dpermList {
+  overflow-y: auto;
+  max-height: 320px;
+  padding: 0 0.4rem 0.5rem;
+  transition: opacity 0.2s;
+}
+
+.dpermListOff {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.dpermCat + .dpermCat {
+  margin-top: 0.35rem;
+}
+
+.dpermCatLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  padding: 0.55rem 0.75rem 0.3rem;
+}
+
+.dpermRow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.12s;
+}
+
+.dpermRow:hover {
+  background: var(--surface-3);
+}
+
+.dpermInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.dpermBox {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--void);
+  font-size: 0.7rem;
+  transition:
+    background-color 0.12s,
+    border-color 0.12s;
+}
+
+.dpermRowOn .dpermBox {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.dpermName {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--text);
+  min-width: 0;
+}
+
+.dpermRowDisabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.dpermRowDisabled:hover {
+  background: transparent;
+}
+
+.dpermReq,
+.dpermForbidden {
+  flex-shrink: 0;
+  font-family: var(--font-heading);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.3rem;
+}
+
+.dpermReq {
+  color: var(--accent);
+  background: var(--accent-10);
+}
+
+.dpermForbidden {
+  color: var(--text-subtle);
+  background: var(--surface-3);
+}
+
+.dpermFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.1rem;
+  padding-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.dpermCount {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.dpermCount strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.dpermFooterActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dpermBack {
+  background: none;
+  border: none;
+  padding: 0.6rem 0.5rem;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dpermBack:hover {
+  color: var(--text);
+}
+
+.dpermAuthorize {
   border: none;
   border-radius: 0.5rem;
-  background-color: var(--accent);
-  color: var(--void);
-  font-family: var(--font-heading);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.025em;
+  padding: 0.7rem 1.6rem;
   cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--void);
+  background: var(--accent);
   transition:
-    filter 0.2s,
+    filter 0.15s,
     transform 0.1s;
 }
 
-.permGiveAllBtn:hover {
-  filter: brightness(1.1);
+.dpermAuthorize:hover {
+  filter: brightness(1.08);
 }
 
-.permGiveAllBtn:active {
+.dpermAuthorize:active {
+  transform: scale(0.98);
+}
+
+.dpermAuthorize:disabled {
+  opacity: 0.5;
+  cursor: default;
+  filter: none;
+  transform: none;
+}
+
+.dpermAuthorizeDanger {
+  background: var(--auth-danger, #f87171);
+}
+
+.confirmCard {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  max-width: 380px;
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    transform 0.1s;
+}
+
+.confirmCard:hover:not(:disabled) {
+  background: var(--surface-3);
+  border-color: var(--accent);
+}
+
+.confirmCard:hover:not(:disabled) .confirmCardArrow {
+  transform: translateX(2px);
+}
+
+.confirmCard:active:not(:disabled) {
   transform: scale(0.99);
 }
 
-.permGiveAllBtn:disabled {
-  opacity: 0.6;
+.confirmCard:disabled {
+  opacity: 0.7;
   cursor: default;
+}
+
+.confirmCardImg {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.confirmCardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.confirmCardInfo h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.confirmCardInfo p {
+  margin: 0.1rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+}
+
+.confirmCardArrow {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-size: 1rem;
+  transition: transform 0.15s;
+}
+
+.permDangerList {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.permDangerList li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.permDangerList li > i {
+  width: 1rem;
+  text-align: center;
+  color: var(--auth-danger, #f87171);
+  flex-shrink: 0;
 }

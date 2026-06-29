@@ -146,13 +146,17 @@ export const TRANSACTION_META: Record<string, TransactionMeta> = {
   },
 };
 
-export function getTransactionMeta(txOrType: Transaction | string): TransactionMeta {
+export function getTransactionMeta(
+  txOrType: Transaction | string,
+): TransactionMeta {
   const type = typeof txOrType === "string" ? txOrType : txOrType.type;
   return (
     TRANSACTION_META[type] || {
       label: type,
       isIncome:
-        typeof txOrType === "string" ? false : (txOrType.new_total ?? 0) >= 0 && txOrType.amount > 0,
+        typeof txOrType === "string"
+          ? false
+          : (txOrType.new_total ?? 0) >= 0 && txOrType.amount > 0,
       category: "transfer",
       color: "#94a3b8",
     }
@@ -166,7 +170,12 @@ export function isTransactionIncome(tx: Transaction): boolean {
 export function transactionCounterparty(tx: Transaction): string {
   const meta = getTransactionMeta(tx);
   const user = String(tx.user || "").trim();
-  if (!meta.showCounterparty || !user || user === "rotur" || user === "roturBOT") {
+  if (
+    !meta.showCounterparty ||
+    !user ||
+    user === "rotur" ||
+    user === "roturBOT"
+  ) {
     return "";
   }
   return user;

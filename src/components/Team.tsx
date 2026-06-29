@@ -105,8 +105,8 @@ export function Team({ data }: { data: TeamData | null }) {
                   <h3 class={s.leadName}>{data.lead.name}</h3>
                   <p class={s.leadRole}>{data.lead.role}</p>
                   {data.lead.bio && (
-                  <p class={s.leadBio}>{prettyBio(data.lead.bio)}</p>
-                )}
+                    <p class={s.leadBio}>{prettyBio(data.lead.bio)}</p>
+                  )}
                   <Socials member={data.lead} />
                 </div>
               </div>

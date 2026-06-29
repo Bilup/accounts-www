@@ -222,7 +222,7 @@ type View =
   | "permissions"
   | "forgot"
   | "reset"
-  | "full_warning";
+  | "confirm";
 type BtnState = { text: string; disabled: boolean; color: string };
 
 const defaultBtn = (text: string): BtnState => ({
@@ -328,10 +328,7 @@ const sidebarForView: Record<View, { title: string; sub: string }> = {
   permissions: { title: "Account Access", sub: "Choose account to continue" },
   forgot: { title: "Reset password", sub: "We'll email you a link" },
   reset: { title: "Set new password", sub: "Enter the code from your email" },
-  full_warning: {
-    title: "Full Access Request",
-    sub: "Review before continuing",
-  },
+  confirm: { title: "Choose an account", sub: "to continue to Rotur" },
 };
 
 export function Auth() {
@@ -388,14 +385,16 @@ export function Auth() {
   const requiredPermsRef = useRef<Set<string>>(new Set());
   const requiresFullRef = useRef(false);
   const defaultAllOnEntryRef = useRef(false);
+  const pendingAutoLoginRef = useRef<{
+    token: string;
+    username: string;
+  } | null>(null);
 
   // Permission picker state
   const [permSchema, setPermSchema] = useState<PermissionSchema | null>(null);
   const [selectedPerms, setSelectedPerms] = useState<Set<string>>(new Set());
-  const [permSearch, setPermSearch] = useState("");
   const [scopeBtn, setScopeBtn] = useState<BtnState>(defaultBtn("Continue"));
   const [scopeError, setScopeError] = useState("");
-  const [showCustom, setShowCustom] = useState(false);
   const [useFullAccess, setUseFullAccess] = useState(false);
 
   const sidebar = useMemo(() => sidebarForView[view], [view]);
@@ -453,14 +452,22 @@ export function Auth() {
     link.href = stylesUrl;
     document.head.appendChild(link);
 
-    if (requiresFullRef.current) {
-      setView("full_warning");
-      return;
+    let storedToken: string | null = null;
+    try {
+      storedToken = localStorage.getItem("rotur_token");
+    } catch {
+      /* ignore */
     }
 
     const signupParam = params.get("signup");
     if (signupParam === "1" || signupParam === "true") {
       setView("signup");
+    } else if (storedToken) {
+      pendingAutoLoginRef.current = {
+        token: storedToken,
+        username: getCookie("username") || "",
+      };
+      setView("confirm");
     } else {
       const username = getCookie("username");
       if (username) {
@@ -572,7 +579,6 @@ export function Auth() {
         setSelectedPerms(new Set(requiredPermsRef.current));
       }
       setUseFullAccess(requiresFullRef.current);
-      setPermSearch("");
       setScopeError("");
       setView("permissions");
     },
@@ -1183,29 +1189,32 @@ export function Auth() {
     location.href = ref.toString();
   }, [account]);
 
-  const handleLogout = useCallback(() => {
-    document.cookie = "username=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
-    location.reload();
+  const handleSwitchAccount = useCallback(() => {
+    setAccount(null);
+    setView("welcome");
   }, []);
 
   const handleCancelAccess = useCallback(() => {
     history.back();
   }, []);
 
-  const handleFullWarningProceed = useCallback(() => {
-    const username = getCookie("username");
-    if (username) {
-      setSiUsername(username);
-      setView("signin");
-      requestAnimationFrame(() => {
-        const pw = document.querySelector<HTMLInputElement>(
-          'input[name="password"]',
-        );
-        pw?.focus();
-      });
-    } else {
+  const handleConfirmContinue = useCallback(() => {
+    const pending = pendingAutoLoginRef.current;
+    if (!pending) {
       setView("welcome");
+      return;
     }
+    quickLogin({
+      username: pending.username,
+      lastUsed: Date.now(),
+      avatar: `https://avatars.rotur.dev/${pending.username}`,
+      token: pending.token,
+    });
+  }, [quickLogin]);
+
+  const handleConfirmReject = useCallback(() => {
+    pendingAutoLoginRef.current = null;
+    setView("welcome");
   }, []);
 
   // Permission toggle helpers
@@ -1219,64 +1228,6 @@ export function Auth() {
     });
   }, []);
 
-  const isGroupActive = useCallback(
-    (perms: string[]): boolean => {
-      return perms.every(
-        (p) => selectedPerms.has(p) || FORBIDDEN_PERMISSIONS.has(p),
-      );
-    },
-    [selectedPerms],
-  );
-
-  const toggleGroup = useCallback(
-    (name: string, perms: string[]) => {
-      setSelectedPerms((prev) => {
-        const next = new Set(prev);
-        const allActive = perms.every(
-          (p) => next.has(p) || FORBIDDEN_PERMISSIONS.has(p),
-        );
-        if (allActive) {
-          const otherGroups =
-            permSchema?.groups.filter(
-              (g) => g.name !== "full" && g.name !== name,
-            ) ?? [];
-          const providedByOthers = new Set<string>();
-          for (const og of otherGroups) {
-            if (
-              og.permissions.every(
-                (p) => next.has(p) || FORBIDDEN_PERMISSIONS.has(p),
-              )
-            ) {
-              for (const p of og.permissions) providedByOthers.add(p);
-            }
-          }
-          for (const p of perms) {
-            if (FORBIDDEN_PERMISSIONS.has(p)) continue;
-            if (!providedByOthers.has(p)) next.delete(p);
-          }
-        } else {
-          for (const p of perms) if (!FORBIDDEN_PERMISSIONS.has(p)) next.add(p);
-        }
-        return next;
-      });
-    },
-    [permSchema],
-  );
-
-  const isGroupPartial = useCallback(
-    (perms: string[]): boolean => {
-      let grantable = 0;
-      let selected = 0;
-      for (const p of perms) {
-        if (FORBIDDEN_PERMISSIONS.has(p)) continue;
-        grantable++;
-        if (selectedPerms.has(p)) selected++;
-      }
-      return grantable > 0 && selected > 0 && selected < grantable;
-    },
-    [selectedPerms],
-  );
-
   const missingRequired = useMemo(() => {
     const missing: string[] = [];
     for (const r of requiredPermsRef.current) {
@@ -1285,118 +1236,75 @@ export function Auth() {
     return missing;
   }, [selectedPerms]);
 
-  const groupIcon = useCallback((name: string): string => {
-    const icons: Record<string, string> = {
-      read_only: "fa-eye",
-      social: "fa-users",
-      economy: "fa-coins",
-      storage: "fa-folder-open",
-      full: "fa-bolt",
-    };
-    return icons[name] || "fa-shield-halved";
-  }, []);
-
-  const formatGroupName = useCallback((name: string): string => {
-    return name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  }, []);
-
-  const clearAll = useCallback(() => {
-    if (requiredPermsRef.current.size > 0) {
-      setSelectedPerms(new Set(requiredPermsRef.current));
-    } else {
-      setSelectedPerms(new Set());
-    }
-  }, []);
-
-  const addMissingRequired = useCallback(() => {
-    setSelectedPerms((prev) => {
-      const next = new Set(prev);
-      for (const r of requiredPermsRef.current) {
-        if (!FORBIDDEN_PERMISSIONS.has(r)) next.add(r);
-      }
-      return next;
-    });
-  }, []);
-
-  const selectedChipsList = useMemo(() => {
-    const all = Array.from(selectedPerms);
-    const req = requiredPermsRef.current;
-    all.sort((a, b) => {
-      const ar = req.has(a) ? 0 : 1;
-      const br = req.has(b) ? 0 : 1;
-      if (ar !== br) return ar - br;
-      return a.localeCompare(b);
-    });
-    return all;
-  }, [selectedPerms]);
-
   const [showMissingWarn, setShowMissingWarn] = useState(false);
 
   const handleAllowScopedAccess = useCallback(
     async (permsOverride?: Set<string>) => {
-    if (!account?.key) return;
-    const perms = permsOverride ?? selectedPerms;
-    if (perms.size === 0) {
-      setScopeError("Pick at least one permission, or use Full access above.");
-      return;
-    }
-    setScopeError("");
-    setScopeBtn(loadingBtn("Creating token…"));
-    try {
-      const body: any = {
-        name: requestor || "Third-party app",
-        permissions: Array.from(perms),
-        origin: requestor,
-        description: `Scoped access for ${requestor}`,
-        websites: [returnToRef.current],
-      };
-      const res = await fetch(
-        `${API}/tokens/create?auth=${encodeURIComponent(account.key)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        setScopeBtn(errorBtn(data.error || "Failed to create token"));
-        setTimeout(() => setScopeBtn(defaultBtn("Continue")), 3000);
+      if (!account?.key) return;
+      const perms = permsOverride ?? selectedPerms;
+      if (perms.size === 0) {
+        setScopeError(
+          "Pick at least one permission, or use Full access above.",
+        );
         return;
       }
-      const subToken: string = data.token;
-      saveAccountToStorage(account);
-      if (window.opener) {
-        window.opener.postMessage(
+      setScopeError("");
+      setScopeBtn(loadingBtn("Creating token…"));
+      try {
+        const body: any = {
+          name: requestor || "Third-party app",
+          permissions: Array.from(perms),
+          origin: requestor,
+          description: `Scoped access for ${requestor}`,
+          websites: [returnToRef.current],
+        };
+        const res = await fetch(
+          `${API}/tokens/create?auth=${encodeURIComponent(account.key)}`,
           {
-            type: "rotur-auth-token",
-            token: subToken,
-            scope: "scoped",
-            permissions: Array.from(perms),
-            id: data.id,
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
           },
-          "*",
         );
+        const data = await res.json();
+        if (!res.ok) {
+          setScopeBtn(errorBtn(data.error || "Failed to create token"));
+          setTimeout(() => setScopeBtn(defaultBtn("Continue")), 3000);
+          return;
+        }
+        const subToken: string = data.token;
+        saveAccountToStorage(account);
+        if (window.opener) {
+          window.opener.postMessage(
+            {
+              type: "rotur-auth-token",
+              token: subToken,
+              scope: "scoped",
+              permissions: Array.from(perms),
+              id: data.id,
+            },
+            "*",
+          );
+        }
+        if (window.parent !== window) {
+          window.parent.postMessage(
+            {
+              type: "rotur-auth-token",
+              token: subToken,
+              scope: "scoped",
+              permissions: Array.from(perms),
+              id: data.id,
+            },
+            "*",
+          );
+        }
+        const ref = returnUrl(returnToRef.current);
+        ref.searchParams.set("token", subToken);
+        location.href = ref.toString();
+      } catch (e: any) {
+        setScopeBtn(errorBtn(e?.message || "Network error"));
+        setTimeout(() => setScopeBtn(defaultBtn("Continue")), 3000);
       }
-      if (window.parent !== window) {
-        window.parent.postMessage(
-          {
-            type: "rotur-auth-token",
-            token: subToken,
-            scope: "scoped",
-            permissions: Array.from(perms),
-            id: data.id,
-          },
-          "*",
-        );
-      }
-      const ref = returnUrl(returnToRef.current);
-      ref.searchParams.set("token", subToken);
-      location.href = ref.toString();
-    } catch (e: any) {
-      setScopeBtn(errorBtn(e?.message || "Network error"));
-      setTimeout(() => setScopeBtn(defaultBtn("Continue")), 3000);
-    }
     },
     [account, selectedPerms, requestor],
   );
@@ -1409,33 +1317,15 @@ export function Auth() {
     handleAllowScopedAccess();
   }, [missingRequired, handleAllowScopedAccess]);
 
-  const giveAllRequired = useCallback(() => {
-    const next = new Set<string>();
-    for (const r of requiredPermsRef.current) {
-      if (!FORBIDDEN_PERMISSIONS.has(r)) next.add(r);
-    }
-    setSelectedPerms(next);
-    setShowMissingWarn(false);
-    handleAllowScopedAccess(next);
-  }, [handleAllowScopedAccess]);
-
-  const visiblePerms = useMemo(() => {
-    const all = permSchema?.permissions || [];
-    if (!permSearch.trim()) return all;
-    const q = permSearch.toLowerCase();
-    return all.filter((p) => p.toLowerCase().includes(q));
-  }, [permSchema, permSearch]);
-
-  // Group visible perms by category for compact display
   const groupedVisible = useMemo(() => {
     const groups: Record<string, string[]> = {};
-    for (const p of visiblePerms) {
+    for (const p of permSchema?.permissions || []) {
       const cat = p.split(":")[0];
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(p);
     }
     return groups;
-  }, [visiblePerms]);
+  }, [permSchema]);
 
   const matchingSubTokens = useMemo(
     () =>
@@ -1570,7 +1460,7 @@ export function Auth() {
           <AuthSidebarAction
             onClick={
               view === "permissions"
-                ? handleLogout
+                ? handleSwitchAccount
                 : view === "welcome"
                   ? () => showSignInForm()
                   : view === "forgot" || view === "reset"
@@ -1664,12 +1554,28 @@ export function Auth() {
 
       {view === "permissions" && account ? (
         <div class={s.permView}>
-          <div class={s.permViewHeader}>
-            <AuthLogo />
-            <AuthHeading>Choose what to share</AuthHeading>
-            <AuthSubheading>
-              <strong>{requestor}</strong> wants to access your Rotur account.
-            </AuthSubheading>
+          <div class={s.dpermHead}>
+            <div class={s.dpermIcons}>
+              <div class={s.dpermIconBox}>
+                <i class="fas fa-globe" />
+              </div>
+              <i class={`fas fa-ellipsis ${s.dpermDots}`} />
+              <div class={s.dpermIconBox}>
+                <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
+              </div>
+            </div>
+            <h1 class={s.dpermTitle}>{requestor}</h1>
+            <p class={s.dpermSub}>wants to access your Rotur account</p>
+            <p class={s.dpermSignedIn}>
+              Signed in as <strong>{account.username}</strong>
+              <button
+                type="button"
+                class={s.dpermSwitch}
+                onClick={handleSwitchAccount}
+              >
+                Not you?
+              </button>
+            </p>
           </div>
 
           {requiresFullRef.current && !useFullAccess && (
@@ -1680,56 +1586,9 @@ export function Auth() {
               </div>
               <p class={s.permMissingWarnText}>
                 You're only granting some permissions. Some features on this app
-                may not work as expected. Re-enable <strong>Full account
-                access</strong> below to grant everything.
+                may not work as expected. Re-enable{" "}
+                <strong>Full account access</strong> below to grant everything.
               </p>
-            </div>
-          )}
-
-          {requiredPermsRef.current.size > 0 && !useFullAccess && (
-            <div class={s.permRequestList}>
-              <div class={s.permRequestListHead}>
-                <i class="fas fa-circle-info" />
-                <span>
-                  <strong>{requestor}</strong> would like permission to:
-                </span>
-              </div>
-              <ul class={s.permRequestItems}>
-                {Array.from(requiredPermsRef.current).map((p) => {
-                  const granted = selectedPerms.has(p);
-                  return (
-                    <li
-                      key={p}
-                      class={`${s.permRequestItem} ${granted ? "" : s.permRequestItemMissing}`}
-                      title={p}
-                    >
-                      <i class={`fas ${permIcon(p)} ${s.permRequestItemIcon}`} />
-                      <span class={s.permRequestItemText}>{describePerm(p)}</span>
-                      <i
-                        class={`fas ${granted ? "fa-check" : "fa-xmark"} ${s.permRequestItemState}`}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-              <button
-                type="button"
-                class={s.permGiveAllBtn}
-                onClick={giveAllRequired}
-                disabled={scopeBtn.disabled}
-              >
-                <i class="fas fa-check-double" /> Give all required permissions
-              </button>
-              {missingRequired.length > 0 && (
-                <button
-                  type="button"
-                  class={s.permRequiredMissingBtn}
-                  onClick={addMissingRequired}
-                >
-                  <i class="fas fa-plus" /> Add the {missingRequired.length} you
-                  removed back
-                </button>
-              )}
             </div>
           )}
 
@@ -1757,230 +1616,57 @@ export function Auth() {
               </>
             )}
 
-            <div
-              class={`${s.permGroupGrid} ${useFullAccess ? s.permSuperseded : ""}`}
-            >
-              {permSchema?.groups
-                ?.filter((g) => g.name !== "full")
-                .map((g) => {
-                  const active = isGroupActive(g.permissions);
-                  const partial = !active && isGroupPartial(g.permissions);
-                  const hasReq = g.permissions.some((p) =>
-                    requiredPermsRef.current.has(p),
-                  );
-                  return (
-                    <button
-                      type="button"
-                      key={g.name}
-                      class={`${s.permGroupCard} ${active ? s.permGroupCardActive : ""} ${partial ? s.permGroupCardPartial : ""}`}
-                      onClick={() => toggleGroup(g.name, g.permissions)}
-                    >
-                      <div class={s.permGroupCardHead}>
-                        <div class={s.permGroupCardHeadLeft}>
-                          <i
-                            class={`fas ${groupIcon(g.name)} ${s.permGroupCardIcon}`}
-                          />
-                          {hasReq && (
-                            <span
-                              class={s.permGroupCardReq}
-                              title="Contains requested permissions"
-                            >
-                              <i class="fas fa-asterisk" />
-                            </span>
-                          )}
-                        </div>
-                        <div class={s.permGroupCardCheck}>
-                          {active ? (
-                            <i class="fas fa-check" />
-                          ) : partial ? (
-                            <i class="fas fa-minus" />
-                          ) : (
-                            <i class="fas fa-plus" />
-                          )}
-                        </div>
-                      </div>
-                      <div class={s.permGroupCardName}>
-                        {formatGroupName(g.name)}
-                      </div>
-                      <div class={s.permGroupCardDesc}>{g.description}</div>
-                      <div class={s.permGroupCardMeta}>
-                        {g.permissions.length} permission
-                        {g.permissions.length !== 1 ? "s" : ""}
-                        {hasReq && (
-                          <span
-                            class={s.permGroupCardMetaReq}
-                            title="Includes permissions requested by this site"
-                          >
-                            · requested
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-            </div>
-
-            {!useFullAccess && (
-              <div class={s.permChips}>
-                <div class={s.permChipsHeader}>
-                  <span class={s.permChipsTitle}>
-                    <i class="fas fa-list-check" />
-                    Selected permissions
-                    <span class={s.permChipsCount}>{selectedPerms.size}</span>
-                  </span>
-                  {selectedPerms.size > 0 && (
-                    <button
-                      type="button"
-                      class={s.permLinkBtn}
-                      onClick={clearAll}
-                      title={
-                        requiredPermsRef.current.size > 0
-                          ? "Remove all non-requested permissions"
-                          : "Clear all selected permissions"
-                      }
-                    >
-                      <i class="fas fa-xmark" />{" "}
-                      {requiredPermsRef.current.size > 0
-                        ? "Clear optional"
-                        : "Clear all"}
-                    </button>
-                  )}
-                </div>
-                {selectedPerms.size === 0 ? (
-                  <div class={s.permChipsEmpty}>
-                    No permissions selected - pick a group above or
-                    {showCustom ? " use the search below." : " open customize."}
-                  </div>
+            <div class={s.dpermPanel}>
+              <p class={s.dpermConfirm}>
+                Confirm that you want to grant <strong>{requestor}</strong> the
+                following permissions:
+              </p>
+              <div
+                class={`${s.dpermList} ${useFullAccess ? s.dpermListOff : ""}`}
+              >
+                {!permSchema ? (
+                  <div class={s.permLoading}>Loading permissions…</div>
                 ) : (
-                  <div class={s.permChipsList}>
-                    {selectedChipsList.slice(0, 16).map((p) => {
-                      const isReq = requiredPermsRef.current.has(p);
-                      return (
-                        <span
-                          key={p}
-                          class={`${s.permChip} ${isReq ? s.permChipRequired : ""}`}
-                          title={isReq ? "Requested by this site" : p}
-                        >
-                          {isReq && (
-                            <i class={`fas fa-asterisk ${s.permChipReqIcon}`} />
-                          )}
-                          <span class={s.permChipLabel}>{p}</span>
-                          <button
-                            type="button"
-                            class={s.permChipRemove}
-                            onClick={() => togglePerm(p)}
-                            aria-label={`Remove ${p}`}
-                            title={`Remove ${p}`}
+                  Object.entries(groupedVisible).map(([cat, perms]) => (
+                    <div key={cat} class={s.dpermCat}>
+                      <div class={s.dpermCatLabel}>
+                        <i class={`fas ${permIcon(perms[0])}`} /> {cat}
+                      </div>
+                      {perms.map((p) => {
+                        const forbidden = FORBIDDEN_PERMISSIONS.has(p);
+                        const checked = selectedPerms.has(p) && !forbidden;
+                        const requested = requiredPermsRef.current.has(p);
+                        return (
+                          <label
+                            key={p}
+                            class={`${s.dpermRow} ${checked ? s.dpermRowOn : ""} ${forbidden ? s.dpermRowDisabled : ""}`}
+                            title={p}
                           >
-                            <i class="fas fa-xmark" />
-                          </button>
-                        </span>
-                      );
-                    })}
-                    {selectedChipsList.length > 16 && (
-                      <button
-                        type="button"
-                        class={s.permChipsMore}
-                        onClick={() => setShowCustom(true)}
-                      >
-                        +{selectedChipsList.length - 16} more - open customize
-                      </button>
-                    )}
-                  </div>
+                            <input
+                              type="checkbox"
+                              class={s.dpermInput}
+                              checked={checked}
+                              disabled={forbidden || useFullAccess}
+                              onChange={() => togglePerm(p)}
+                            />
+                            <span class={s.dpermBox}>
+                              {checked && <i class="fas fa-check" />}
+                            </span>
+                            <span class={s.dpermName}>{describePerm(p)}</span>
+                            {requested && (
+                              <span class={s.dpermReq}>requested</span>
+                            )}
+                            {forbidden && (
+                              <span class={s.dpermForbidden}>not allowed</span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ))
                 )}
               </div>
-            )}
-
-            <button
-              class={s.permCustomizeToggle}
-              onClick={() => setShowCustom(!showCustom)}
-            >
-              <i class={`fas fa-chevron-${showCustom ? "up" : "down"}`} />
-              {showCustom ? "Hide" : "Customize"} individual permissions
-            </button>
-
-            {showCustom && (
-              <div
-                class={`${s.permPickerInline} ${useFullAccess ? s.permSuperseded : ""}`}
-              >
-                <div class={s.permPickerControls}>
-                  <div class={s.permSearchWrap}>
-                    <i class={`fas fa-magnifying-glass ${s.permSearchIcon}`} />
-                    <input
-                      type="text"
-                      class={s.permSearch}
-                      placeholder="Search permissions…"
-                      value={permSearch}
-                      onInput={(e: any) => setPermSearch(e.target.value)}
-                    />
-                    {permSearch && (
-                      <button
-                        type="button"
-                        class={s.permSearchClear}
-                        onClick={() => setPermSearch("")}
-                        aria-label="Clear search"
-                        title="Clear search"
-                      >
-                        <i class="fas fa-xmark" />
-                      </button>
-                    )}
-                  </div>
-                  {permSearch && (
-                    <span class={s.permSearchCount}>
-                      {visiblePerms.length} match
-                      {visiblePerms.length !== 1 ? "es" : ""}
-                    </span>
-                  )}
-                </div>
-                <div class={s.permListScroll}>
-                  {!permSchema ? (
-                    <div class={s.permLoading}>Loading permissions…</div>
-                  ) : Object.keys(groupedVisible).length === 0 ? (
-                    <div class={s.permLoading}>
-                      No permissions match your search.
-                    </div>
-                  ) : (
-                    Object.entries(groupedVisible).map(([cat, perms]) => (
-                      <div key={cat} class={s.permCategory}>
-                        <div class={s.permCategoryHeader}>{cat}</div>
-                        <div class={s.permList}>
-                          {perms.map((p) => {
-                            const forbidden = FORBIDDEN_PERMISSIONS.has(p);
-                            const isRequested = requiredPermsRef.current.has(p);
-                            const checked = selectedPerms.has(p);
-                            return (
-                              <label
-                                key={p}
-                                class={`${s.permItem} ${checked ? s.permItemChecked : ""} ${forbidden ? s.permItemForbidden : ""} ${isRequested ? s.permItemRequested : ""} ${isRequested && !checked ? s.permItemRequestedMissing : ""}`}
-                                title={
-                                  isRequested
-                                    ? "Requested by this site"
-                                    : undefined
-                                }
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  disabled={forbidden}
-                                  onChange={() => togglePerm(p)}
-                                />
-                                <span class={s.permItemLabel}>{p}</span>
-                                {isRequested && (
-                                  <span class={s.permBadge}>requested</span>
-                                )}
-                                {!isRequested && forbidden && (
-                                  <span class={s.permBadge}>forbidden</span>
-                                )}
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+            </div>
 
             <label
               class={`${s.permFullAccessToggle} ${useFullAccess ? s.permFullAccessToggleActive : ""} ${useFullAccess ? s.permFullAccessToggleDanger : ""}`}
@@ -2014,34 +1700,57 @@ export function Auth() {
                 <div class={s.permDangerWarningHead}>
                   <i class="fas fa-triangle-exclamation" />
                   <strong>
-                    {requestor} will be able to do anything you can, including
-                    delete your account and manage your tokens.
+                    {requestor} will be able to do anything you can. That
+                    includes:
                   </strong>
                 </div>
+                <ul class={s.permDangerList}>
+                  <li>
+                    <i class="fas fa-id-card" /> Read and change everything in
+                    your account
+                  </li>
+                  <li>
+                    <i class="fas fa-coins" /> Spend and transfer your credits
+                  </li>
+                  <li>
+                    <i class="fas fa-folder-open" /> Read, upload, and delete
+                    your files
+                  </li>
+                  <li>
+                    <i class="fas fa-key" /> View and manage your keys and
+                    tokens
+                  </li>
+                </ul>
                 <p class={s.permDangerWarningNote}>
-                  Only enable this if you fully trust {requestor}. A scoped
-                  sub-token is almost always the safer choice.
+                  Only enable this if you fully trust {requestor}. Otherwise
+                  turn it off and grant just the permissions above. A scoped
+                  token is almost always the safer choice.
                 </p>
               </div>
             )}
 
-            <div class={s.permPickerFooter}>
-              <span class={s.permCount}>
-                <strong>{useFullAccess ? "all" : selectedPerms.size}</strong>{" "}
-                permission{useFullAccess || selectedPerms.size !== 1 ? "s" : ""}{" "}
-                selected
+            <div class={s.dpermFooter}>
+              <span class={s.dpermCount}>
+                {useFullAccess ? (
+                  "Full account access"
+                ) : (
+                  <>
+                    <strong>{selectedPerms.size}</strong> permission
+                    {selectedPerms.size !== 1 ? "s" : ""} selected
+                  </>
+                )}
               </span>
-              <div class={s.permPickerActions}>
+              <div class={s.dpermFooterActions}>
                 <button
                   type="button"
-                  class={s.permCancelBtn}
+                  class={s.dpermBack}
                   onClick={handleCancelAccess}
                 >
-                  Cancel
+                  Back
                 </button>
                 <button
                   type="button"
-                  class={`${s.permAllowBtn} ${useFullAccess ? s.permAllowBtnDanger : ""}`}
+                  class={`${s.dpermAuthorize} ${useFullAccess ? s.dpermAuthorizeDanger : ""}`}
                   onClick={useFullAccess ? handleAllowAccess : attemptSubmit}
                   disabled={
                     scopeBtn.disabled ||
@@ -2053,11 +1762,7 @@ export function Auth() {
                       : undefined
                   }
                 >
-                  {scopeBtn.color
-                    ? scopeBtn.text
-                    : useFullAccess
-                      ? "Continue with all permissions"
-                      : "Continue"}
+                  {scopeBtn.color ? scopeBtn.text : "Authorize"}
                 </button>
               </div>
             </div>
@@ -2120,51 +1825,47 @@ export function Auth() {
             </p>
           </AuthTosLinks>
         </div>
-      ) : view === "full_warning" ? (
-        <div class={`${s.welcomeArea} ${s.fullWarningArea}`}>
-          <div class={s.fullWarningBadge}>
-            <i class="fas fa-triangle-exclamation" />
+      ) : view === "confirm" ? (
+        <div class={s.welcomeArea}>
+          <div class={s.welcomeLogo}>
+            <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
           </div>
           <div class={s.welcomeContent}>
-            <h1 class={s.fullWarningTitle}>Full account access requested</h1>
-            <p>
-              <strong>{requestor}</strong> is asking for{" "}
-              <strong>full access</strong> to your Rotur account. That lets it do
-              anything you can, including:
-            </p>
-            <ul class={s.fullWarningList}>
-              <li>
-                <i class="fas fa-id-card" /> Read and change everything in your
-                account
-              </li>
-              <li>
-                <i class="fas fa-coins" /> Spend and transfer your credits
-              </li>
-              <li>
-                <i class="fas fa-folder-open" /> Read, upload, and delete your
-                files
-              </li>
-              <li>
-                <i class="fas fa-key" /> View and manage your keys
-              </li>
-            </ul>
-            <p class={s.fullWarningNote}>
-              Only continue if you fully trust {requestor}. If an app asks for
-              full access it probably needs it to work — but on the next screen
-              you can sign in and choose to grant only some permissions instead.
-              If you do, <strong>some features on this app may not work as
-              expected.</strong>
-            </p>
+            <h1>
+              {pendingAutoLoginRef.current?.username
+                ? `Continue as ${pendingAutoLoginRef.current.username}?`
+                : "Continue to Rotur?"}
+            </h1>
+            <p>You're already signed in to Rotur. Continue to {requestor}?</p>
           </div>
+          <button
+            type="button"
+            class={s.confirmCard}
+            onClick={handleConfirmContinue}
+            disabled={!!quickLoginBusy}
+          >
+            <UserAvatar
+              username={pendingAutoLoginRef.current?.username || ""}
+              className={s.confirmCardImg}
+              size={44}
+            />
+            <div class={s.confirmCardInfo}>
+              <h3>{pendingAutoLoginRef.current?.username || "Your account"}</h3>
+              <p>Rotur Account</p>
+            </div>
+            {quickLoginBusy ? (
+              <i class={`fas fa-spinner fa-spin ${s.confirmCardArrow}`} />
+            ) : (
+              <i class={`fas fa-arrow-right ${s.confirmCardArrow}`} />
+            )}
+          </button>
           <div class={s.welcomeButtons}>
             <button
-              class={`${s.btnWelcomePrimary} ${s.btnWelcomeDanger}`}
-              onClick={handleFullWarningProceed}
+              class={s.btnWelcomeSecondary}
+              onClick={handleConfirmReject}
+              disabled={!!quickLoginBusy}
             >
-              <i class="fas fa-arrow-right" /> Continue to sign in
-            </button>
-            <button class={s.btnWelcomeSecondary} onClick={handleCancelAccess}>
-              <i class="fas fa-arrow-left" /> Go back
+              <i class="fas fa-user-group" /> Use another account
             </button>
           </div>
           <AuthTosLinks>
