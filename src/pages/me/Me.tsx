@@ -7,6 +7,8 @@ import {
   Check,
   X,
   UserMinus,
+  Send,
+  Search,
   LogIn,
   LogOut,
   Key,
@@ -24,6 +26,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Inbox,
+  ArrowRightLeft,
 } from "lucide-preact";
 import {
   AccountPage,
@@ -102,6 +106,8 @@ export function Me() {
   const [activeTab, setActiveTab] = useState<MainTab>("profile");
   const [friendsTab, setFriendsTab] = useState<"all" | "requests">("all");
   const [friendInput, setFriendInput] = useState("");
+  const [outgoingRequests, setOutgoingRequests] = useState<string[]>([]);
+  const [outgoingLoading, setOutgoingLoading] = useState(false);
   const [keys, setKeys] = useState<KeyRecord[] | null>(null);
   const [groupSubs, setGroupSubs] = useState<GroupProductSubscription[]>([]);
 
@@ -142,6 +148,41 @@ export function Me() {
       cancelled = true;
     };
   }, [user?.username, token]);
+
+  const fetchOutgoingRequests = useCallback(async () => {
+    if (!token) {
+      setOutgoingRequests([]);
+      return;
+    }
+    setOutgoingLoading(true);
+    try {
+      const res = await fetch(
+        `${API}/requests_out?auth=${encodeURIComponent(token)}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const data = await res.json();
+      if (res.ok) {
+        const requests = Array.isArray(data?.requests_out)
+          ? data.requests_out
+          : Array.isArray(data?.outgoing)
+            ? data.outgoing
+            : [];
+        setOutgoingRequests(requests);
+      }
+    } catch {
+      /* keep the last loaded list */
+    } finally {
+      setOutgoingLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (!user || !token) {
+      setOutgoingRequests([]);
+      return;
+    }
+    fetchOutgoingRequests();
+  }, [user?.username, token, fetchOutgoingRequests]);
 
   useEffect(() => {
     if (!user || !token) return;
@@ -213,14 +254,22 @@ export function Me() {
     if (!username || !token) return;
     setFriendInput("");
     try {
-      await fetch(
+      const res = await fetch(
         `${API}/friends/request/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
         { method: "POST" },
       );
+      const data = await res.json().catch(() => null);
+      if (!res.ok || data?.error) return;
+      setOutgoingRequests((prev) =>
+        prev.some((u) => u.toLowerCase() === username.toLowerCase())
+          ? prev
+          : [...prev, username],
+      );
+      await reload();
     } catch {
       /* ignore */
     }
-  }, [friendInput, token]);
+  }, [friendInput, token, reload]);
 
   const friendAction = useCallback(
     async (action: "accept" | "reject" | "remove", username: string) => {
@@ -230,12 +279,37 @@ export function Me() {
           `${API}/friends/${action}/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
           { method: "POST" },
         );
+        if (action === "accept") {
+          setOutgoingRequests((prev) =>
+            prev.filter((u) => u.toLowerCase() !== username.toLowerCase()),
+          );
+        }
         await reload();
       } catch {
         /* ignore */
       }
     },
     [token, reload],
+  );
+
+  const cancelFriendRequest = useCallback(
+    async (username: string) => {
+      if (!token) return;
+      try {
+        const res = await fetch(
+          `${API}/friends/cancel/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
+          { method: "POST" },
+        );
+        const data = await res.json().catch(() => null);
+        if (!res.ok || data?.error) return;
+        setOutgoingRequests((prev) =>
+          prev.filter((u) => u.toLowerCase() !== username.toLowerCase()),
+        );
+      } catch {
+        /* ignore */
+      }
+    },
+    [token],
   );
 
   const cancelSubscription = useCallback(
@@ -346,12 +420,15 @@ export function Me() {
             <FriendsSection
               friends={friends}
               requests={requests}
+              outgoingRequests={outgoingRequests}
+              outgoingLoading={outgoingLoading}
               tab={friendsTab}
               setTab={setFriendsTab}
               input={friendInput}
               setInput={setFriendInput}
               onSend={sendFriendRequest}
               onAction={friendAction}
+              onCancelRequest={cancelFriendRequest}
             />
             <BlockedSection blocked={blocked} onUnblock={unblockUser} />
             <StandingSection
@@ -418,30 +495,38 @@ export function Me() {
 interface FriendsSectionProps {
   friends: string[];
   requests: string[];
+  outgoingRequests: string[];
+  outgoingLoading: boolean;
   tab: "all" | "requests";
   setTab: (t: "all" | "requests") => void;
   input: string;
   setInput: (v: string) => void;
   onSend: () => void;
   onAction: (action: "accept" | "reject" | "remove", username: string) => void;
+  onCancelRequest: (username: string) => void;
 }
 
 function FriendsSection({
   friends,
   requests,
+  outgoingRequests,
+  outgoingLoading,
   tab,
   setTab,
   input,
   setInput,
   onSend,
   onAction,
+  onCancelRequest,
 }: FriendsSectionProps) {
   const list = tab === "all" ? friends : requests;
+  const pendingCount = requests.length + outgoingRequests.length;
+
   return (
     <AccountSection
       icon={<Users size={18} />}
       title="Friends"
-      subtitle={`${friends.length} connected • ${requests.length} pending`}
+      subtitle={`${friends.length} connected • ${pendingCount} pending`}
     >
       <div class={s.addFriendForm}>
         <input
@@ -468,19 +553,23 @@ function FriendsSection({
           class={`${s.friendsTab} ${tab === "requests" ? s.active : ""}`}
           onClick={() => setTab("requests")}
         >
-          Requests <span class={s.friendsTabCount}>{requests.length}</span>
+          Requests <span class={s.friendsTabCount}>{pendingCount}</span>
         </button>
       </div>
 
-      {list.length === 0 ? (
+      {tab === "requests" ? (
+        <RequestsSection
+          incoming={requests}
+          outgoing={outgoingRequests}
+          outgoingLoading={outgoingLoading}
+          onAction={onAction}
+          onCancelRequest={onCancelRequest}
+        />
+      ) : list.length === 0 ? (
         <EmptyState
-          icon={tab === "all" ? <Users size={24} /> : <UserPlus size={24} />}
-          title={tab === "all" ? "No friends yet" : "No pending requests"}
-          text={
-            tab === "all"
-              ? "Add a friend by their username to get started."
-              : "Friend requests will appear here."
-          }
+          icon={<Users size={24} />}
+          title="No friends yet"
+          text="Add a friend by their username to get started."
         />
       ) : (
         <div class={s.friendGrid}>
@@ -496,41 +585,189 @@ function FriendsSection({
                 </div>
               </a>
               <div class={s.friendActions}>
-                {tab === "all" ? (
-                  <button
-                    class={`${s.iconBtn} ${s.iconBtnDanger}`}
-                    onClick={() => onAction("remove", username)}
-                    title="Remove friend"
-                    aria-label="Remove friend"
-                  >
-                    <UserMinus size={14} />
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      class={`${s.iconBtn} ${s.iconBtnSuccess}`}
-                      onClick={() => onAction("accept", username)}
-                      title="Accept"
-                      aria-label="Accept request"
-                    >
-                      <Check size={14} />
-                    </button>
-                    <button
-                      class={`${s.iconBtn} ${s.iconBtnDanger}`}
-                      onClick={() => onAction("reject", username)}
-                      title="Reject"
-                      aria-label="Reject request"
-                    >
-                      <X size={14} />
-                    </button>
-                  </>
-                )}
+                <button
+                  class={`${s.iconBtn} ${s.iconBtnDanger}`}
+                  onClick={() => onAction("remove", username)}
+                  title="Remove friend"
+                  aria-label="Remove friend"
+                >
+                  <UserMinus size={14} />
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
     </AccountSection>
+  );
+}
+
+function RequestsSection({
+  incoming,
+  outgoing,
+  outgoingLoading,
+  onAction,
+  onCancelRequest,
+}: {
+  incoming: string[];
+  outgoing: string[];
+  outgoingLoading: boolean;
+  onAction: (action: "accept" | "reject" | "remove", username: string) => void;
+  onCancelRequest: (username: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const filteredIncoming = q
+    ? incoming.filter((u) => u.toLowerCase().includes(q))
+    : incoming;
+  const filteredOutgoing = q
+    ? outgoing.filter((u) => u.toLowerCase().includes(q))
+    : outgoing;
+  const totalEmpty = incoming.length === 0 && outgoing.length === 0;
+  const noResults =
+    !totalEmpty &&
+    filteredIncoming.length === 0 &&
+    filteredOutgoing.length === 0;
+
+  if (totalEmpty && !outgoingLoading) {
+    return (
+      <EmptyState
+        icon={<Inbox size={24} />}
+        title="No pending requests"
+        text="Friend requests you send and receive will appear here."
+      />
+    );
+  }
+
+  return (
+    <div class={s.requestsView}>
+      {!totalEmpty && (
+        <div class={s.requestSearch}>
+          <Search size={14} />
+          <input
+            type="text"
+            class={s.requestSearchInput}
+            placeholder="Search requests..."
+            value={search}
+            onInput={(e: any) => setSearch(e.target.value)}
+          />
+        </div>
+      )}
+
+      {incoming.length > 0 && (
+        <RequestGroup
+          icon={<ArrowRightLeft size={13} />}
+          title="Incoming"
+          count={filteredIncoming.length}
+        >
+          {filteredIncoming.map((username) => (
+            <RequestCard
+              key={username}
+              username={username}
+              subtitle="Wants to connect"
+            >
+              <button
+                class={`${s.iconBtn} ${s.iconBtnSuccess}`}
+                onClick={() => onAction("accept", username)}
+                title="Accept"
+                aria-label={`Accept ${username}'s request`}
+              >
+                <Check size={14} />
+              </button>
+              <button
+                class={`${s.iconBtn} ${s.iconBtnDanger}`}
+                onClick={() => onAction("reject", username)}
+                title="Reject"
+                aria-label={`Reject ${username}'s request`}
+              >
+                <X size={14} />
+              </button>
+            </RequestCard>
+          ))}
+        </RequestGroup>
+      )}
+
+      {(outgoing.length > 0 || outgoingLoading) && (
+        <RequestGroup
+          icon={<Send size={13} />}
+          title="Outgoing"
+          count={filteredOutgoing.length}
+        >
+          {outgoingLoading && outgoing.length === 0 ? (
+            <div class={s.requestsLoading}>Loading...</div>
+          ) : (
+            filteredOutgoing.map((username) => (
+              <RequestCard
+                key={username}
+                username={username}
+                subtitle="Outgoing request"
+              >
+                <button
+                  class={`${s.iconBtn} ${s.iconBtnDanger}`}
+                  onClick={() => onCancelRequest(username)}
+                  title="Cancel request"
+                  aria-label={`Cancel request to ${username}`}
+                >
+                  <X size={14} />
+                </button>
+              </RequestCard>
+            ))
+          )}
+        </RequestGroup>
+      )}
+
+      {noResults && (
+        <EmptyState
+          icon={<Search size={24} />}
+          title="No requests found"
+          text="Try a different search."
+        />
+      )}
+    </div>
+  );
+}
+
+function RequestGroup({
+  icon,
+  title,
+  count,
+  children,
+}: {
+  icon: any;
+  title: string;
+  count: number;
+  children: any;
+}) {
+  return (
+    <div class={s.requestGroup}>
+      <h3 class={s.requestGroupTitle}>
+        {icon} {title} <span>{count}</span>
+      </h3>
+      <div class={s.friendGrid}>{children}</div>
+    </div>
+  );
+}
+
+function RequestCard({
+  username,
+  subtitle,
+  children,
+}: {
+  username: string;
+  subtitle: string;
+  children: any;
+}) {
+  return (
+    <div class={s.friendCard}>
+      <a href={`/profile/${username}`} style={{ display: "contents" }}>
+        <UserAvatar username={username} className={s.friendAvatar} />
+        <div class={s.friendInfo}>
+          <div class={s.friendName}>@{username}</div>
+          <div class={s.friendHandle}>{subtitle}</div>
+        </div>
+      </a>
+      <div class={s.friendActions}>{children}</div>
+    </div>
   );
 }
 
