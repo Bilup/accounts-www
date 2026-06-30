@@ -203,16 +203,6 @@ function tokenMatchesDomain(t: SubToken, returnTo: string): boolean {
   return false;
 }
 
-function findMatchingSubToken(
-  tokens: SubToken[],
-  returnTo: string,
-): SubToken | null {
-  return (
-    tokens.find((t) => isTokenUsable(t) && tokenMatchesDomain(t, returnTo)) ||
-    null
-  );
-}
-
 type View =
   | "welcome"
   | "signin"
@@ -626,18 +616,6 @@ export function Auth() {
     [],
   );
 
-  const tryAutoUseSubToken = useCallback(
-    (tokens: SubToken[]) => {
-      const match = findMatchingSubToken(tokens, returnToRef.current);
-      if (match) {
-        useSubTokenAndRedirect(match, "existing");
-        return true;
-      }
-      return false;
-    },
-    [useSubTokenAndRedirect],
-  );
-
   const flashBtn = (
     setter: (b: BtnState) => void,
     original: string,
@@ -855,11 +833,6 @@ export function Auth() {
 
         if (!checkTOSAcceptance(hydrated)) return;
 
-        if (!inFrameOrPopup && !isOwnDomain) {
-          const tokens = await fetchSubTokens(saved.token);
-          if (tokens && tryAutoUseSubToken(tokens)) return;
-        }
-
         if (inFrameOrPopup) {
           handleAccountLogin(hydrated);
           return;
@@ -898,8 +871,6 @@ export function Auth() {
       showSignInForm,
       checkTOSAcceptance,
       handleAccountLogin,
-      fetchSubTokens,
-      tryAutoUseSubToken,
     ],
   );
 
@@ -1341,6 +1312,7 @@ export function Auth() {
 
   const [showAllPerms, setShowAllPerms] = useState(false);
   const hasRequiredPerms = requiredPermsRef.current.size > 0;
+  const allowFullAccess = !hasRequiredPerms || requiresFullRef.current;
   const showAllPermsEffective = showAllPerms || !hasRequiredPerms;
   const displayedGroups = showAllPermsEffective
     ? groupedVisible
@@ -1701,32 +1673,34 @@ export function Auth() {
               )}
             </div>
 
-            <label
-              class={`${s.permFullAccessToggle} ${useFullAccess ? s.permFullAccessToggleActive : ""} ${useFullAccess ? s.permFullAccessToggleDanger : ""}`}
-            >
-              <input
-                type="checkbox"
-                checked={useFullAccess}
-                onChange={(e: any) => {
-                  const next = e.target.checked;
-                  setUseFullAccess(next);
-                  setShowMissingWarn(false);
-                  if (next) setScopeError("");
-                }}
-                class={s.permFullAccessCheckbox}
-              />
-              <div class={s.permFullAccessCheck}>
-                {useFullAccess && <i class="fas fa-check" />}
-              </div>
-              <div class={s.permFullAccessBody}>
-                <span class={s.permFullAccessTitle}>
-                  <i class="fas fa-bolt" /> Full account access
-                </span>
-                <span class={s.permFullAccessSub}>
-                  Send your main account token instead of a limited sub-token
-                </span>
-              </div>
-            </label>
+            {allowFullAccess && (
+              <label
+                class={`${s.permFullAccessToggle} ${useFullAccess ? s.permFullAccessToggleActive : ""} ${useFullAccess ? s.permFullAccessToggleDanger : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={useFullAccess}
+                  onChange={(e: any) => {
+                    const next = e.target.checked;
+                    setUseFullAccess(next);
+                    setShowMissingWarn(false);
+                    if (next) setScopeError("");
+                  }}
+                  class={s.permFullAccessCheckbox}
+                />
+                <div class={s.permFullAccessCheck}>
+                  {useFullAccess && <i class="fas fa-check" />}
+                </div>
+                <div class={s.permFullAccessBody}>
+                  <span class={s.permFullAccessTitle}>
+                    <i class="fas fa-bolt" /> Full account access
+                  </span>
+                  <span class={s.permFullAccessSub}>
+                    Send your main account token instead of a limited sub-token
+                  </span>
+                </div>
+              </label>
+            )}
 
             {useFullAccess && (
               <div class={s.permDangerWarning}>
