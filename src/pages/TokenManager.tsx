@@ -21,6 +21,9 @@ import {
   EmptyState,
 } from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
+import { clickable } from "../lib/clickable";
+import { useConfirm } from "../components/ConfirmDialog";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import s from "./TokenManager.module.css";
 
 const API_BASE_URL = "https://api.rotur.dev";
@@ -138,8 +141,10 @@ export function TokenManager() {
   const { user } = useAuth();
   const currentUser = user?.username || "";
 
+  const [confirm, confirmDialog] = useConfirm();
   const [tokens, setTokens] = useState<SubToken[]>([]);
   const [tokensLoading, setTokensLoading] = useState(false);
+  const [tokensError, setTokensError] = useState<string | null>(null);
   const [schema, setSchema] = useState<PermissionSchema | null>(null);
   const [selectedToken, setSelectedToken] = useState<SubToken | null>(null);
   const [tokenMessages, setTokenMessages] = useState<
@@ -229,6 +234,7 @@ export function TokenManager() {
 
   async function fetchUserTokens() {
     setTokensLoading(true);
+    setTokensError(null);
     try {
       const res = await fetch(
         `${API_BASE_URL}/tokens?auth=${encodeURIComponent(getToken() || "")}`,
@@ -238,9 +244,14 @@ export function TokenManager() {
         setTokens(data.tokens);
       } else if (res.ok && Array.isArray(data)) {
         setTokens(data);
+      } else {
+        // Never let a failed load masquerade as "you have no tokens".
+        setTokensError(
+          data?.error || "Something went wrong loading your tokens.",
+        );
       }
     } catch {
-      /* ignore */
+      setTokensError("Network error — check your connection and try again.");
     }
     setTokensLoading(false);
   }
@@ -431,8 +442,13 @@ export function TokenManager() {
   }
 
   async function revokeToken(tokenId: string) {
-    if (!confirm("Revoke this token? It will become immediately unusable."))
-      return;
+    const ok = await confirm({
+      title: "Revoke this token?",
+      message: "It will become immediately unusable.",
+      confirmLabel: "Revoke token",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/tokens/${encodeURIComponent(tokenId)}/revoke?auth=${encodeURIComponent(getToken() || "")}`,
@@ -453,8 +469,13 @@ export function TokenManager() {
   }
 
   async function deleteToken(tokenId: string) {
-    if (!confirm("Delete this token permanently? This cannot be undone."))
-      return;
+    const ok = await confirm({
+      title: "Delete this token permanently?",
+      message: "This cannot be undone.",
+      confirmLabel: "Delete token",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/tokens/${encodeURIComponent(tokenId)}?auth=${encodeURIComponent(getToken() || "")}`,
@@ -525,6 +546,7 @@ export function TokenManager() {
       title="Token Manager"
       subtitle="Create and manage permission-scoped sub-tokens for the apps you use"
     >
+      {confirmDialog}
       {/* Newly created token reveal */}
       {createdToken && (
         <div class={s.tokenReveal}>
@@ -545,6 +567,16 @@ export function TokenManager() {
               <Copy size={12} /> Copy
             </button>
           </div>
+          {tokenMessages["__new__"] && (
+            <div
+              class={
+                tokenMessages["__new__"].type === "success" ? s.success : s.error
+              }
+              style={{ marginTop: "0.5rem" }}
+            >
+              {tokenMessages["__new__"].text}
+            </div>
+          )}
           <button
             class={s.btnSecondary}
             style={{ marginTop: "0.75rem" }}
@@ -576,7 +608,18 @@ export function TokenManager() {
             subtitle={`${tokens.length}/25 created`}
           >
             {tokensLoading && <div class={s.loading}>Loading your tokens…</div>}
-            {!tokensLoading && tokens.length === 0 && (
+            {!tokensLoading && tokensError && (
+              <EmptyState
+                icon={<Key size={24} />}
+                title="Couldn't load your tokens"
+                text={tokensError}
+              >
+                <button class={s.btnSecondary} onClick={fetchUserTokens}>
+                  <RotateCcw size={14} /> Retry
+                </button>
+              </EmptyState>
+            )}
+            {!tokensLoading && !tokensError && tokens.length === 0 && (
               <EmptyState
                 icon={<Key size={24} />}
                 title="No sub-tokens yet"
@@ -590,7 +633,7 @@ export function TokenManager() {
                   <div
                     key={token.id}
                     class={`${s.tokenCard} ${token.revoked ? s.tokenCardRevoked : ""}`}
-                    onClick={() => setSelectedToken(token)}
+                    {...clickable(() => setSelectedToken(token), token.name)}
                   >
                     <div class={s.tokenHeader}>
                       <h3 class={s.tokenName}>{token.name}</h3>
@@ -955,6 +998,7 @@ function TokenDetailModal({
   nameInputRefs: { current: Record<string, HTMLInputElement | null> };
   descInputRefs: { current: Record<string, HTMLInputElement | null> };
 }) {
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
   const tokenId = token.id;
   const st = statusOf(token);
   const editSet = editing ?? new Set(token.permissions);
@@ -968,8 +1012,16 @@ function TokenDetailModal({
   return (
     <div class={s.modal} onClick={onClose}>
       <div class={s.modalOverlay} />
-      <div class={s.modalContainer} onClick={(e) => e.stopPropagation()}>
-        <button class={s.modalClose} onClick={onClose}>
+      <div
+        ref={trapRef}
+        tabIndex={-1}
+        class={s.modalContainer}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Token: ${token.name}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button class={s.modalClose} onClick={onClose} aria-label="Close">
           <X size={20} />
         </button>
         <div class={s.modalContent}>

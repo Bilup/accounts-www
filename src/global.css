@@ -89,3 +89,52 @@ img {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-subtle);
 }
+
+/* Respect the OS "reduce motion" setting: kill keyframe loops, collapse
+   transitions to near-instant, and stop smooth-scroll hijacking. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Skip link: off-screen until focused, then pinned top-left. */
+.skipLink {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+}
+
+.skipLink:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+/* The dark theme's default UA focus ring is nearly invisible on --void.
+   Give every interactive element an explicit, high-contrast ring. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

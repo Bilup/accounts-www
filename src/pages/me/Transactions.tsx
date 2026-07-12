@@ -472,6 +472,7 @@ export function Transactions() {
             <input
               class={s.searchInput}
               placeholder="Search transactions..."
+              aria-label="Search transactions"
               value={query}
               onInput={(e: any) => setQuery(e.target.value)}
             />
@@ -769,6 +770,17 @@ export function Transactions() {
                     onClick={toggle}
                     role={grouped ? "button" : undefined}
                     aria-expanded={grouped ? isOpen : undefined}
+                    tabIndex={grouped ? 0 : undefined}
+                    onKeyDown={
+                      grouped
+                        ? (e: KeyboardEvent) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              toggle();
+                            }
+                          }
+                        : undefined
+                    }
                   >
                     <div
                       class={`${s.txIcon} ${isIncome ? s.income : s.expense}`}

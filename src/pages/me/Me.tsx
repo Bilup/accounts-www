@@ -38,6 +38,7 @@ import {
   EmptyState,
 } from "../../components/AccountPage";
 import { ProfileCard } from "../../components/ProfileCard";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { UserAvatar } from "../../components/UserAvatar";
 import {
   useAuth,
@@ -102,14 +103,18 @@ const MAIN_TABS: { id: MainTab; label: string; icon: typeof Users }[] = [
 
 export function Me() {
   const { user, isLoggedIn, token, reload, logout } = useAuth();
+  const [confirm, confirmDialog] = useConfirm();
   const { benefits } = useBenefits();
   const [activeTab, setActiveTab] = useState<MainTab>("profile");
   const [friendsTab, setFriendsTab] = useState<"all" | "requests">("all");
   const [friendInput, setFriendInput] = useState("");
+  const [friendSending, setFriendSending] = useState(false);
+  const [friendError, setFriendError] = useState<string | null>(null);
   const [outgoingRequests, setOutgoingRequests] = useState<string[]>([]);
   const [outgoingLoading, setOutgoingLoading] = useState(false);
   const [keys, setKeys] = useState<KeyRecord[] | null>(null);
   const [groupSubs, setGroupSubs] = useState<GroupProductSubscription[]>([]);
+  const [subError, setSubError] = useState<string | null>(null);
 
   useEffect(() => {
     captureTokenFromUrl();
@@ -251,15 +256,23 @@ export function Me() {
 
   const sendFriendRequest = useCallback(async () => {
     const username = friendInput.trim();
-    if (!username || !token) return;
-    setFriendInput("");
+    if (!username || !token || friendSending) return;
+    setFriendSending(true);
+    setFriendError(null);
     try {
       const res = await fetch(
         `${API}/friends/request/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
         { method: "POST" },
       );
       const data = await res.json().catch(() => null);
-      if (!res.ok || data?.error) return;
+      if (!res.ok || data?.error) {
+        // Keep what they typed so they can correct it, and say what went wrong.
+        setFriendError(
+          data?.error || `Couldn't send a request to ${username}.`,
+        );
+        return;
+      }
+      setFriendInput("");
       setOutgoingRequests((prev) =>
         prev.some((u) => u.toLowerCase() === username.toLowerCase())
           ? prev
@@ -267,9 +280,11 @@ export function Me() {
       );
       await reload();
     } catch {
-      /* ignore */
+      setFriendError("Network error — the request was not sent.");
+    } finally {
+      setFriendSending(false);
     }
-  }, [friendInput, token, reload]);
+  }, [friendInput, token, reload, friendSending]);
 
   const friendAction = useCallback(
     async (action: "accept" | "reject" | "remove", username: string) => {
@@ -315,42 +330,67 @@ export function Me() {
   const cancelSubscription = useCallback(
     async (keyId: string) => {
       if (!token) return;
-      if (!confirm("Cancel this subscription?")) return;
+      const ok = await confirm({
+        title: "Cancel this subscription?",
+        message: "You'll keep access until the end of the current billing period.",
+        confirmLabel: "Cancel subscription",
+        cancelLabel: "Keep it",
+        danger: true,
+      });
+      if (!ok) return;
+      setSubError(null);
       try {
-        await fetch(
+        const res = await fetch(
           `${API}/keys/cancel/${encodeURIComponent(keyId)}?auth=${encodeURIComponent(token)}`,
           { method: "POST" },
         );
+        // A failed cancel leaves the subscription billing — never fail silently.
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setSubError(data?.error || "Failed to cancel subscription");
+          return;
+        }
         await reload();
       } catch {
-        /* ignore */
+        setSubError("Network error — subscription was not cancelled");
       }
     },
-    [token, reload],
+    [token, reload, confirm],
   );
 
   const cancelGroupSubscription = useCallback(
     async (groupTag: string, productId: string) => {
       if (!token) return;
-      if (!confirm("Cancel this group subscription?")) return;
+      const ok = await confirm({
+        title: "Cancel this group subscription?",
+        message: "You'll keep access until the end of the current billing period.",
+        confirmLabel: "Cancel subscription",
+        cancelLabel: "Keep it",
+        danger: true,
+      });
+      if (!ok) return;
+      setSubError(null);
       try {
         const res = await fetch(
           `${API}/groups/${encodeURIComponent(groupTag)}/products/${encodeURIComponent(productId)}/cancel?auth=${encodeURIComponent(token)}`,
           { method: "POST" },
         );
-        if (res.ok) {
-          const refreshed = await fetch(
-            `${API}/groups/products/subscriptions/mine?auth=${encodeURIComponent(token)}`,
-          );
-          const data = await refreshed.json();
-          if (refreshed.ok && Array.isArray(data)) setGroupSubs(data);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setSubError(data?.error || "Failed to cancel subscription");
+          return;
         }
+        const refreshed = await fetch(
+          `${API}/groups/products/subscriptions/mine?auth=${encodeURIComponent(token)}`,
+        );
+        const data = await refreshed.json();
+        if (refreshed.ok && Array.isArray(data)) setGroupSubs(data);
         await reload();
       } catch {
-        /* ignore */
+        setSubError("Network error — subscription was not cancelled");
       }
     },
-    [token, reload],
+    [token, reload, confirm],
   );
 
   const unblockUser = useCallback(
@@ -384,6 +424,7 @@ export function Me() {
 
   return (
     <AccountPage>
+      {confirmDialog}
       <ProfileCard
         user={user}
         editable
@@ -427,6 +468,8 @@ export function Me() {
               input={friendInput}
               setInput={setFriendInput}
               onSend={sendFriendRequest}
+              sending={friendSending}
+              error={friendError}
               onAction={friendAction}
               onCancelRequest={cancelFriendRequest}
             />
@@ -476,6 +519,8 @@ export function Me() {
               username={user.username}
               onCancel={cancelSubscription}
               onCancelGroup={cancelGroupSubscription}
+              error={subError}
+              loading={keys === null}
             />
           </>
         )}
@@ -502,6 +547,8 @@ interface FriendsSectionProps {
   input: string;
   setInput: (v: string) => void;
   onSend: () => void;
+  sending: boolean;
+  error: string | null;
   onAction: (action: "accept" | "reject" | "remove", username: string) => void;
   onCancelRequest: (username: string) => void;
 }
@@ -516,6 +563,8 @@ function FriendsSection({
   input,
   setInput,
   onSend,
+  sending,
+  error,
   onAction,
   onCancelRequest,
 }: FriendsSectionProps) {
@@ -533,14 +582,25 @@ function FriendsSection({
           type="text"
           class={s.addFriendInput}
           placeholder="Add a friend by username..."
+          aria-label="Add a friend by username"
           value={input}
+          disabled={sending}
           onInput={(e: any) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && onSend()}
         />
-        <button class={s.btnPrimary} onClick={onSend} disabled={!input.trim()}>
-          <UserPlus size={14} /> Add
+        <button
+          class={s.btnPrimary}
+          onClick={onSend}
+          disabled={!input.trim() || sending}
+        >
+          <UserPlus size={14} /> {sending ? "Sending…" : "Add"}
         </button>
       </div>
+      {error && (
+        <div class={s.subError} role="alert">
+          {error}
+        </div>
+      )}
 
       <div class={s.friendsTabs}>
         <button
@@ -778,6 +838,8 @@ interface SubscriptionsSectionProps {
   username: string;
   onCancel: (keyId: string) => void;
   onCancelGroup: (groupTag: string, productId: string) => void;
+  error?: string | null;
+  loading?: boolean;
 }
 
 function SubscriptionsSection({
@@ -787,6 +849,8 @@ function SubscriptionsSection({
   username,
   onCancel,
   onCancelGroup,
+  error,
+  loading,
 }: SubscriptionsSectionProps) {
   return (
     <AccountSection
@@ -801,6 +865,12 @@ function SubscriptionsSection({
         </a>
       }
     >
+      {error && (
+        <div class={s.subError} role="alert">
+          {error}
+        </div>
+      )}
+
       {paying.length > 0 && (
         <>
           <div class={s.sectionDivider}>Key Subscriptions</div>
@@ -900,7 +970,10 @@ function SubscriptionsSection({
         </>
       )}
 
-      {paying.length === 0 &&
+      {loading && <div class={s.loading}>Loading subscriptions…</div>}
+
+      {!loading &&
+        paying.length === 0 &&
         created.length === 0 &&
         groupSubs.length === 0 && (
           <EmptyState

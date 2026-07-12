@@ -42,6 +42,8 @@ import {
 import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, getToken, formatRelativeTime } from "../../lib/auth";
 import s from "./GroupDetail.module.css";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { useConfirm } from "../../components/ConfirmDialog";
 
 const API_BASE_URL = "https://api.rotur.dev";
 
@@ -257,6 +259,13 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
     text: string;
     type: "success" | "error";
   } | null>(null);
+  // Joining can charge an entry fee — guard against a double-click charging twice.
+  const [joining, setJoining] = useState(false);
+  const [confirm, confirmDialog] = useConfirm();
+  const [joinOpen, setJoinOpen] = useState(false);
+  const joinTrapRef = useFocusTrap<HTMLDivElement>(joinOpen);
+  const [joinMessage, setJoinMessage] = useState("");
+  const [rulesAgreed, setRulesAgreed] = useState(false);
 
   useEffect(() => {
     if (!tag) return;
@@ -344,47 +353,46 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
     return isOwner || myPermissions.has(perm);
   }
 
-  async function joinGroup() {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && joinOpen && !joining) setJoinOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [joinOpen, joining]);
+
+  // Opens the join dialog. The rules, the entry fee and the request message all
+  // belong in one reviewable surface — a native confirm() truncates long rules,
+  // so people were agreeing to text they couldn't actually read.
+  function joinGroup() {
+    if (joining) return;
     if (!isLoggedIn) {
       window.location.href = `/auth?return_to=${encodeURIComponent(
         window.location.origin + window.location.pathname,
       )}`;
       return;
     }
-    if (group?.rules && group.rules.trim()) {
-      if (
-        !confirm(
-          `Before joining, please read the group rules:\n\n${group.rules}\n\nDo you agree to these rules?`,
-        )
-      ) {
-        return;
-      }
-    }
-    if (group && group.entry_fee > 0) {
-      if (
-        !confirm(
-          `Joining this group costs ${group.entry_fee} credits. Continue?`,
-        )
-      ) {
-        return;
-      }
-    }
+    setJoinMessage("");
+    setRulesAgreed(false);
+    setJoinOpen(true);
+  }
+
+  async function confirmJoin() {
+    if (joining || !group) return;
     setActionMessage(null);
+    setJoining(true);
     try {
-      if (group?.join_policy === "REQUEST") {
-        const message = prompt("Optional message for the group admins:") || "";
+      if (group.join_policy === "REQUEST") {
         const params = new URLSearchParams();
-        if (message.trim()) params.set("message", message.trim());
+        if (joinMessage.trim()) params.set("message", joinMessage.trim());
         const requestRes = await fetch(
           `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/join_requests?${params.toString()}&${authQs().slice(1)}`,
           { method: "POST" },
         );
         const requestData = await requestRes.json();
         if (requestRes.ok) {
-          setActionMessage({
-            text: "Join request sent.",
-            type: "success",
-          });
+          setActionMessage({ text: "Join request sent.", type: "success" });
+          setJoinOpen(false);
         } else {
           setActionMessage({
             text: requestData.error || "Failed to request access",
@@ -400,6 +408,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       const data = await res.json();
       if (res.ok) {
         setActionMessage({ text: "Joined group!", type: "success" });
+        setJoinOpen(false);
         if (reloadUser) await reloadUser();
         loadGroup();
         loadMyMembership();
@@ -411,12 +420,19 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       }
     } catch {
       setActionMessage({ text: "Network error", type: "error" });
+    } finally {
+      setJoining(false);
     }
   }
 
   async function leaveGroup() {
-    if (!confirm(`Are you sure you want to leave ${group?.name || tag}?`))
-      return;
+    const ok = await confirm({
+      title: `Leave ${group?.name || tag}?`,
+      message: "You'll lose your roles in this group.",
+      confirmLabel: "Leave group",
+      danger: true,
+    });
+    if (!ok) return;
     setActionMessage(null);
     try {
       const res = await fetch(
@@ -440,7 +456,12 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   }
 
   async function reportGroup() {
-    if (!confirm("Report this group for review?")) return;
+    const ok = await confirm({
+      title: "Report this group for review?",
+      message: "A moderator will review this group.",
+      confirmLabel: "Report group",
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/report?${authQs().slice(1)}`,
@@ -607,6 +628,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
 
   return (
     <AccountPage layoutClassName={s.wideLayout}>
+      {confirmDialog}
       <a class={s.backBtn} href="/groups">
         <ArrowLeft size={14} /> Back to Groups
       </a>
@@ -727,15 +749,21 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
             )}
 
             {isLoggedIn && !isMember && group.public && (
-              <button class={s.btnPrimary} onClick={joinGroup}>
+              <button
+                class={s.btnPrimary}
+                onClick={joinGroup}
+                disabled={joining}
+              >
                 <UserPlus size={13} />{" "}
-                {group.join_policy === "REQUEST"
-                  ? "Request to Join"
-                  : group.entry_fee > 0
-                    ? `Join (${group.entry_fee} credits)`
-                    : group.join_policy === "INVITE"
-                      ? "Join with Invite"
-                      : "Join Group"}
+                {joining
+                  ? "Joining…"
+                  : group.join_policy === "REQUEST"
+                    ? "Request to Join"
+                    : group.entry_fee > 0
+                      ? `Join (${group.entry_fee} credits)`
+                      : group.join_policy === "INVITE"
+                        ? "Join with Invite"
+                        : "Join Group"}
               </button>
             )}
 
@@ -868,6 +896,124 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
           />
         )}
       </AccountTabPanel>
+
+      {joinOpen && (
+        <div
+          class={s.modalBackdrop}
+          role="presentation"
+          onClick={() => !joining && setJoinOpen(false)}
+        >
+          <div
+            ref={joinTrapRef}
+            tabIndex={-1}
+            class={s.modal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="join-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div class={s.modalHeader}>
+              <div>
+                <h2 id="join-modal-title" class={s.modalTitle}>
+                  {group.join_policy === "REQUEST"
+                    ? "Request to join"
+                    : "Join group"}
+                </h2>
+                <p class={s.modalSubtitle}>{group.name}</p>
+              </div>
+              <button
+                class={s.iconButton}
+                aria-label="Close"
+                disabled={joining}
+                onClick={() => setJoinOpen(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div class={s.modalBody}>
+              {group.rules && group.rules.trim() && (
+                <div class={s.joinSection}>
+                  <h4 class={s.manageListTitle}>Group rules</h4>
+                  <div class={s.joinRules}>{group.rules}</div>
+                  <label class={s.joinAgree}>
+                    <input
+                      type="checkbox"
+                      checked={rulesAgreed}
+                      onChange={(e) =>
+                        setRulesAgreed((e.target as HTMLInputElement).checked)
+                      }
+                    />
+                    <span>I have read and agree to these rules</span>
+                  </label>
+                </div>
+              )}
+
+              {group.entry_fee > 0 && (
+                <div class={s.joinFee}>
+                  <Coins size={14} />
+                  <span>
+                    Joining costs{" "}
+                    <strong>{group.entry_fee.toLocaleString()} credits</strong>.
+                    This is deducted immediately.
+                  </span>
+                </div>
+              )}
+
+              {group.join_policy === "REQUEST" && (
+                <div class={s.joinSection}>
+                  <label class={s.manageListTitle} for="join-message">
+                    Message for the admins (optional)
+                  </label>
+                  <textarea
+                    id="join-message"
+                    class={s.formInput}
+                    rows={3}
+                    maxLength={500}
+                    value={joinMessage}
+                    disabled={joining}
+                    placeholder="Why do you want to join?"
+                    onInput={(e) =>
+                      setJoinMessage((e.target as HTMLTextAreaElement).value)
+                    }
+                  />
+                </div>
+              )}
+
+              {actionMessage && actionMessage.type === "error" && (
+                <div class={s.error} role="alert">
+                  {actionMessage.text}
+                </div>
+              )}
+
+              <div class={s.formActions}>
+                <button
+                  class={s.btnPrimary}
+                  onClick={confirmJoin}
+                  disabled={
+                    joining ||
+                    (!!group.rules && !!group.rules.trim() && !rulesAgreed)
+                  }
+                >
+                  {joining
+                    ? "Working…"
+                    : group.join_policy === "REQUEST"
+                      ? "Send request"
+                      : group.entry_fee > 0
+                        ? `Join for ${group.entry_fee.toLocaleString()} credits`
+                        : "Join group"}
+                </button>
+                <button
+                  class={s.btnSecondary}
+                  onClick={() => setJoinOpen(false)}
+                  disabled={joining}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AccountPage>
   );
 }
@@ -897,6 +1043,7 @@ function OverviewTab({
   onUpdated: () => void;
   onMessage: (m: { text: string; type: "success" | "error" } | null) => void;
 }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(group.name);
   const [groupTag, setGroupTag] = useState(group.tag);
@@ -968,12 +1115,14 @@ function OverviewTab({
   }
 
   async function deleteGroup() {
-    if (
-      !confirm(
-        `Delete "${group.name}"? This permanently removes the group and all data.`,
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: `Delete "${group.name}"?`,
+      message:
+        "This permanently removes the group and all of its data. This cannot be undone.",
+      confirmLabel: "Delete group",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/groups/${encodeURIComponent(group.tag)}?${authQs().slice(1)}`,
@@ -992,6 +1141,7 @@ function OverviewTab({
 
   return (
     <div class={s.tabColumn}>
+      {confirmDialog}
       {isMember && myRoles.length > 0 && (
         <AccountSection
           icon={<KeyRound size={18} />}
@@ -1278,6 +1428,7 @@ function AnnouncementsTab({
   canPost: boolean;
   isMember: boolean;
 }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [items, setItems] = useState<GroupAnnouncement[]>([]);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
@@ -1315,9 +1466,15 @@ function AnnouncementsTab({
       const data = await res.json();
       if (res.ok) {
         setItems(Array.isArray(data) ? data : []);
+      } else {
+        // A failed load must not render as "no announcements".
+        setMsg({
+          text: data?.error || "Couldn't load announcements.",
+          type: "error",
+        });
       }
     } catch {
-      /* ignore */
+      setMsg({ text: "Network error loading announcements.", type: "error" });
     }
     setLoading(false);
   }
@@ -1359,7 +1516,12 @@ function AnnouncementsTab({
   }
 
   async function del(id: string) {
-    if (!confirm("Delete this announcement?")) return;
+    const ok = await confirm({
+      title: "Delete this announcement?",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/announcements/${encodeURIComponent(id)}?${authQs().slice(1)}`,
@@ -1397,6 +1559,7 @@ function AnnouncementsTab({
 
   return (
     <div class={s.tabColumn}>
+      {confirmDialog}
       {isMember && (
         <AccountSection
           icon={muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -1542,11 +1705,13 @@ function MembersTab({
   isOwner: boolean;
   isMember: boolean;
 }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [membersPage, setMembersPage] = useState(1);
   const [membersTotal, setMembersTotal] = useState(0);
   const [membersPages, setMembersPages] = useState(1);
   const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState<string | null>(null);
   const [memberSearch, setMemberSearch] = useState("");
   const [targetUser, setTargetUser] = useState("");
   const [targetRoles, setTargetRoles] = useState<GroupRole[]>([]);
@@ -1554,6 +1719,7 @@ function MembersTab({
     null,
   );
   const [roleModalRoles, setRoleModalRoles] = useState<GroupRole[]>([]);
+  const roleTrapRef = useFocusTrap<HTMLDivElement>(!!roleModalMember);
   const [roleModalMsg, setRoleModalMsg] = useState<{
     text: string;
     type: "success" | "error";
@@ -1568,6 +1734,7 @@ function MembersTab({
 
   async function loadMembers(page: number) {
     setMembersLoading(true);
+    setMembersError(null);
     try {
       const params = new URLSearchParams({
         page: String(page),
@@ -1584,9 +1751,12 @@ function MembersTab({
         setMembers(data.members || []);
         setMembersTotal(data.total || 0);
         setMembersPages(data.pages || 1);
+      } else {
+        // A failed load must not render as "no members".
+        setMembersError(data?.error || "Couldn't load members.");
       }
     } catch {
-      /* ignore */
+      setMembersError("Network error — check your connection and try again.");
     }
     setMembersLoading(false);
   }
@@ -1687,7 +1857,12 @@ function MembersTab({
   }
 
   async function removeRole(userId: string, roleId: string) {
-    if (!confirm("Remove this role from the user?")) return;
+    const ok = await confirm({
+      title: "Remove this role from the user?",
+      confirmLabel: "Remove role",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/members/${encodeURIComponent(userId)}/roles/${encodeURIComponent(roleId)}?${authQs().slice(1)}`,
@@ -1731,6 +1906,7 @@ function MembersTab({
 
   return (
     <div class={s.tabColumn}>
+      {confirmDialog}
       <AccountSection
         icon={<Users size={18} />}
         title="Your Membership"
@@ -1773,6 +1949,7 @@ function MembersTab({
               type="text"
               class={s.formInput}
               placeholder="Search members…"
+              aria-label="Search members"
               value={memberSearch}
               onInput={(e) =>
                 setMemberSearch((e.target as HTMLInputElement).value)
@@ -1788,6 +1965,18 @@ function MembersTab({
           {membersLoading ? (
             <div class={s.empty}>
               <div class={s.emptyText}>Loading members…</div>
+            </div>
+          ) : membersError ? (
+            <div class={s.empty}>
+              <div class={s.error} role="alert">
+                {membersError}
+              </div>
+              <button
+                class={s.btnSecondary}
+                onClick={() => loadMembers(membersPage)}
+              >
+                Retry
+              </button>
             </div>
           ) : members.length === 0 ? (
             <div class={s.empty}>
@@ -1871,6 +2060,7 @@ function MembersTab({
               type="text"
               class={s.formInput}
               placeholder="Username"
+              aria-label="Username to look up roles for"
               value={targetUser}
               onInput={(e) =>
                 setTargetUser((e.target as HTMLInputElement).value)
@@ -1945,6 +2135,8 @@ function MembersTab({
           onClick={() => setRoleModalMember(null)}
         >
           <div
+            ref={roleTrapRef}
+            tabIndex={-1}
             class={s.modal}
             role="dialog"
             aria-modal="true"
@@ -2053,8 +2245,13 @@ function RolesTab({
     text: string;
     type: "success" | "error";
   } | null>(null);
+  const [confirm, confirmDialog] = useConfirm();
   const [products, setProducts] = useState<GroupProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
+  // Product id whose purchase is in flight, so a second click can't charge twice.
+  const [buying, setBuying] = useState<string | null>(null);
+  // Guards role/product creation against a double-click creating duplicates.
+  const [creatingBusy, setCreatingBusy] = useState(false);
   const [creatingProduct, setCreatingProduct] = useState(false);
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
@@ -2089,9 +2286,16 @@ function RolesTab({
         `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/products?${authQs().slice(1)}`,
       );
       const data = await res.json();
-      if (res.ok) setProducts(Array.isArray(data) ? data : []);
+      if (res.ok) {
+        setProducts(Array.isArray(data) ? data : []);
+      } else {
+        setMsg({
+          text: data?.error || "Couldn't load roles for sale.",
+          type: "error",
+        });
+      }
     } catch {
-      /* ignore */
+      setMsg({ text: "Network error loading roles for sale.", type: "error" });
     }
     setProductsLoading(false);
   }
@@ -2108,11 +2312,13 @@ function RolesTab({
   }
 
   async function create() {
+    if (creatingBusy) return;
     if (!newName.trim()) {
       setMsg({ text: "Name required", type: "error" });
       return;
     }
     setMsg(null);
+    setCreatingBusy(true);
     try {
       const params = new URLSearchParams();
       params.set("name", newName.trim());
@@ -2162,6 +2368,8 @@ function RolesTab({
       }
     } catch {
       setMsg({ text: "Network error", type: "error" });
+    } finally {
+      setCreatingBusy(false);
     }
   }
 
@@ -2211,7 +2419,13 @@ function RolesTab({
   }
 
   async function del(role: GroupRole) {
-    if (!confirm(`Delete role "${role.name}"?`)) return;
+    const ok = await confirm({
+      title: `Delete role "${role.name}"?`,
+      message: "Members with this role will lose it.",
+      confirmLabel: "Delete role",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/roles/${encodeURIComponent(role.id)}?${authQs().slice(1)}`,
@@ -2230,6 +2444,7 @@ function RolesTab({
   }
 
   async function createProduct() {
+    if (creatingBusy) return;
     const price = parseFloat(productPrice);
     if (!productName.trim()) {
       setMsg({ text: "Product name required", type: "error" });
@@ -2249,6 +2464,7 @@ function RolesTab({
       return;
     }
     setMsg(null);
+    setCreatingBusy(true);
     try {
       const params = new URLSearchParams();
       params.set("name", productName.trim());
@@ -2283,11 +2499,18 @@ function RolesTab({
       }
     } catch {
       setMsg({ text: "Network error", type: "error" });
+    } finally {
+      setCreatingBusy(false);
     }
   }
 
   async function deleteProduct(product: GroupProduct) {
-    if (!confirm(`Delete product "${product.name}"?`)) return;
+    const ok = await confirm({
+      title: `Delete product "${product.name}"?`,
+      confirmLabel: "Delete product",
+      danger: true,
+    });
+    if (!ok) return;
     setMsg(null);
     try {
       const res = await fetch(
@@ -2307,9 +2530,15 @@ function RolesTab({
   }
 
   async function purchaseProduct(product: GroupProduct) {
-    if (!confirm(`Buy ${product.name} for ${product.price_credits} credits?`))
-      return;
+    if (buying) return;
+    const ok = await confirm({
+      title: `Buy ${product.name}?`,
+      message: `${product.price_credits.toLocaleString()} credits will be deducted from your balance.`,
+      confirmLabel: `Buy for ${product.price_credits.toLocaleString()} credits`,
+    });
+    if (!ok) return;
     setMsg(null);
+    setBuying(product.id);
     try {
       const res = await fetch(
         `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/products/${encodeURIComponent(product.id)}/purchase?${authQs().slice(1)}`,
@@ -2326,11 +2555,14 @@ function RolesTab({
       }
     } catch {
       setMsg({ text: "Network error", type: "error" });
+    } finally {
+      setBuying(null);
     }
   }
 
   return (
     <div class={s.tabColumn}>
+      {confirmDialog}
       {canManage && (
         <AccountSection
           icon={<Plus size={18} />}
@@ -2418,7 +2650,11 @@ function RolesTab({
                 </small>
               </div>
               <div class={s.formActions}>
-                <button class={s.btnPrimary} onClick={create}>
+                <button
+                  class={s.btnPrimary}
+                  onClick={create}
+                  disabled={creatingBusy}
+                >
                   <Save size={13} /> Create Role
                 </button>
                 <button
@@ -2571,7 +2807,11 @@ function RolesTab({
               />
             </div>
             <div class={s.formActions}>
-              <button class={s.btnPrimary} onClick={createProduct}>
+              <button
+                class={s.btnPrimary}
+                onClick={createProduct}
+                disabled={creatingBusy}
+              >
                 <Save size={13} /> Create Product
               </button>
               <button
@@ -2624,8 +2864,10 @@ function RolesTab({
                   <button
                     class={s.btnPrimary}
                     onClick={() => purchaseProduct(product)}
+                    disabled={buying === product.id}
                   >
-                    <Coins size={13} /> Buy Role
+                    <Coins size={13} />{" "}
+                    {buying === product.id ? "Purchasing…" : "Buy Role"}
                   </button>
                 )}
                 {canManage && (
@@ -2831,6 +3073,7 @@ function EventsTab({
   isMember: boolean;
   isPublic: boolean;
 }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [events, setEvents] = useState<GroupEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -2856,9 +3099,14 @@ function EventsTab({
       const data = await res.json();
       if (res.ok) {
         setEvents(Array.isArray(data) ? data : []);
+      } else {
+        setMsg({
+          text: data?.error || "Couldn't load events.",
+          type: "error",
+        });
       }
     } catch {
-      /* ignore */
+      setMsg({ text: "Network error loading events.", type: "error" });
     }
     setLoading(false);
   }
@@ -2954,7 +3202,12 @@ function EventsTab({
   }
 
   async function deleteEvent(event: GroupEvent) {
-    if (!confirm(`Delete event "${event.title}"?`)) return;
+    const ok = await confirm({
+      title: `Delete event "${event.title}"?`,
+      confirmLabel: "Delete event",
+      danger: true,
+    });
+    if (!ok) return;
     setMsg(null);
     try {
       const res = await fetch(
@@ -2981,6 +3234,7 @@ function EventsTab({
 
   return (
     <div class={s.tabColumn}>
+      {confirmDialog}
       {canManage && (
         <AccountSection
           icon={<Plus size={18} />}
@@ -3213,10 +3467,12 @@ function AdminTab({
   const [invites, setInvites] = useState<GroupInvite[]>([]);
   const [requests, setRequests] = useState<GroupJoinRequest[]>([]);
   const [bans, setBans] = useState<GroupBan[]>([]);
+  const [confirm, confirmDialog] = useConfirm();
   const [withdrawals, setWithdrawals] = useState<GroupWithdrawal[]>([]);
   const [inviteUsername, setInviteUsername] = useState("");
   const [banReason, setBanReason] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{
     text: string;
@@ -3277,12 +3533,16 @@ function AdminTab({
     loadAdminData();
   }, [tag, canInvite, canBan, canWithdraw, canViewMembers]);
 
+  // Every admin action (including the money ones: withdraw, transfer) funnels
+  // through here, so one in-flight guard stops all of them double-firing.
   async function runAction(
     successText: string,
     input: RequestInfo,
     init?: RequestInit,
   ) {
+    if (actionBusy) return;
     setMsg(null);
+    setActionBusy(true);
     try {
       const res = await fetch(input, init);
       const data = await res.json();
@@ -3296,6 +3556,8 @@ function AdminTab({
       }
     } catch {
       setMsg({ text: "Network error", type: "error" });
+    } finally {
+      setActionBusy(false);
     }
   }
 
@@ -3318,7 +3580,12 @@ function AdminTab({
   }
 
   async function revokeInvite(id: string) {
-    if (!confirm("Revoke this invite?")) return;
+    const ok = await confirm({
+      title: "Revoke this invite?",
+      confirmLabel: "Revoke invite",
+      danger: true,
+    });
+    if (!ok) return;
     await runAction(
       "Invite revoked.",
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/invites/${encodeURIComponent(id)}?${authQs().slice(1)}`,
@@ -3327,7 +3594,13 @@ function AdminTab({
   }
 
   async function kick(member: GroupMember) {
-    if (!confirm(`Remove ${member.username} from this group?`)) return;
+    const ok = await confirm({
+      title: `Remove ${member.username} from this group?`,
+      message: "They can rejoin unless the group is invite-only.",
+      confirmLabel: "Remove member",
+      danger: true,
+    });
+    if (!ok) return;
     await runAction(
       "Member removed.",
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/members/${encodeURIComponent(member.user_id)}?${authQs().slice(1)}`,
@@ -3336,7 +3609,13 @@ function AdminTab({
   }
 
   async function ban(member: GroupMember) {
-    if (!confirm(`Ban ${member.username} from this group?`)) return;
+    const ok = await confirm({
+      title: `Ban ${member.username} from this group?`,
+      message: "They will not be able to rejoin.",
+      confirmLabel: "Ban member",
+      danger: true,
+    });
+    if (!ok) return;
     const params = new URLSearchParams();
     if (banReason.trim()) params.set("reason", banReason.trim());
     await runAction(
@@ -3355,13 +3634,13 @@ function AdminTab({
   }
 
   async function transfer(member: GroupMember) {
-    if (
-      !confirm(
-        `Transfer ownership of ${group.name} to ${member.username}? You will no longer be the owner.`,
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Transfer ownership to ${member.username}?`,
+      message: `You will no longer be the owner of ${group.name}. This cannot be undone.`,
+      confirmLabel: "Transfer ownership",
+      danger: true,
+    });
+    if (!ok) return;
     await runAction(
       "Ownership transferred.",
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/transfer/${encodeURIComponent(member.user_id)}?${authQs().slice(1)}`,
@@ -3375,7 +3654,12 @@ function AdminTab({
       setMsg({ text: "Enter a valid withdrawal amount", type: "error" });
       return;
     }
-    if (!confirm(`Withdraw ${amount} credits from the group balance?`)) return;
+    const ok = await confirm({
+      title: `Withdraw ${amount.toLocaleString()} credits?`,
+      message: "This will be taken from the group balance and added to yours.",
+      confirmLabel: "Withdraw",
+    });
+    if (!ok) return;
     await runAction(
       "Withdrawal complete.",
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/tips/withdraw?amount=${encodeURIComponent(String(amount))}&${authQs().slice(1)}`,
@@ -3390,6 +3674,7 @@ function AdminTab({
 
   return (
     <div class={s.tabColumn}>
+      {confirmDialog}
       {msg && (
         <div class={msg.type === "success" ? s.success : s.error}>
           {msg.text}
@@ -3408,6 +3693,7 @@ function AdminTab({
                 class={s.formInput}
                 value={inviteUsername}
                 placeholder="Username"
+                aria-label="Username to invite"
                 onInput={(e) =>
                   setInviteUsername((e.target as HTMLInputElement).value)
                 }
@@ -3589,16 +3875,18 @@ function AdminTab({
               class={s.formInput}
               value={withdrawAmount}
               placeholder="Amount to withdraw"
+              aria-label="Amount to withdraw"
               onInput={(e) =>
                 setWithdrawAmount((e.target as HTMLInputElement).value)
               }
+              onKeyDown={(e) => e.key === "Enter" && withdraw()}
             />
             <button
               class={s.btnPrimary}
               onClick={withdraw}
-              disabled={!withdrawAmount}
+              disabled={!withdrawAmount || actionBusy}
             >
-              <Coins size={13} /> Withdraw
+              <Coins size={13} /> {actionBusy ? "Withdrawing…" : "Withdraw"}
             </button>
           </div>
           <div class={s.manageList}>
@@ -3642,6 +3930,7 @@ function TipsTab({
   balanceVisible: boolean;
   onSent: () => void;
 }) {
+  const [confirm, confirmDialog] = useConfirm();
   const [tips, setTips] = useState<GroupTip[]>([]);
   const [loading, setLoading] = useState(false);
   const [amount, setAmount] = useState("");
@@ -3664,9 +3953,14 @@ function TipsTab({
       const data = await res.json();
       if (res.ok) {
         setTips(Array.isArray(data) ? data : []);
+      } else {
+        setMsg({
+          text: data?.error || "Couldn't load tips.",
+          type: "error",
+        });
       }
     } catch {
-      /* ignore */
+      setMsg({ text: "Network error loading tips.", type: "error" });
     }
     setLoading(false);
   }
@@ -3681,8 +3975,12 @@ function TipsTab({
       setMsg({ text: "Enter a valid amount", type: "error" });
       return;
     }
-    if (!confirm(`Send ${amt} credits to this group? This cannot be undone.`))
-      return;
+    const ok = await confirm({
+      title: `Send ${amt.toLocaleString()} credits to this group?`,
+      message: "This cannot be undone.",
+      confirmLabel: "Send tip",
+    });
+    if (!ok) return;
     setBusy(true);
     setMsg(null);
     try {
@@ -3712,6 +4010,7 @@ function TipsTab({
 
   return (
     <div class={s.tabColumn}>
+      {confirmDialog}
       {balanceVisible && (
         <AccountSection
           icon={<Coins size={18} />}
@@ -3739,6 +4038,7 @@ function TipsTab({
               min={0}
               step="0.01"
               placeholder="Amount in credits"
+              aria-label="Tip amount in credits"
               value={amount}
               onInput={(e) => setAmount((e.target as HTMLInputElement).value)}
             />

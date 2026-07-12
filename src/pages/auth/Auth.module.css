@@ -1432,3 +1432,160 @@
   color: var(--auth-danger, #f87171);
   flex-shrink: 0;
 }
+
+/* ── Existing-token-for-this-site (recommended path) ── */
+.existingBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--accent-3);
+  border: 1px solid var(--accent-10);
+}
+
+.existingHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.existingHead > i {
+  color: var(--accent);
+  font-size: 1rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.existingTitle {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.existingSub {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* The primary action on the page. */
+.existingPrimary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--void);
+  font-family: var(--font-heading);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    filter 0.2s,
+    transform 0.1s;
+}
+
+.existingPrimary:hover {
+  filter: brightness(1.08);
+}
+
+.existingPrimary:active {
+  transform: scale(0.99);
+}
+
+.existingPrimaryBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.existingPrimaryTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.existingPrimarySub {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.existingPrimaryArrow {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Deliberately quiet: creating a duplicate token is the discouraged path. */
+.existingCreateNew {
+  align-self: center;
+  padding: 0.5rem 0.25rem;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--text-subtle);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.existingCreateNew:hover {
+  color: var(--text-muted);
+}
+
+/* ── Warning shown when they opt into a duplicate token anyway ── */
+.duplicateWarn {
+  padding: 0.875rem 1rem;
+  border-radius: 0.625rem;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.25);
+}
+
+.duplicateWarnHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: #facc15;
+}
+
+.duplicateWarnText {
+  margin: 0.4rem 0 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.duplicateWarnBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--accent-10);
+  background: var(--accent-3);
+  color: var(--accent);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.duplicateWarnBack:hover {
+  border-color: var(--accent);
+}

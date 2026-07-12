@@ -13,8 +13,12 @@ export function PageChrome({
 }) {
   return (
     <div class={className} style={style}>
+      {/* Lets keyboard users jump the 6 header links on every page. */}
+      <a href="#main" class="skipLink">
+        Skip to content
+      </a>
       <Header />
-      {children}
+      <main id="main">{children}</main>
       <Footer />
     </div>
   );

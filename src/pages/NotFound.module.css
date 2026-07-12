@@ -30,9 +30,25 @@
   line-height: var(--sub-line-height);
 }
 
+/* --primary was never defined, so this link rendered as plain body text and
+   did not read as clickable. Use the real accent and give it a hit area. */
 .homeLink {
-  margin-top: 1rem;
-  color: var(--primary);
+  margin-top: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background-color: var(--surface);
+  color: var(--accent);
   text-decoration: none;
-  font-weight: bold;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.homeLink:hover,
+.homeLink:focus-visible {
+  border-color: var(--accent);
+  background-color: var(--accent-dim);
 }

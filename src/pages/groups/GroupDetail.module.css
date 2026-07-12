@@ -975,3 +975,54 @@
     padding: 1rem;
   }
 }
+
+/* ── Join dialog ── */
+.joinSection {
+  margin-bottom: 1rem;
+}
+
+/* Rules can run to 5,000 chars — scroll them, never truncate. */
+.joinRules {
+  max-height: 14rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.joinAgree {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.joinFee {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  background-color: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.25);
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.joinFee strong {
+  color: var(--text);
+}

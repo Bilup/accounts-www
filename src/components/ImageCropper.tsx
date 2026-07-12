@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "preact/hooks";
 import { X, Check, ZoomIn, ZoomOut, Move, Coins } from "lucide-preact";
 import s from "./ImageCropper.module.css";
+import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useConfirm } from "./ConfirmDialog";
 
 export type CropperKind = "pfp" | "banner";
 
@@ -43,6 +45,18 @@ export function ImageCropper({
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [saving, setSaving] = useState(false);
   const [confirmPaid, setConfirmPaid] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirm, confirmDialog] = useConfirm();
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
+
+  // Escape closes the cropper, matching every other modal in the app.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && !saving) onCancel();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel, saving]);
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -166,18 +180,22 @@ export function ImageCropper({
   const handleSave = async () => {
     if (saving || !img) return;
     if (kind === "banner" && !freeBannerUploads && !confirmPaid) {
-      const ok = confirm(
-        `Setting a banner costs ${BANNER_COST} credits. Continue?`,
-      );
+      const ok = await confirm({
+        title: `Set banner for ${BANNER_COST} credits?`,
+        message: `${BANNER_COST} credits will be deducted from your balance when you save.`,
+        confirmLabel: `Pay ${BANNER_COST} credits`,
+      });
       if (!ok) return;
       setConfirmPaid(true);
     }
     setSaving(true);
+    setError(null);
     try {
       const dataUrl = await renderToDataUrl();
       await onSave(dataUrl);
     } catch (e) {
-      console.error("crop save failed", e);
+      setError(e instanceof Error ? e.message : "Failed to save image");
+      setConfirmPaid(false);
     } finally {
       setSaving(false);
     }
@@ -185,7 +203,18 @@ export function ImageCropper({
 
   return (
     <div class={s.backdrop} onClick={onCancel}>
-      <div class={s.modal} onClick={(e) => e.stopPropagation()}>
+      {confirmDialog}
+      <div
+        ref={trapRef}
+        tabIndex={-1}
+        class={s.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-label={
+          kind === "pfp" ? "Position profile picture" : "Position banner"
+        }
+        onClick={(e) => e.stopPropagation()}
+      >
         <div class={s.header}>
           <div class={s.titleGroup}>
             <div class={s.title}>
@@ -275,6 +304,12 @@ export function ImageCropper({
             </button>
             <span class={s.zoomValue}>{Math.round(scale * 100)}%</span>
           </div>
+
+          {error && (
+            <div class={s.error} role="alert">
+              {error}
+            </div>
+          )}
 
           <div class={s.actions}>
             <button class={s.cancelBtn} onClick={onCancel} disabled={saving}>

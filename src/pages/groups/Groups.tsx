@@ -116,6 +116,7 @@ export function Groups() {
 
   const [browseResults, setBrowseResults] = useState<GroupNet[]>([]);
   const [browseLoading, setBrowseLoading] = useState(false);
+  const [browseError, setBrowseError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [createTag, setCreateTag] = useState("");
@@ -219,6 +220,7 @@ export function Groups() {
 
   async function loadBrowse() {
     setBrowseLoading(true);
+    setBrowseError(null);
     try {
       const res = searchQuery.trim()
         ? await fetch(
@@ -232,9 +234,12 @@ export function Groups() {
       const data = await res.json();
       if (res.ok) {
         setBrowseResults(Array.isArray(data) ? data : []);
+      } else {
+        // A failed search must not read as "there are no groups".
+        setBrowseError(data?.error || "Something went wrong searching groups.");
       }
     } catch {
-      /* ignore */
+      setBrowseError("Network error — check your connection and try again.");
     }
     setBrowseLoading(false);
   }
@@ -533,6 +538,7 @@ export function Groups() {
                 type="text"
                 class={s.searchInput}
                 placeholder="Search by name, description, or tag…"
+                aria-label="Search groups"
                 value={searchQuery}
                 onInput={(e) =>
                   setSearchQuery((e.target as HTMLInputElement).value)
@@ -548,13 +554,38 @@ export function Groups() {
             </form>
 
             {browseLoading && <div class={s.loading}>Searching groups…</div>}
-            {!browseLoading && browseResults.length === 0 && (
+            {!browseLoading && browseError && (
+              <EmptyState
+                icon={<Search size={24} />}
+                title="Couldn't load groups"
+                text={browseError}
+              >
+                <button class={s.btnSecondary} onClick={loadBrowse}>
+                  Retry
+                </button>
+              </EmptyState>
+            )}
+            {!browseLoading && !browseError && browseResults.length === 0 && (
               <EmptyState
                 icon={<Search size={24} />}
                 title="No groups found"
-                text="Try a different search term."
+                text={
+                  searchQuery.trim()
+                    ? "Try a different search term."
+                    : "There are no public groups to browse yet."
+                }
               />
             )}
+            {!browseLoading &&
+              !browseError &&
+              browseResults.length > 0 &&
+              filteredBrowse.length === 0 && (
+                <EmptyState
+                  icon={<Search size={24} />}
+                  title="No matches"
+                  text="No loaded groups match your filter."
+                />
+              )}
             <div class={s.groupGrid}>
               {filteredBrowse.map((g) => (
                 <GroupCard key={g.tag} group={g} />

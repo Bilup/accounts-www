@@ -73,8 +73,17 @@ export function AuthBtnPrimary({
   style?: any;
   [key: string]: any;
 }) {
+  // Auth errors are surfaced by swapping this button's label (see errorBtn in
+  // Auth.tsx), so the button itself is the live region — otherwise a screen
+  // reader user never hears "Invalid credentials".
   return (
-    <button class={s.btnPrimary} disabled={disabled} style={style} {...rest}>
+    <button
+      class={s.btnPrimary}
+      disabled={disabled}
+      style={style}
+      aria-live="polite"
+      {...rest}
+    >
       {children}
     </button>
   );

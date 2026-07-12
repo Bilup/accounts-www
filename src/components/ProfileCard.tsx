@@ -48,6 +48,7 @@ interface ProfileCardProps {
   viewerBalance?: number | null;
   benefits?: Benefits | null;
   viewerNotes?: Record<string, string>;
+  actionError?: string | null;
   onFollowToggle?: () => void;
   onFriendAction?: (action: "add" | "remove" | "accept" | "reject") => void;
   onBlockToggle?: () => void;
@@ -81,6 +82,7 @@ export function ProfileCard({
   viewerBalance = null,
   benefits = null,
   viewerNotes,
+  actionError = null,
   onFollowToggle,
   onFriendAction,
   onBlockToggle,
@@ -106,10 +108,12 @@ export function ProfileCard({
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendSuccess, setSendSuccess] = useState<string | null>(null);
   const [sendSending, setSendSending] = useState(false);
+  const [sendConfirming, setSendConfirming] = useState(false);
   const [editingNote, setEditingNote] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
+  const [mediaError, setMediaError] = useState<string | null>(null);
   const sendAmountRef = useRef<HTMLInputElement>(null);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -136,8 +140,11 @@ export function ProfileCard({
   const handleFileChosen = (event: Event, kind: CropperKind) => {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
+    setMediaError(null);
     if (!file) return;
+    // Picking a non-image used to fail silently — say so.
     if (!file.type.startsWith("image/")) {
+      setMediaError("That file isn't an image. Pick a PNG, JPG, GIF or WebP.");
       input.value = "";
       return;
     }
@@ -146,15 +153,15 @@ export function ProfileCard({
       file.type === "image/webp" ||
       file.type === "image/apng";
     if (isAnimated && kind === "pfp" && !benefits?.animated_pfp) {
-      alert(
-        "Animated profile pictures require a subscription. Upgrade at ko-fi.com/mistium",
+      setMediaError(
+        "Animated profile pictures require a subscription — upgrade at ko-fi.com/mistium.",
       );
       input.value = "";
       return;
     }
     if (isAnimated && kind === "banner" && !benefits?.animated_banner) {
-      alert(
-        "Animated banners require a subscription. Upgrade at ko-fi.com/mistium",
+      setMediaError(
+        "Animated banners require a subscription — upgrade at ko-fi.com/mistium.",
       );
       input.value = "";
       return;
@@ -163,22 +170,22 @@ export function ProfileCard({
     input.value = "";
   };
 
+  // Throws on failure so the cropper can surface the reason (e.g. not enough
+  // credits for a paid banner) instead of silently pretending it saved.
   const uploadImage = async (key: "pfp" | "banner", dataUrl: string) => {
     const token = getToken();
-    if (!token) return;
-    try {
-      await fetch(`${API}/me/update`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ key, value: dataUrl }),
-      });
-      if (onEdit) await onEdit({ [key]: dataUrl });
-    } catch {
-      /* ignore */
-    }
+    if (!token) throw new Error("You must be signed in");
+    const res = await fetch(`${API}/me/update`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ key, value: dataUrl }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || "Upload failed");
+    if (onEdit) await onEdit({ [key]: dataUrl });
   };
 
   const saveBio = async () => {
@@ -261,6 +268,7 @@ export function ProfileCard({
     setSendAmount("");
     setSendNote("");
     setSendSending(false);
+    setSendConfirming(false);
   };
 
   const submitSend = async () => {
@@ -287,6 +295,11 @@ export function ProfileCard({
     const token = getToken();
     if (!token) {
       setSendError("You must be signed in to send credits");
+      return;
+    }
+    // Transfers are irreversible — make the user confirm the amount once it's valid.
+    if (!sendConfirming) {
+      setSendConfirming(true);
       return;
     }
     setSendSending(true);
@@ -320,6 +333,8 @@ export function ProfileCard({
       setSendError("Network error");
     } finally {
       setSendSending(false);
+      // Consume the confirmation: every send attempt must be confirmed afresh.
+      setSendConfirming(false);
     }
   };
 
@@ -420,6 +435,11 @@ export function ProfileCard({
       </div>
 
       <div class={s.body}>
+        {mediaError && (
+          <div class={s.sendError} role="alert">
+            {mediaError}
+          </div>
+        )}
         <div class={s.nameRow}>
           <div class={s.displayName}>
             {displayName}
@@ -644,6 +664,12 @@ export function ProfileCard({
               )}
             </div>
 
+            {actionError && (
+              <div class={s.sendError} role="alert">
+                {actionError}
+              </div>
+            )}
+
             {sendOpen && (
               <div class={s.sendPanel} id="send-credits-panel">
                 <div class={s.sendHeader}>
@@ -676,6 +702,7 @@ export function ProfileCard({
                     onInput={(e: any) => {
                       setSendAmount(e.target.value);
                       setSendSuccess(null);
+                      setSendConfirming(false);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") submitSend();
@@ -698,21 +725,35 @@ export function ProfileCard({
                     onInput={(e: any) => {
                       setSendNote(e.target.value);
                       setSendSuccess(null);
+                      setSendConfirming(false);
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === "Escape") cancelSend();
+                      if (e.key === "Enter") submitSend();
+                      else if (e.key === "Escape") cancelSend();
                     }}
                   />
                 </div>
                 {sendError && <div class={s.sendError}>{sendError}</div>}
                 {sendSuccess && <div class={s.sendSuccess}>{sendSuccess}</div>}
+                {sendConfirming && !sendSending && (
+                  <div class={s.sendConfirm}>
+                    Send <strong>{Number(sendAmount).toLocaleString()}</strong>{" "}
+                    credits to <strong>@{user.username}</strong>? This can't be
+                    undone.
+                  </div>
+                )}
                 <div class={s.sendActions}>
                   <button
                     class={`${s.actionBtn} ${s.actionBtnPrimary}`}
                     onClick={submitSend}
                     disabled={sendSending}
                   >
-                    <Send size={14} /> {sendSending ? "Sending…" : "Send"}
+                    <Send size={14} />{" "}
+                    {sendSending
+                      ? "Sending…"
+                      : sendConfirming
+                        ? "Confirm send"
+                        : "Send"}
                   </button>
                   <button
                     class={s.actionBtn}

@@ -45,7 +45,7 @@
 
 .brandTagline {
   font-size: 0.75rem;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   font-family: var(--font-body);
 }
 
@@ -55,10 +55,15 @@
   gap: 1rem;
   font-size: 0.75rem;
   font-family: var(--font-body);
-  color: var(--text-subtle);
+  color: var(--text-muted);
 }
 
 .legalLink {
+  /* was a bare 12px text row — too small to tap reliably */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.5rem;
   transition: color 0.2s;
 }
 .legalLink:hover {
@@ -75,6 +80,6 @@
   margin-top: 2rem;
   text-align: center;
   font-size: 0.75rem;
-  color: var(--text-subtle);
+  color: var(--text-muted);
   font-family: var(--font-body);
 }

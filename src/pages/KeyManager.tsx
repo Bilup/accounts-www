@@ -15,9 +15,13 @@ import {
   AccountSection,
   AccountTabPanel,
   AccountTabs,
+  AuthRequired,
   EmptyState,
 } from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
+import { clickable } from "../lib/clickable";
+import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useConfirm } from "../components/ConfirmDialog";
 import s from "./KeyManager.module.css";
 
 const API_BASE_URL = "https://api.rotur.dev";
@@ -85,8 +89,10 @@ function keyUserSubscriptionText(data: any): string {
 export function KeyManager() {
   const { user } = useAuth();
   const currentUser = user?.username || "";
+  const [confirm, confirmDialog] = useConfirm();
   const [keys, setKeys] = useState<KeyData[]>([]);
   const [keysLoading, setKeysLoading] = useState(false);
+  const [keysError, setKeysError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<KeyData | null>(null);
   const [keyMessages, setKeyMessages] = useState<
     Record<string, { text: string; type: "success" | "error" }>
@@ -107,6 +113,11 @@ export function KeyManager() {
   const [createMessageType, setCreateMessageType] = useState<
     "success" | "error"
   >("success");
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [createdKey, setCreatedKey] = useState<{
+    name: string;
+    key: string;
+  } | null>(null);
 
   const priceInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const nameInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -138,6 +149,7 @@ export function KeyManager() {
 
   async function fetchUserKeys() {
     setKeysLoading(true);
+    setKeysError(null);
     try {
       const res = await fetch(
         `${API_BASE_URL}/keys/mine?auth=${encodeURIComponent(getToken() || "")}`,
@@ -149,14 +161,18 @@ export function KeyManager() {
             k.creator && k.creator.toLowerCase() === currentUser.toLowerCase(),
         );
         setKeys(mine);
+      } else {
+        // Never let a failed load masquerade as "you have no keys".
+        setKeysError(data?.error || "Something went wrong loading your keys.");
       }
     } catch {
-      /* ignore */
+      setKeysError("Network error — check your connection and try again.");
     }
     setKeysLoading(false);
   }
 
   async function createNewKey() {
+    if (createSubmitting) return;
     const name = createName.trim();
     if (!name) {
       setCreateMessage("Key name is required");
@@ -170,38 +186,39 @@ export function KeyManager() {
       return;
     }
 
-    try {
-      let url = `${API_BASE_URL}/keys/create?auth=${encodeURIComponent(getToken() || "")}&name=${encodeURIComponent(name)}${price ? `&price=${price}` : ""}`;
-      if (createType === "subscription") {
-        const freq = Math.floor(parseInt(billingFrequency)) || 1;
-        if (freq <= 0) {
-          setCreateMessage("Frequency must be positive");
-          setCreateMessageType("error");
-          return;
-        }
-        url += `&subscription=true&frequency=${freq}&period=${billingPeriod}`;
+    let url = `${API_BASE_URL}/keys/create?auth=${encodeURIComponent(getToken() || "")}&name=${encodeURIComponent(name)}${price ? `&price=${price}` : ""}`;
+    if (createType === "subscription") {
+      const freq = Math.floor(parseInt(billingFrequency)) || 1;
+      if (freq <= 0) {
+        setCreateMessage("Frequency must be positive");
+        setCreateMessageType("error");
+        return;
       }
+      url += `&subscription=true&frequency=${freq}&period=${billingPeriod}`;
+    }
 
-      setCreateMessage("Creating key…");
-      setCreateMessageType("success");
+    setCreateSubmitting(true);
+    setCreateMessage("");
+    try {
       const res = await fetch(url);
       const data = await res.json();
       if (res.ok) {
-        setCreateMessage(`Key created: ${data.key}`);
-        setCreateMessageType("success");
+        // The key is only ever returned once — surface it in a panel the user
+        // dismisses, never a message that expires on its own.
+        setCreatedKey({ name, key: data.key });
         setCreateName("");
         setCreatePrice("");
         setCreateType("regular");
         fetchUserKeys();
-        setTimeout(() => setCreateMessage(""), 5000);
       } else {
         setCreateMessage(data.error || "Failed to create key");
         setCreateMessageType("error");
-        setTimeout(() => setCreateMessage(""), 5000);
       }
     } catch {
       setCreateMessage("Network error occurred");
       setCreateMessageType("error");
+    } finally {
+      setCreateSubmitting(false);
     }
   }
 
@@ -265,6 +282,7 @@ export function KeyManager() {
           webhook ? "Webhook updated" : "Webhook removed",
           "success",
         );
+        fetchUserKeys();
       } else {
         setKeyMsg(keyId, data.error || "Failed to update webhook", "error");
       }
@@ -274,7 +292,13 @@ export function KeyManager() {
   }
 
   async function revokeKey(keyId: string) {
-    if (!confirm("Revoke this key? All other users will be removed.")) return;
+    const ok = await confirm({
+      title: "Revoke this key?",
+      message: "All other users will be removed. This cannot be undone.",
+      confirmLabel: "Revoke key",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/keys/revoke/${keyId}?auth=${encodeURIComponent(getToken() || "")}`,
@@ -292,7 +316,13 @@ export function KeyManager() {
   }
 
   async function deleteKey(keyId: string) {
-    if (!confirm("Delete this key permanently? This cannot be undone.")) return;
+    const ok = await confirm({
+      title: "Delete this key permanently?",
+      message: "This cannot be undone.",
+      confirmLabel: "Delete key",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/keys/delete/${keyId}?auth=${encodeURIComponent(getToken() || "")}`,
@@ -334,7 +364,12 @@ export function KeyManager() {
   }
 
   async function removeUserFromKey(keyId: string, username: string) {
-    if (!confirm(`Remove ${username} from this key?`)) return;
+    const ok = await confirm({
+      title: `Remove ${username} from this key?`,
+      confirmLabel: "Remove user",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(
         `${API_BASE_URL}/keys/admin_remove/${keyId}?auth=${encodeURIComponent(getToken() || "")}&username=${encodeURIComponent(username)}`,
@@ -369,11 +404,62 @@ export function KeyManager() {
     }
   }
 
+  if (!currentUser) {
+    return (
+      <AuthRequired
+        icon={<Key size={28} />}
+        title="Sign in to manage keys"
+        text="Sign in to create and manage API keys for authentication and monetization."
+        href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/key-manager")}`}
+      />
+    );
+  }
+
   return (
     <AccountPage
       title="Key Manager"
       subtitle="Create and manage API keys for authentication and monetization"
     >
+      {confirmDialog}
+      {/* Newly created key reveal */}
+      {createdKey && (
+        <div class={s.keyReveal}>
+          <div class={s.keyRevealHeader}>
+            <Key size={16} /> Key created: {createdKey.name}
+          </div>
+          <p class={s.keyRevealText}>
+            Copy this key now. <strong>It will never be shown again.</strong>{" "}
+            Store it somewhere safe.
+          </p>
+          <div class={s.keyRevealValue}>
+            <code>{createdKey.key}</code>
+            <button
+              class={s.copyBtn}
+              onClick={() => copyToClipboard(createdKey.key, "__new__")}
+            >
+              <Copy size={12} /> Copy
+            </button>
+          </div>
+          {keyMessages["__new__"] && (
+            <div
+              class={
+                keyMessages["__new__"].type === "success" ? s.success : s.error
+              }
+              style={{ marginTop: "0.5rem" }}
+            >
+              {keyMessages["__new__"].text}
+            </div>
+          )}
+          <button
+            class={s.btnSecondary}
+            style={{ marginTop: "0.75rem" }}
+            onClick={() => setCreatedKey(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <AccountTabs
         tabs={TABS}
         active={activeTab}
@@ -389,7 +475,18 @@ export function KeyManager() {
             subtitle={`${keys.length} created`}
           >
             {keysLoading && <div class={s.loading}>Loading your keys…</div>}
-            {!keysLoading && keys.length === 0 && (
+            {!keysLoading && keysError && (
+              <EmptyState
+                icon={<Key size={24} />}
+                title="Couldn't load your keys"
+                text={keysError}
+              >
+                <button class={s.btnSecondary} onClick={fetchUserKeys}>
+                  <RotateCcw size={14} /> Retry
+                </button>
+              </EmptyState>
+            )}
+            {!keysLoading && !keysError && keys.length === 0 && (
               <EmptyState
                 icon={<Key size={24} />}
                 title="No keys yet"
@@ -406,7 +503,7 @@ export function KeyManager() {
                   <div
                     key={keyId}
                     class={s.keyCard}
-                    onClick={() => setSelectedKey(key)}
+                    {...clickable(() => setSelectedKey(key), key.name || keyId)}
                   >
                     <div class={s.keyHeader}>
                       <h3 class={s.keyName}>
@@ -525,8 +622,13 @@ export function KeyManager() {
             )}
 
             <div class={s.formGroup}>
-              <button class={s.btnPrimary} onClick={createNewKey}>
-                <PlusCircle size={14} /> Create Key
+              <button
+                class={s.btnPrimary}
+                onClick={createNewKey}
+                disabled={createSubmitting}
+              >
+                <PlusCircle size={14} />{" "}
+                {createSubmitting ? "Creating…" : "Create Key"}
               </button>
             </div>
 
@@ -600,6 +702,7 @@ function KeyDetailModal({
   webhookInputRefs: { current: Record<string, HTMLInputElement | null> };
   addUserInputRefs: { current: Record<string, HTMLInputElement | null> };
 }) {
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
   const keyId = keyData.key;
   const isSubscription = keyData.type === "subscription";
   const sub = keyData.subscription;
@@ -608,8 +711,16 @@ function KeyDetailModal({
   return (
     <div class={s.modal} onClick={onClose}>
       <div class={s.modalOverlay} />
-      <div class={s.modalContainer} onClick={(e) => e.stopPropagation()}>
-        <button class={s.modalClose} onClick={onClose}>
+      <div
+        ref={trapRef}
+        tabIndex={-1}
+        class={s.modalContainer}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Key: ${keyData.name || keyId}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button class={s.modalClose} onClick={onClose} aria-label="Close">
           <X size={20} />
         </button>
         <div class={s.modalContent}>

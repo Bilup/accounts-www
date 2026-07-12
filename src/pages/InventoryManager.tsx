@@ -16,9 +16,11 @@ import {
   AccountSection,
   AccountTabPanel,
   AccountTabs,
+  AuthRequired,
   EmptyState,
 } from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
+import { useConfirm } from "../components/ConfirmDialog";
 import s from "./InventoryManager.module.css";
 
 const API_BASE_URL = "https://api.rotur.dev";
@@ -65,11 +67,15 @@ function formatDate(epoch: number): string {
 
 export function InventoryManager() {
   const { user } = useAuth();
+  const [confirm, confirmDialog] = useConfirm();
   const currentUser = user?.username || "";
   const [userCurrency, setUserCurrency] = useState(0);
 
   const [activeTab, setActiveTab] = useState<TabName>("my-items");
   const [viewingItem, setViewingItem] = useState<InventoryItem | null>(null);
+  const [viewNotFound, setViewNotFound] = useState<string | null>(null);
+  // Key of the money action currently in flight, so a second click can't double-charge.
+  const [busy, setBusy] = useState<string | null>(null);
 
   const [myItems, setMyItems] = useState<InventoryItem[]>([]);
   const [myItemsLoading, setMyItemsLoading] = useState(false);
@@ -86,6 +92,7 @@ export function InventoryManager() {
   const [createMessageType, setCreateMessageType] = useState<
     "success" | "error"
   >("success");
+  const [createSubmitting, setCreateSubmitting] = useState(false);
 
   const [itemMessages, setItemMessages] = useState<
     Record<string, { text: string; type: "success" | "error" }>
@@ -200,9 +207,11 @@ export function InventoryManager() {
 
       if (item) {
         setViewingItem(item);
+      } else {
+        setViewNotFound(itemName);
       }
     } catch {
-      /* ignore */
+      setViewNotFound(itemName);
     }
   }
 
@@ -326,12 +335,13 @@ export function InventoryManager() {
   }
 
   async function deleteItem(itemName: string) {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${itemName}"? This cannot be undone.`,
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: `Delete "${itemName}"?`,
+      message: "This cannot be undone.",
+      confirmLabel: "Delete item",
+      danger: true,
+    });
+    if (!ok) return;
     const safeId = createSafeId(itemName);
     try {
       const res = await fetch(
@@ -354,9 +364,15 @@ export function InventoryManager() {
   }
 
   async function buySingleItem() {
-    if (!viewingItem || !currentUser) return;
+    if (!viewingItem || !currentUser || busy) return;
     const itemName = viewingItem.name;
-    if (!confirm(`Are you sure you want to buy "${itemName}"?`)) return;
+    const ok = await confirm({
+      title: `Buy "${itemName}"?`,
+      message: `${formatPrice(viewingItem.price)} credits will be deducted from your balance.`,
+      confirmLabel: "Buy item",
+    });
+    if (!ok) return;
+    setBusy("single");
     try {
       const res = await fetch(
         `${API_BASE_URL}/items/buy/${encodeURIComponent(itemName)}?auth=${encodeURIComponent(getToken() || "")}`,
@@ -375,22 +391,37 @@ export function InventoryManager() {
     } catch {
       setSingleItemErr("Network error occurred");
       setSingleItemMsg("");
+    } finally {
+      setBusy(null);
     }
   }
 
   async function createNewItem() {
+    if (createSubmitting) return;
     if (!createName.trim()) {
       setCreateMessage("Item name is required");
       setCreateMessageType("error");
       return;
     }
+
+    // Parse first: a network failure must not be reported as bad JSON.
+    let parsedData: unknown;
+    try {
+      parsedData = JSON.parse(createData.trim() || "{}");
+    } catch {
+      setCreateMessage("Item data is not valid JSON");
+      setCreateMessageType("error");
+      return;
+    }
+
+    setCreateSubmitting(true);
     try {
       const itemData = {
         name: createName.trim(),
         description: createDescription.trim(),
         price: parseInt(createPrice) || 0,
         selling: createSelling,
-        data: JSON.parse(createData.trim() || "{}"),
+        data: parsedData,
       };
       const res = await fetch(
         `${API_BASE_URL}/items/create?auth=${encodeURIComponent(getToken() || "")}&item=${encodeURIComponent(JSON.stringify(itemData))}`,
@@ -413,8 +444,10 @@ export function InventoryManager() {
         setCreateMessageType("error");
       }
     } catch {
-      setCreateMessage("Invalid JSON data or network error");
+      setCreateMessage("Network error — the item was not created");
       setCreateMessageType("error");
+    } finally {
+      setCreateSubmitting(false);
     }
   }
 
@@ -427,17 +460,38 @@ export function InventoryManager() {
     setCreateMessage("");
   }
 
-  async function copyItemLink(itemName: string) {
+  // msgKey must match the key the calling card reads its message from; the
+  // single-item view has its own message slot instead.
+  async function copyItemLink(itemName: string, msgKey?: string) {
     const url = `${location.origin}${location.pathname}?view=${encodeURIComponent(itemName)}`;
+
+    const report = (text: string, type: "success" | "error") => {
+      if (msgKey) setItemMessage(msgKey, text, type);
+      else if (type === "success") {
+        setSingleItemMsg(text);
+        setSingleItemErr("");
+        setTimeout(() => setSingleItemMsg(""), 5000);
+      } else {
+        setSingleItemErr(text);
+        setSingleItemMsg("");
+      }
+    };
+
     try {
       await navigator.clipboard.writeText(url);
+      report("Link copied!", "success");
     } catch {
+      // clipboard API is unavailable outside secure contexts — fall back
       const ta = document.createElement("textarea");
       ta.value = url;
       document.body.appendChild(ta);
       ta.select();
-      document.execCommand("copy");
+      const ok = document.execCommand("copy");
       document.body.removeChild(ta);
+      report(
+        ok ? "Link copied!" : "Couldn't copy link",
+        ok ? "success" : "error",
+      );
     }
   }
 
@@ -460,7 +514,14 @@ export function InventoryManager() {
 
   async function buyItemMarketplace(itemName: string, safeId: string) {
     const key = `mp-${safeId}`;
-    if (!confirm(`Are you sure you want to buy "${itemName}"?`)) return;
+    if (busy) return;
+    const ok = await confirm({
+      title: `Buy "${itemName}"?`,
+      message: "The price will be deducted from your balance.",
+      confirmLabel: "Buy item",
+    });
+    if (!ok) return;
+    setBusy(key);
     try {
       const res = await fetch(
         `${API_BASE_URL}/items/buy/${encodeURIComponent(itemName)}?auth=${encodeURIComponent(getToken() || "")}`,
@@ -476,6 +537,8 @@ export function InventoryManager() {
       }
     } catch {
       setItemMessage(key, "Network error occurred", "error");
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -488,6 +551,7 @@ export function InventoryManager() {
 
     return (
       <AccountPage>
+        {confirmDialog}
         <button
           class={s.backBtn}
           onClick={() => {
@@ -506,6 +570,7 @@ export function InventoryManager() {
               class={s.copyBtn}
               onClick={() => copyItemLink(item.name)}
               title="Copy link to this item"
+              aria-label={`Copy link to ${item.name}`}
             >
               <Link2 size={14} />
             </button>
@@ -538,8 +603,15 @@ export function InventoryManager() {
           </div>
           <div class={s.singleItemActions}>
             {item.selling && user && !isOwnItem && (
-              <button class={s.btnPrimary} onClick={buySingleItem}>
-                <Coins size={14} /> Buy for {formatPrice(item.price)} credits
+              <button
+                class={s.btnPrimary}
+                onClick={buySingleItem}
+                disabled={busy === "single"}
+              >
+                <Coins size={14} />{" "}
+                {busy === "single"
+                  ? "Purchasing…"
+                  : `Buy for ${formatPrice(item.price)} credits`}
               </button>
             )}
             {isOwnItem && <div class={s.ownItemNotice}>This is your item</div>}
@@ -556,11 +628,46 @@ export function InventoryManager() {
     );
   }
 
+  // A shared ?view= link to a deleted/renamed item must say so, not silently
+  // drop the visitor onto the normal inventory page.
+  if (viewNotFound) {
+    return (
+      <AccountPage>
+        <EmptyState
+          icon={<Package size={24} />}
+          title="Item not found"
+          text={`We couldn't find an item called "${viewNotFound}". It may have been deleted or renamed.`}
+        >
+          <button
+            class={s.btnPrimary}
+            onClick={() => setViewNotFound(null)}
+            disabled={!currentUser}
+          >
+            <ArrowLeft size={14} /> Back to inventory
+          </button>
+        </EmptyState>
+      </AccountPage>
+    );
+  }
+
+  // The single-item `?view=` link stays public; only the manager itself needs auth.
+  if (!currentUser) {
+    return (
+      <AuthRequired
+        icon={<Package size={28} />}
+        title="Sign in to manage inventory"
+        text="Sign in to create, buy, sell, and manage your items."
+        href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/inventory-manager")}`}
+      />
+    );
+  }
+
   return (
     <AccountPage
       title="Inventory Manager"
       subtitle="Create, buy, sell, and manage your items"
     >
+      {confirmDialog}
       <AccountTabs
         tabs={TABS}
         active={activeTab}
@@ -689,6 +796,7 @@ export function InventoryManager() {
                         defaultValue={formatPrice(item.price)}
                         min={0}
                         placeholder="Price"
+                        aria-label={`New price for ${item.name}`}
                       />
                       <button
                         class={s.btnSecondary}
@@ -705,6 +813,7 @@ export function InventoryManager() {
                         type="text"
                         class={s.formInput}
                         placeholder="Username"
+                        aria-label={`Transfer ${item.name} to username`}
                       />
                       <button
                         class={s.btnSecondary}
@@ -783,8 +892,9 @@ export function InventoryManager() {
                       <h3 class={s.itemName}>{item.name}</h3>
                       <button
                         class={s.copyBtn}
-                        onClick={() => copyItemLink(item.name)}
+                        onClick={() => copyItemLink(item.name, `mp-${safeId}`)}
                         title="Copy link to this item"
+                        aria-label={`Copy link to ${item.name}`}
                       >
                         <Link2 size={14} />
                       </button>
@@ -816,9 +926,12 @@ export function InventoryManager() {
                         <button
                           class={s.btnPrimary}
                           onClick={() => buyItemMarketplace(item.name, safeId)}
+                          disabled={busy === `mp-${safeId}`}
                         >
-                          <Coins size={14} /> Buy for {formatPrice(item.price)}{" "}
-                          credits
+                          <Coins size={14} />{" "}
+                          {busy === `mp-${safeId}`
+                            ? "Purchasing…"
+                            : `Buy for ${formatPrice(item.price)} credits`}
                         </button>
                       ) : (
                         <div class={s.ownItemNotice}>This is your item</div>
@@ -932,8 +1045,13 @@ export function InventoryManager() {
             </div>
 
             <div class={s.formActions}>
-              <button class={s.btnPrimary} onClick={createNewItem}>
-                <PlusCircle size={14} /> Create Item
+              <button
+                class={s.btnPrimary}
+                onClick={createNewItem}
+                disabled={createSubmitting}
+              >
+                <PlusCircle size={14} />{" "}
+                {createSubmitting ? "Creating…" : "Create Item"}
               </button>
               <button class={s.btnSecondary} onClick={resetCreateForm}>
                 Clear Form

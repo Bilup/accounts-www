@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo, useCallback } from "preact/hooks";
 import { PageChrome } from "../components/PageChrome";
 import { UserAvatar } from "../components/UserAvatar";
 import { useAuth, getToken } from "../lib/auth";
+import { clickable } from "../lib/clickable";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import s from "./Shop.module.css";
 import {
   ShoppingBag,
@@ -73,12 +75,12 @@ function ToastStack({
   onDismiss: (id: number) => void;
 }) {
   return (
-    <div class={s.toastStack}>
+    <div class={s.toastStack} role="status" aria-live="polite">
       {toasts.map((t) => (
         <div
           key={t.id}
           class={`${s.toast} ${t.tone === "error" ? s.toastError : s.toastInfo}`}
-          onClick={() => onDismiss(t.id)}
+          {...clickable(() => onDismiss(t.id), `Dismiss: ${t.message}`)}
         >
           {t.tone === "error" ? <AlertCircle size={16} /> : <Check size={16} />}
           <span>{t.message}</span>
@@ -176,10 +178,11 @@ export function Shop() {
   const [tab, setTab] = useState<Tab>("shop");
   const [selectedItem, setSelectedItem] = useState<Cosmetic | null>(null);
   const [purchasing, setPurchasing] = useState(false);
-  const [equipping, setEquipping] = useState(false);
+  const [equipping, setEquipping] = useState<string | null>(null);
   const [ownedCosmetics, setOwnedCosmetics] = useState<Set<string>>(new Set());
   const [myCosmetics, setMyCosmetics] = useState<MyCosmetics | null>(null);
   const [myLoading, setMyLoading] = useState(false);
+  const [myError, setMyError] = useState<string | null>(null);
 
   const fetchCosmetics = async () => {
     setLoading(true);
@@ -209,12 +212,17 @@ export function Shop() {
       return;
     }
     setMyLoading(true);
+    setMyError(null);
     try {
       const token = getToken();
       const res = await fetch(
         `${COSMETICS_API_BASE}/cosmetics/mine?auth=${encodeURIComponent(token || "")}`,
       );
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Don't render "no cosmetics yet" to someone whose request just failed.
+        setMyError("Couldn't load your cosmetics.");
+        return;
+      }
       const data: MyCosmetics = await res.json();
       setMyCosmetics(data);
       const ownedIds = (data.owned_cosmetics || []).map((item) =>
@@ -222,7 +230,7 @@ export function Shop() {
       );
       setOwnedCosmetics(new Set(ownedIds));
     } catch {
-      // ignore
+      setMyError("Network error — check your connection and try again.");
     } finally {
       setMyLoading(false);
     }
@@ -324,7 +332,7 @@ export function Shop() {
         { method: "POST" },
       );
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.message) {
+      if (res.ok) {
         setOwnedCosmetics((prev) => new Set(prev).add(item.id));
         await Promise.all([fetchMyCosmetics(), reloadUser()]);
         showInfo(`Successfully obtained ${item.name}!`, {
@@ -344,8 +352,8 @@ export function Shop() {
   };
 
   const handleEquip = async (item: Cosmetic) => {
-    if (!user) return;
-    setEquipping(true);
+    if (!user || equipping) return;
+    setEquipping(item.id);
     try {
       const token = getToken();
       const res = await fetch(
@@ -355,7 +363,7 @@ export function Shop() {
         { method: "POST" },
       );
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.message) {
+      if (res.ok) {
         await Promise.all([fetchMyCosmetics(), reloadUser()]);
         showInfo(`Equipped ${item.name}!`, { autoDismissMs: 2500 });
       } else {
@@ -366,13 +374,13 @@ export function Shop() {
         err instanceof Error ? err.message : "Failed to equip cosmetic",
       );
     } finally {
-      setEquipping(false);
+      setEquipping(null);
     }
   };
 
   const handleUnequip = async (item: Cosmetic) => {
-    if (!user) return;
-    setEquipping(true);
+    if (!user || equipping) return;
+    setEquipping(item.id);
     try {
       const token = getToken();
       const res = await fetch(
@@ -382,7 +390,7 @@ export function Shop() {
         { method: "POST" },
       );
       const data = await res.json().catch(() => ({}));
-      if (res.ok && data.message) {
+      if (res.ok) {
         await Promise.all([fetchMyCosmetics(), reloadUser()]);
         showInfo(`Unequipped ${item.name}`, { autoDismissMs: 2500 });
       } else {
@@ -393,7 +401,7 @@ export function Shop() {
         err instanceof Error ? err.message : "Failed to unequip cosmetic",
       );
     } finally {
-      setEquipping(false);
+      setEquipping(null);
     }
   };
 
@@ -495,6 +503,8 @@ export function Shop() {
             <OwnedTab
               user={user}
               loading={myLoading}
+              error={myError}
+              onRetry={fetchMyCosmetics}
               ownedItems={ownedItems}
               activeItems={activeItems}
               isEquipped={isEquipped}
@@ -583,6 +593,7 @@ function ShopTab({
             type="text"
             class={s.searchInput}
             placeholder="Search by name, description, or creator..."
+            aria-label="Search cosmetics"
             value={searchQuery}
             onInput={(e) =>
               onSearchQueryChange((e.target as HTMLInputElement).value)
@@ -592,6 +603,7 @@ function ShopTab({
             <button
               class={s.clearSearch}
               onClick={() => onSearchQueryChange("")}
+              aria-label="Clear search"
             >
               <X size={14} />
             </button>
@@ -601,6 +613,7 @@ function ShopTab({
         <div class={s.filters}>
           <select
             class={s.filterSelect}
+            aria-label="Filter by item type"
             value={typeFilter}
             onChange={(e) =>
               onTypeFilterChange((e.target as HTMLSelectElement).value)
@@ -614,6 +627,7 @@ function ShopTab({
           </select>
           <select
             class={s.filterSelect}
+            aria-label="Sort items"
             value={sortBy}
             onChange={(e) =>
               onSortByChange((e.target as HTMLSelectElement).value)
@@ -640,7 +654,10 @@ function ShopTab({
           {typeFilter && (
             <span class={s.filterTag}>
               Type: {COSMETIC_TYPES.find((t) => t.value === typeFilter)?.label}
-              <button onClick={() => onTypeFilterChange("")}>
+              <button
+                onClick={() => onTypeFilterChange("")}
+                aria-label="Remove type filter"
+              >
                 <X size={12} />
               </button>
             </span>
@@ -648,7 +665,10 @@ function ShopTab({
           {searchQuery && (
             <span class={s.filterTag}>
               Search: "{searchQuery}"
-              <button onClick={() => onSearchQueryChange("")}>
+              <button
+                onClick={() => onSearchQueryChange("")}
+                aria-label="Remove search filter"
+              >
                 <X size={12} />
               </button>
             </span>
@@ -656,7 +676,10 @@ function ShopTab({
           {showFeatured && (
             <span class={s.filterTag}>
               Featured only
-              <button onClick={onShowFeaturedToggle}>
+              <button
+                onClick={onShowFeaturedToggle}
+                aria-label="Remove featured filter"
+              >
                 <X size={12} />
               </button>
             </span>
@@ -718,7 +741,7 @@ function ShopTab({
                       <div
                         key={item.id}
                         class={`${s.itemCard} ${s.featured} ${isOwned(item.id) ? s.owned : ""}`}
-                        onClick={() => onItemClick(item)}
+                        {...clickable(() => onItemClick(item), item.name)}
                       >
                         <ItemCardImage
                           item={item}
@@ -746,7 +769,7 @@ function ShopTab({
                       <div
                         key={item.id}
                         class={`${s.itemCard} ${isOwned(item.id) ? s.owned : ""}`}
-                        onClick={() => onItemClick(item)}
+                        {...clickable(() => onItemClick(item), item.name)}
                       >
                         <ItemCardImage
                           item={item}
@@ -858,6 +881,8 @@ function ItemCardBody({
 function OwnedTab({
   user,
   loading,
+  error,
+  onRetry,
   ownedItems,
   activeItems,
   isEquipped,
@@ -869,10 +894,12 @@ function OwnedTab({
 }: {
   user: { username: string } | null;
   loading: boolean;
+  error: string | null;
+  onRetry: () => void;
   ownedItems: Cosmetic[];
   activeItems: Cosmetic[];
   isEquipped: (item: Cosmetic) => boolean;
-  equipping: boolean;
+  equipping: string | null;
   username: string;
   onItemClick: (item: Cosmetic) => void;
   onEquip: (item: Cosmetic) => void;
@@ -910,6 +937,21 @@ function OwnedTab({
             <ItemSkeleton key={i} />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div class={s.emptyContainer}>
+        <div class={s.emptyIcon}>
+          <AlertCircle size={48} />
+        </div>
+        <h3>Couldn't load your cosmetics</h3>
+        <p>{error}</p>
+        <button class={s.clearAll} onClick={onRetry}>
+          <RefreshCw size={14} /> Retry
+        </button>
       </div>
     );
   }
@@ -999,7 +1041,7 @@ function OwnedCard({
 }: {
   item: Cosmetic;
   equipped: boolean;
-  equipping: boolean;
+  equipping: string | null;
   username: string;
   onItemClick: (item: Cosmetic) => void;
   onEquip: (item: Cosmetic) => void;
@@ -1007,7 +1049,10 @@ function OwnedCard({
 }) {
   return (
     <div class={`${s.itemCard} ${s.owned} ${equipped ? s.equipped : ""}`}>
-      <div class={s.itemImageContainer} onClick={() => onItemClick(item)}>
+      <div
+        class={s.itemImageContainer}
+        {...clickable(() => onItemClick(item), item.name)}
+      >
         <div class={s.hoverPreview}>
           <UserAvatar
             username={username}
@@ -1041,18 +1086,20 @@ function OwnedCard({
               type="button"
               class={`${s.actionButton} ${s.action_secondary}`}
               onClick={() => onUnequip(item)}
-              disabled={equipping}
+              disabled={!!equipping}
             >
-              <X size={14} /> Unequip
+              <X size={14} />{" "}
+              {equipping === item.id ? "Unequipping…" : "Unequip"}
             </button>
           ) : (
             <button
               type="button"
               class={`${s.actionButton} ${s.action_primary}`}
               onClick={() => onEquip(item)}
-              disabled={equipping}
+              disabled={!!equipping}
             >
-              <Check size={14} /> Equip
+              <Check size={14} />{" "}
+              {equipping === item.id ? "Equipping…" : "Equip"}
             </button>
           )}
           <button
@@ -1087,12 +1134,13 @@ function ItemModal({
   owned: boolean;
   equipped: boolean;
   purchasing: boolean;
-  equipping: boolean;
+  equipping: string | null;
   onClose: () => void;
   onPurchase: (item: Cosmetic) => void;
   onEquip: (item: Cosmetic) => void;
   onUnequip: (item: Cosmetic) => void;
 }) {
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
   const formatPrice = (price: number, pricingType: string) => {
     if (pricingType === "free" || price === 0) return "Free";
     return `${price} rotur credits`;
@@ -1108,8 +1156,16 @@ function ItemModal({
   return (
     <div class={s.modal} onClick={onClose}>
       <div class={s.modalOverlay} />
-      <div class={s.modalContainer} onClick={(e) => e.stopPropagation()}>
-        <button class={s.modalClose} onClick={onClose}>
+      <div
+        ref={trapRef}
+        tabIndex={-1}
+        class={s.modalContainer}
+        role="dialog"
+        aria-modal="true"
+        aria-label={item.name}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button class={s.modalClose} onClick={onClose} aria-label="Close">
           <X size={20} />
         </button>
         <div class={s.modalContent}>
@@ -1162,7 +1218,7 @@ function ItemModal({
                     variant="secondary"
                     fullWidth
                     onClick={() => onUnequip(item)}
-                    loading={equipping}
+                    loading={equipping === item.id}
                   >
                     <X size={18} /> Unequip
                   </ActionButton>
@@ -1171,7 +1227,7 @@ function ItemModal({
                     variant="primary"
                     fullWidth
                     onClick={() => onEquip(item)}
-                    loading={equipping}
+                    loading={equipping === item.id}
                   >
                     <Check size={18} /> Equip
                   </ActionButton>

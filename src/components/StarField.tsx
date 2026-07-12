@@ -195,11 +195,37 @@ export function StarField() {
       }
     }
 
-    window.addEventListener("resize", handleResize);
-    animId = requestAnimationFrame(update);
+    // Draws a single frame: same starfield, no twinkle cycle, no shooting stars.
+    function drawStatic() {
+      ctx!.clearRect(0, 0, width, height);
+      for (const star of stars) drawStar(star, 0);
+    }
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    function start() {
+      cancelAnimationFrame(animId);
+      if (reduceMotion.matches) {
+        drawStatic();
+      } else {
+        lastTime = performance.now();
+        animId = requestAnimationFrame(update);
+      }
+    }
+
+    function onResize() {
+      handleResize();
+      // A resize wipes the canvas, so a static field must be repainted.
+      if (reduceMotion.matches) drawStatic();
+    }
+
+    window.addEventListener("resize", onResize);
+    reduceMotion.addEventListener("change", start);
+    start();
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", onResize);
+      reduceMotion.removeEventListener("change", start);
       cancelAnimationFrame(animId);
     };
   }, []);

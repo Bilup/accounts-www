@@ -1124,3 +1124,15 @@
   justify-content: flex-end;
   margin-top: 0.25rem;
 }
+
+.subError {
+  composes: error from "../../components/AccountPage.module.css";
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  margin-bottom: 0.75rem;
+}
+
+.loading {
+  composes: loading from "../../components/AccountPage.module.css";
+}

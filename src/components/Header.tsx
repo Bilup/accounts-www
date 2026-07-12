@@ -23,6 +23,16 @@ export function Header() {
     };
   }, [menuOpen]);
 
+  // The open menu scroll-locks the page, so Escape must be able to get out of it.
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   const signInHref = `/auth?return_to=${encodeURIComponent(
     window.location.origin + window.location.pathname + window.location.search,
   )}`;
@@ -83,14 +93,16 @@ export function Header() {
         <button
           class={s.hamburger}
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
         >
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {menuOpen && (
-        <div class={s.mobileMenu}>
+        <div class={s.mobileMenu} id="mobile-menu">
           {links.map((l) => (
             <a
               key={l.label}

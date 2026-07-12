@@ -1,6 +1,15 @@
-import { useState, useEffect, useCallback } from "preact/hooks";
-import { Smartphone, UserCheck, ScrollText, Trash2, Copy } from "lucide-preact";
+import { useState, useEffect, useCallback, useRef } from "preact/hooks";
+import {
+  Smartphone,
+  UserCheck,
+  ScrollText,
+  Trash2,
+  Copy,
+  Bell,
+} from "lucide-preact";
 import { PageChrome } from "../components/PageChrome";
+import { AuthRequired } from "../components/AccountPage";
+import { useConfirm } from "../components/ConfirmDialog";
 import {
   useAuth,
   getToken,
@@ -46,6 +55,7 @@ function truncate(text: string, len: number): string {
 
 export function Notifications() {
   const { user, reload } = useAuth();
+  const [confirm, confirmDialog] = useConfirm();
   const currentUser = user?.username || "";
   const [tab, setTab] = useState<Tab>("devices");
 
@@ -65,9 +75,14 @@ export function Notifications() {
     type: "success" | "error";
   } | null>(null);
 
+  const flashTimer = useRef<number | undefined>(undefined);
+
   function flash(text: string, type: "success" | "error") {
     setStatusMsg({ text, type });
-    window.setTimeout(() => setStatusMsg(null), 4000);
+    // Restart the clock — otherwise a new message inherits the old one's
+    // remaining time and can disappear almost immediately.
+    window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setStatusMsg(null), 4000);
   }
 
   // ── Data loading ──
@@ -154,10 +169,13 @@ export function Notifications() {
   // ── Actions ──
 
   async function deleteDevice(deviceId: string) {
-    if (
-      !confirm("Remove this device? It will no longer receive notifications.")
-    )
-      return;
+    const ok = await confirm({
+      title: "Remove this device?",
+      message: "It will no longer receive notifications.",
+      confirmLabel: "Remove device",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const token = getToken() || "";
       const res = await fetch(
@@ -217,10 +235,13 @@ export function Notifications() {
   }
 
   async function removeSender(username: string, source: string) {
-    if (
-      !confirm(`Revoke ${username}'s permission to notify you from ${source}?`)
-    )
-      return;
+    const ok = await confirm({
+      title: `Revoke ${username}'s permission?`,
+      message: `They will no longer be able to notify you from ${source}.`,
+      confirmLabel: "Revoke",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const token = getToken() || "";
       const res = await fetch(
@@ -257,8 +278,20 @@ export function Notifications() {
     0,
   );
 
+  if (!user) {
+    return (
+      <AuthRequired
+        icon={<Bell size={28} />}
+        title="Sign in to manage notifications"
+        text="Sign in to manage your push notification devices and control who can send you notifications."
+        href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/notifications")}`}
+      />
+    );
+  }
+
   return (
     <PageChrome>
+      {confirmDialog}
       <div class={s.page}>
         <div class={s.wrapper}>
           <h1 class={s.title}>Notifications</h1>

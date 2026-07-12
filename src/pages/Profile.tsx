@@ -70,6 +70,8 @@ function ProfileView({ username }: { username: string }) {
   const { user: me, token, reload } = useAuth();
   const { benefits } = useBenefits();
   const [isFollowing, setIsFollowing] = useState(false);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const isSelf = !!me && me.username?.toLowerCase() === username.toLowerCase();
 
@@ -109,71 +111,110 @@ function ProfileView({ username }: { username: string }) {
   }, [profile?.followed_by_you]);
 
   const onFollowToggle = useCallback(async () => {
-    if (!token || isSelf) return;
+    // Without this guard, rapid clicks interleave follow/unfollow requests
+    // against the optimistic local state and can settle on the wrong value.
+    if (!token || isSelf || actionBusy) return;
     const wasFollowing = isFollowing;
     setIsFollowing(!wasFollowing);
+    setActionError(null);
+    setActionBusy(true);
     const endpoint = wasFollowing ? "unfollow" : "follow";
     const param = wasFollowing ? "username" : "name";
     try {
       const res = await fetch(
         `${API}/${endpoint}?auth=${encodeURIComponent(token)}&${param}=${encodeURIComponent(username)}`,
       );
-      if (!res.ok) setIsFollowing(wasFollowing);
+      if (!res.ok) {
+        setIsFollowing(wasFollowing);
+        const data = await res.json().catch(() => ({}));
+        setActionError(
+          data?.error ||
+            `Couldn't ${wasFollowing ? "unfollow" : "follow"} @${username}.`,
+        );
+      }
     } catch {
       setIsFollowing(wasFollowing);
+      setActionError("Network error — please try again.");
+    } finally {
+      setActionBusy(false);
     }
-  }, [token, username, isSelf, isFollowing]);
+  }, [token, username, isSelf, isFollowing, actionBusy]);
 
   const onFriendAction = useCallback(
     async (action: "add" | "remove" | "accept" | "reject") => {
-      if (!token) return;
+      if (!token || actionBusy) return;
       const endpoint = action === "add" ? "request" : action;
+      setActionError(null);
+      setActionBusy(true);
       try {
-        await fetch(
+        const res = await fetch(
           `${API}/friends/${endpoint}/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
           { method: "POST" },
         );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data?.error) {
+          setActionError(data?.error || `Couldn't ${action} @${username}.`);
+          return;
+        }
         await reload();
       } catch {
-        /* ignore */
+        setActionError("Network error — please try again.");
+      } finally {
+        setActionBusy(false);
       }
     },
-    [token, username, reload],
+    [token, username, reload, actionBusy],
   );
 
   const onBlockToggle = useCallback(async () => {
-    if (!token || isSelf) return;
+    if (!token || isSelf || actionBusy) return;
     const wasBlocked = isBlocked;
     const endpoint = wasBlocked ? "unblock" : "block";
+    setActionError(null);
+    setActionBusy(true);
     try {
       const res = await fetch(
         `${API}/me/${endpoint}/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
         { method: "POST" },
       );
-      if (res.ok) await reload();
+      if (res.ok) {
+        await reload();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setActionError(
+          data?.error ||
+            `Couldn't ${wasBlocked ? "unblock" : "block"} @${username}.`,
+        );
+      }
     } catch {
-      /* ignore */
+      setActionError("Network error — please try again.");
+    } finally {
+      setActionBusy(false);
     }
-  }, [token, username, isSelf, isBlocked, reload]);
+  }, [token, username, isSelf, isBlocked, reload, actionBusy]);
 
   const onNoteUpdate = useCallback(
     async (noteUsername: string, note: string) => {
       if (!token) return;
+      setActionError(null);
       try {
-        if (note) {
-          await fetch(
-            `${API}/me/note/${encodeURIComponent(noteUsername)}?auth=${encodeURIComponent(token)}&note=${encodeURIComponent(note)}`,
-            { method: "POST" },
-          );
-        } else {
-          await fetch(
-            `${API}/me/note/${encodeURIComponent(noteUsername)}?auth=${encodeURIComponent(token)}`,
-            { method: "DELETE" },
-          );
+        const res = note
+          ? await fetch(
+              `${API}/me/note/${encodeURIComponent(noteUsername)}?auth=${encodeURIComponent(token)}&note=${encodeURIComponent(note)}`,
+              { method: "POST" },
+            )
+          : await fetch(
+              `${API}/me/note/${encodeURIComponent(noteUsername)}?auth=${encodeURIComponent(token)}`,
+              { method: "DELETE" },
+            );
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setActionError(data?.error || "Couldn't save your note.");
+          return;
         }
         await reload();
       } catch {
-        /* ignore */
+        setActionError("Network error — your note was not saved.");
       }
     },
     [token, reload],
@@ -232,6 +273,7 @@ function ProfileView({ username }: { username: string }) {
           viewerBalance={me ? (me["sys.currency"] ?? 0) : null}
           benefits={benefits?.benefits ?? null}
           viewerNotes={viewerNotes}
+          actionError={actionError}
           onFollowToggle={onFollowToggle}
           onFriendAction={onFriendAction}
           onBlockToggle={onBlockToggle}

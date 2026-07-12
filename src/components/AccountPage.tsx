@@ -2,6 +2,7 @@ import type { ComponentChildren } from "preact";
 import type { LucideProps } from "lucide-preact";
 import type React from "preact/compat";
 import { PageChrome } from "./PageChrome";
+import { useAuth } from "../lib/auth";
 import s from "./AccountPage.module.css";
 
 type IconComponent = React.FC<LucideProps>;
@@ -169,6 +170,17 @@ export function AuthRequired({
   href: string;
   label?: string;
 }) {
+  // A stored token that hasn't resolved to a user yet is not "signed out" — show
+  // a placeholder instead of flashing the sign-in prompt at every returning user.
+  const { loading } = useAuth();
+  if (loading) {
+    return (
+      <AccountPage>
+        <div class={s.loading}>Loading…</div>
+      </AccountPage>
+    );
+  }
+
   return (
     <AccountPage>
       <div class={s.authRequired}>

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const l=require\\('lucide-preact'\\); ['Image','Link2','NotebookPen','MessageCircle','Share2','PawPrint','UserSearch','ShieldCheck','Mail','MoveUpRight','Send','StickyNote'].forEach\\(n=>console.log\\(n, n in l\\)\\)\")",
+      "Bash(git push *)"
+    ]
+  }
+}
