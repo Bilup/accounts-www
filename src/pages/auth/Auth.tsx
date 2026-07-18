@@ -23,303 +23,40 @@ import {
 } from "./Shell";
 import { UserAvatar } from "../../components/UserAvatar";
 import { TosContent } from "../../components/TosContent";
+import { PermissionsView } from "./PermissionsView";
 
 declare const hcaptcha: any;
 
-const API = "https://api.rotur.dev";
-
-interface AccountData {
-  username: string;
-  key?: string;
-  token?: string;
-  [key: string]: any;
-}
-
-interface SavedAccount {
-  username: string;
-  lastUsed: number;
-  avatar: string;
-  token?: string;
-}
-
-interface PermissionSchema {
-  permissions: string[];
-  groups: { name: string; description: string; permissions: string[] }[];
-}
-
-interface SubToken {
-  id: string;
-  token?: string;
-  name: string;
-  permissions: string[];
-  created_at: number;
-  last_used_at?: number;
-  expires_at?: number | null;
-  revoked: boolean;
-  revoked_at?: number | null;
-  origin?: string;
-  description?: string;
-  websites?: string[];
-}
-
-const FORBIDDEN_PERMISSIONS = new Set(["tokens:manage", "account:delete"]);
-
-const AUTO_LOGIN_HOSTNAMES = new Set(["rotur.dev", "originchats.com"]);
-
-const PERMISSION_DESCRIPTIONS: Record<string, string> = {
-  "account:delete": "Delete your account",
-  "account:profile": "Edit your profile",
-  "account:settings": "Change your account settings",
-  "account:view": "View your profile",
-  "blocked:manage": "Manage your blocked users",
-  "blocked:view": "See who you've blocked",
-  "cosmetics:buy": "Buy cosmetics for you",
-  "cosmetics:equip": "Equip cosmetics on your profile",
-  "cosmetics:view": "View your cosmetics",
-  "credits:daily": "Claim your daily credits",
-  "credits:manage": "Spend and manage your credits",
-  "credits:transfer": "Transfer your credits",
-  "credits:view": "View your credit balance",
-  "files:delete": "Delete your files",
-  "files:manage": "Upload and manage your files",
-  "files:view": "View your files",
-  "following:follow": "Follow people for you",
-  "following:unfollow": "Unfollow people for you",
-  "following:view": "See who you follow",
-  "friends:accept": "Accept friend requests for you",
-  "friends:cancel": "Cancel your friend requests",
-  "friends:manage": "Manage your friends",
-  "friends:remove": "Remove your friends",
-  "friends:request": "Send friend requests for you",
-  "friends:view": "View your friends list",
-  "gifts:cancel": "Cancel your gifts",
-  "gifts:claim": "Claim gifts for you",
-  "gifts:create": "Create gifts on your behalf",
-  "gifts:view": "View your gifts",
-  "groups:ban": "Ban members from your groups",
-  "groups:invite": "Manage your group invites",
-  "groups:join": "Join groups for you",
-  "groups:leave": "Leave groups for you",
-  "groups:manage": "Manage your groups",
-  "groups:members.view": "View members of your groups",
-  "groups:view": "View your groups",
-  "items:buy": "Buy marketplace items for you",
-  "items:manage": "Manage your marketplace items",
-  "items:sell": "Sell your marketplace items",
-  "items:view": "View marketplace items",
-  "keys:manage": "Manage your keys",
-  "keys:view": "View your keys",
-  "notifications:send": "Send notifications on your behalf",
-  "notifications:view": "View your notifications",
-  "posts:create": "Create posts for you",
-  "posts:delete": "Delete your posts",
-  "posts:like": "Like posts for you",
-  "posts:manage": "Manage your posts",
-  "posts:reply": "Reply to posts for you",
-  "posts:repost": "Repost for you",
-  "posts:view": "View posts",
-  "tokens:manage": "Manage your access tokens",
-  "validators:generate": "Generate validators for you",
-};
-
-const PERMISSION_CATEGORY_ICONS: Record<string, string> = {
-  account: "fa-user",
-  blocked: "fa-ban",
-  cosmetics: "fa-palette",
-  credits: "fa-coins",
-  files: "fa-folder-open",
-  following: "fa-user-plus",
-  friends: "fa-user-group",
-  gifts: "fa-gift",
-  groups: "fa-users",
-  items: "fa-store",
-  keys: "fa-key",
-  notifications: "fa-bell",
-  posts: "fa-comment",
-  tokens: "fa-key",
-  validators: "fa-shield-halved",
-};
-
-function describePerm(p: string): string {
-  if (PERMISSION_DESCRIPTIONS[p]) return PERMISSION_DESCRIPTIONS[p];
-  // Fallback: humanize "namespace:action" → "Action namespace"
-  const [ns, action = ""] = p.split(":");
-  const verb = action.split(".")[0].replace(/_/g, " ");
-  const noun = ns.replace(/_/g, " ");
-  const phrase = `${verb} ${noun}`.trim();
-  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
-}
-
-function permIcon(p: string): string {
-  return PERMISSION_CATEGORY_ICONS[p.split(":")[0]] || "fa-shield-halved";
-}
-
-function parseReturnUrl(url: string): URL | null {
-  try {
-    return new URL(url, location.origin);
-  } catch {
-    return null;
-  }
-}
-
-function isAutoLoginHost(url: string): boolean {
-  const host = getHostname(url);
-  if (!host) return false;
-  if (isRoturSubdomain(url)) return true;
-  if (AUTO_LOGIN_HOSTNAMES.has(host)) return true;
-  return AUTO_LOGIN_HOSTNAMES.has(host.replace(/^www\./, ""));
-}
-
-function isRoturSubdomain(url: string): boolean {
-  const host = getHostname(url).replace(/^www\./, "");
-  return host === "rotur.dev" || host.endsWith(".rotur.dev");
-}
-
-function getHostname(url: string): string {
-  return parseReturnUrl(url)?.hostname.toLowerCase() || "";
-}
-
-function returnUrl(url: string): URL {
-  return parseReturnUrl(url) || new URL("https://rotur.dev/me");
-}
-
-function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function isTokenUsable(t: SubToken): boolean {
-  if (t.revoked) return false;
-  if (t.expires_at && t.expires_at < Date.now()) return false;
-  if (!t.token) return false;
-  return true;
-}
-
-function tokenMatchesDomain(t: SubToken, returnTo: string): boolean {
-  const host = getHostname(returnTo);
-  if (!host) return false;
-  if (t.origin && getHostname(t.origin) === host) return true;
-  if (t.websites && t.websites.some((w) => getHostname(w) === host))
-    return true;
-  return false;
-}
-
-type View =
-  | "welcome"
-  | "signin"
-  | "signup"
-  | "verify"
-  | "tos"
-  | "permissions"
-  | "forgot"
-  | "reset"
-  | "confirm";
-type BtnState = { text: string; disabled: boolean; color: string };
-
-const defaultBtn = (text: string): BtnState => ({
-  text,
-  disabled: false,
-  color: "",
-});
-const loadingBtn = (text: string): BtnState => ({
-  text,
-  disabled: true,
-  color: "",
-});
-const errorBtn = (text: string): BtnState => ({
-  text,
-  disabled: false,
-  color: "var(--auth-danger, #f87171)",
-});
-const successBtn = (text: string): BtnState => ({
-  text,
-  disabled: false,
-  color: "var(--auth-success, #4ade80)",
-});
-
-function loadSavedAccounts(): SavedAccount[] {
-  try {
-    const saved = localStorage.getItem("rotur_saved_accounts");
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveAccountToStorage(data: AccountData) {
-  try {
-    let accounts = loadSavedAccounts();
-    const existing = accounts.find((a) => a.username === data.username);
-    accounts = accounts.filter((a) => a.username !== data.username);
-    accounts.unshift({
-      username: data.username,
-      lastUsed: Date.now(),
-      avatar: `https://avatars.rotur.dev/${data.username}`,
-      token: data.key || existing?.token,
-    });
-    accounts = accounts.slice(0, 5);
-    localStorage.setItem("rotur_saved_accounts", JSON.stringify(accounts));
-  } catch {
-    /* ignore */
-  }
-}
-
-function removeAccountFromStorage(username: string) {
-  try {
-    let accounts = loadSavedAccounts();
-    accounts = accounts.filter((a) => a.username !== username);
-    localStorage.setItem("rotur_saved_accounts", JSON.stringify(accounts));
-  } catch {
-    /* ignore */
-  }
-}
-
-function setCookie(n: string, v: string, days: number) {
-  const d = new Date(Date.now() + days * 864e5);
-  document.cookie = `${n}=${encodeURIComponent(v)};expires=${d.toUTCString()};path=/;Secure;SameSite=Strict`;
-}
-
-function getCookie(n: string): string {
-  const m = document.cookie.match(new RegExp("(^| )" + n + "=([^;]+)"));
-  return m ? decodeURIComponent(m[2]) : "";
-}
-
-async function requestAccount(username: string, password: string) {
-  const res = await fetch(
-    `${API}/get_user?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-  );
-  const json = await res.json();
-  if (json.error) {
-    if (json.error.includes("Terms-Of-Service") && json.token)
-      return {
-        error: json.error,
-        key: json.token,
-        username,
-        "sys.tos_accepted": false,
-        requiresTOSAcceptance: true,
-      } as any;
-    if (json.error === "Email address not verified" && json.token)
-      return {
-        error: json.error,
-        token: json.token,
-        username: json.username,
-        requiresEmailVerification: true,
-      } as any;
-    return { error: json.error };
-  }
-  return json;
-}
-
-const sidebarForView: Record<View, { title: string; sub: string }> = {
-  welcome: { title: "Choose an account", sub: "to continue to Rotur" },
-  signin: { title: "Sign in", sub: "to continue to Rotur" },
-  signup: { title: "Create account", sub: "Join Rotur today" },
-  verify: { title: "Verify email", sub: "Check your inbox" },
-  tos: { title: "Terms of Service", sub: "Review and accept to continue" },
-  permissions: { title: "Account Access", sub: "Choose account to continue" },
-  forgot: { title: "Reset password", sub: "We'll email you a link" },
-  reset: { title: "Set new password", sub: "Enter the code from your email" },
-  confirm: { title: "Choose an account", sub: "to continue to Rotur" },
-};
+import {
+  API,
+  FORBIDDEN_PERMISSIONS,
+  sidebarForView,
+  getHostname,
+  isAutoLoginHost,
+  isLocalhostHost,
+  returnUrl,
+  isValidEmail,
+  isTokenUsable,
+  tokenMatchesDomain,
+  defaultBtn,
+  loadingBtn,
+  errorBtn,
+  successBtn,
+  loadSavedAccounts,
+  saveAccountToStorage,
+  removeAccountFromStorage,
+  setCookie,
+  getCookie,
+  requestAccount,
+} from "./lib";
+import type {
+  AccountData,
+  SavedAccount,
+  PermissionSchema,
+  SubToken,
+  View,
+  BtnState,
+} from "./lib";
 
 export function Auth() {
   const [view, setView] = useState<View>("welcome");
@@ -374,19 +111,15 @@ export function Auth() {
   } | null>(null);
   const requiredPermsRef = useRef<Set<string>>(new Set());
   const requiresFullRef = useRef(false);
-  const defaultAllOnEntryRef = useRef(false);
   const pendingAutoLoginRef = useRef<{
     token: string;
     username: string;
   } | null>(null);
 
-  // Permission picker state
   const [permSchema, setPermSchema] = useState<PermissionSchema | null>(null);
-  const [selectedPerms, setSelectedPerms] = useState<Set<string>>(new Set());
-  const [scopeBtn, setScopeBtn] = useState<BtnState>(defaultBtn("Continue"));
+  const [scopeBtn, setScopeBtn] = useState<BtnState>(defaultBtn("Allow"));
   const [scopeError, setScopeError] = useState("");
-  const [createNewToken, setCreateNewToken] = useState(false);
-  const [useFullAccess, setUseFullAccess] = useState(false);
+  const [updatingTokenId, setUpdatingTokenId] = useState<string | null>(null);
 
   const sidebar = useMemo(() => sidebarForView[view], [view]);
   const addBtnText = view === "welcome" ? "Use another account" : "Back";
@@ -570,13 +303,6 @@ export function Auth() {
         return;
       }
       setAccount(data);
-      defaultAllOnEntryRef.current = isRoturSubdomain(returnToRef.current);
-      if (defaultAllOnEntryRef.current) {
-        setSelectedPerms(new Set());
-      } else {
-        setSelectedPerms(new Set(requiredPermsRef.current));
-      }
-      setUseFullAccess(requiresFullRef.current);
       setScopeError("");
       setView("permissions");
     },
@@ -1196,205 +922,120 @@ export function Auth() {
     setView("welcome");
   }, []);
 
-  // Permission toggle helpers
-  const togglePerm = useCallback((p: string) => {
-    if (FORBIDDEN_PERMISSIONS.has(p)) return;
-    setSelectedPerms((prev) => {
-      const next = new Set(prev);
-      if (next.has(p)) next.delete(p);
-      else next.add(p);
-      return next;
-    });
-  }, []);
-
-  const missingRequired = useMemo(() => {
-    const missing: string[] = [];
-    for (const r of requiredPermsRef.current) {
-      if (!selectedPerms.has(r)) missing.push(r);
-    }
-    return missing;
-  }, [selectedPerms]);
-
-  const [showMissingWarn, setShowMissingWarn] = useState(false);
-
-  const handleAllowScopedAccess = useCallback(
-    async (permsOverride?: Set<string>) => {
-      if (!account?.key) return;
-      const perms = permsOverride ?? selectedPerms;
-      if (perms.size === 0) {
-        setScopeError(
-          "Pick at least one permission, or use Full access above.",
-        );
-        return;
-      }
+  const createTokenAndRedirect = useCallback(
+    async (perms: string[]) => {
+      if (!account?.key || perms.length === 0) return;
       setScopeError("");
       setScopeBtn(loadingBtn("Creating token…"));
       try {
-        const body: any = {
-          name: requestor || "Third-party app",
-          permissions: Array.from(perms),
-          origin: requestor,
-          description: `Scoped access for ${requestor}`,
-          websites: [returnToRef.current],
-        };
         const res = await fetch(
           `${API}/tokens/create?auth=${encodeURIComponent(account.key)}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
+            body: JSON.stringify({
+              name: requestor || "Third-party app",
+              permissions: perms,
+              origin: requestor,
+              description: `Scoped access for ${requestor}`,
+              websites: [returnToRef.current],
+            }),
           },
         );
         const data = await res.json();
         if (!res.ok) {
           setScopeBtn(errorBtn(data.error || "Failed to create token"));
-          setTimeout(() => setScopeBtn(defaultBtn("Continue")), 3000);
+          setTimeout(() => setScopeBtn(defaultBtn("Allow")), 3000);
           return;
         }
-        const subToken: string = data.token;
         saveAccountToStorage(account);
-        if (window.opener) {
-          window.opener.postMessage(
-            {
-              type: "rotur-auth-token",
-              token: subToken,
-              scope: "scoped",
-              permissions: Array.from(perms),
-              id: data.id,
-            },
-            "*",
-          );
-        }
-        if (window.parent !== window) {
-          window.parent.postMessage(
-            {
-              type: "rotur-auth-token",
-              token: subToken,
-              scope: "scoped",
-              permissions: Array.from(perms),
-              id: data.id,
-            },
-            "*",
-          );
-        }
+        const payload = {
+          type: "rotur-auth-token",
+          token: data.token as string,
+          scope: "scoped",
+          permissions: perms,
+          id: data.id,
+        };
+        if (window.opener) window.opener.postMessage(payload, "*");
+        if (window.parent !== window) window.parent.postMessage(payload, "*");
         const ref = returnUrl(returnToRef.current);
-        ref.searchParams.set("token", subToken);
+        ref.searchParams.set("token", data.token);
         location.href = ref.toString();
       } catch (e: any) {
         setScopeBtn(errorBtn(e?.message || "Network error"));
-        setTimeout(() => setScopeBtn(defaultBtn("Continue")), 3000);
+        setTimeout(() => setScopeBtn(defaultBtn("Allow")), 3000);
       }
     },
-    [account, selectedPerms, requestor],
+    [account, requestor],
   );
 
-  const attemptSubmit = useCallback(() => {
-    if (missingRequired.length > 0) {
-      setShowMissingWarn(true);
-      return;
-    }
-    handleAllowScopedAccess();
-  }, [missingRequired, handleAllowScopedAccess]);
-
-  const groupedVisible = useMemo(() => {
-    const groups: Record<string, string[]> = {};
-    for (const p of permSchema?.permissions || []) {
-      const cat = p.split(":")[0];
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(p);
-    }
-    return groups;
-  }, [permSchema]);
-
-  const requiredGrouped = useMemo(() => {
-    const groups: Record<string, string[]> = {};
-    const all = permSchema?.permissions || [];
-    for (const p of all) {
-      if (!requiredPermsRef.current.has(p)) continue;
-      const cat = p.split(":")[0];
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(p);
-    }
-    return groups;
-  }, [permSchema]);
-
-  const [showAllPerms, setShowAllPerms] = useState(false);
-  const hasRequiredPerms = requiredPermsRef.current.size > 0;
-  const allowFullAccess = !hasRequiredPerms || requiresFullRef.current;
-  const showAllPermsEffective = showAllPerms || !hasRequiredPerms;
-  const displayedGroups = showAllPermsEffective
-    ? groupedVisible
-    : requiredGrouped;
-
-  const matchingSubTokens = useMemo(
-    () =>
-      subTokens.filter((t) => {
-        if (!isTokenUsable(t) || !tokenMatchesDomain(t, returnToRef.current))
-          return false;
-        if (requiredPermsRef.current.size > 0) {
-          for (const r of requiredPermsRef.current) {
-            if (!t.permissions.includes(r)) return false;
-          }
+  const updateTokenAndRedirect = useCallback(
+    async (sub: SubToken) => {
+      if (!account?.key || !sub.id) return;
+      const merged = new Set<string>(sub.permissions);
+      for (const r of requiredPermsRef.current) merged.add(r);
+      setScopeError("");
+      setUpdatingTokenId(sub.id);
+      try {
+        const res = await fetch(
+          `${API}/tokens/${sub.id}?auth=${encodeURIComponent(account.key)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ permissions: Array.from(merged) }),
+          },
+        );
+        const data = await res.json().catch(() => ({}) as any);
+        if (!res.ok) {
+          setUpdatingTokenId(null);
+          setScopeError(data.error || "Could not update the token");
+          return;
         }
-        return true;
-      }),
+        useSubTokenAndRedirect(
+          { ...sub, permissions: Array.from(merged) },
+          "existing",
+        );
+      } catch (e: any) {
+        setUpdatingTokenId(null);
+        setScopeError(e?.message || "Network error");
+      }
+    },
+    [account, useSubTokenAndRedirect],
+  );
+
+  const siteTokens = useMemo(
+    () =>
+      subTokens.filter(
+        (t) => isTokenUsable(t) && tokenMatchesDomain(t, returnToRef.current),
+      ),
     [subTokens],
   );
 
-  const hasExistingTokens = matchingSubTokens.length > 0;
-  // Grant flow is the default only when there's no token for this site yet.
-  const showGrantPanel = !hasExistingTokens || createNewToken;
+  const [schemaVersion, setSchemaVersion] = useState(0);
+  const permissionsRequested = useMemo(
+    () =>
+      Array.from(requiredPermsRef.current).filter(
+        (p) => !FORBIDDEN_PERMISSIONS.has(p),
+      ),
+    [schemaVersion],
+  );
+  const isLocalhostReturn = useMemo(
+    () => isLocalhostHost(returnToRef.current),
+    [],
+  );
 
-  // Prune requested perms against the loaded schema (drop unknown/forbidden)
   useEffect(() => {
-    if (!permSchema || requiredPermsRef.current.size === 0) return;
+    if (!permSchema) return;
+    const valid = new Set(permSchema.permissions);
     let changed = false;
     for (const p of Array.from(requiredPermsRef.current)) {
-      if (!permSchema.permissions.includes(p) || FORBIDDEN_PERMISSIONS.has(p)) {
+      if (!valid.has(p) || FORBIDDEN_PERMISSIONS.has(p)) {
         requiredPermsRef.current.delete(p);
         changed = true;
       }
     }
-    if (changed) {
-      setSelectedPerms((prev) => {
-        const next = new Set<string>();
-        for (const p of prev) {
-          if (
-            permSchema.permissions.includes(p) &&
-            !FORBIDDEN_PERMISSIONS.has(p)
-          )
-            next.add(p);
-        }
-        return next;
-      });
-    }
+    if (changed) setSchemaVersion((v) => v + 1);
   }, [permSchema]);
-
-  // On subdomains of rotur.dev, default to selecting all non-forbidden
-  // permissions once the schema has loaded.
-  useEffect(() => {
-    if (view !== "permissions") return;
-    if (!defaultAllOnEntryRef.current) return;
-    if (!permSchema) return;
-    defaultAllOnEntryRef.current = false;
-    const all = new Set<string>();
-    for (const p of permSchema.permissions) {
-      if (!FORBIDDEN_PERMISSIONS.has(p)) all.add(p);
-    }
-    setSelectedPerms(all);
-  }, [view, permSchema]);
-
-  useEffect(() => {
-    if (showMissingWarn && missingRequired.length === 0) {
-      setShowMissingWarn(false);
-    }
-  }, [showMissingWarn, missingRequired]);
-
-  useEffect(() => {
-    if (selectedPerms.size > 0 && scopeError) {
-      setScopeError("");
-    }
-  }, [selectedPerms.size, scopeError]);
 
   useEffect(() => {
     if (view === "permissions" && account?.key) {
@@ -1556,355 +1197,24 @@ export function Auth() {
       </AuthSidebar>
 
       {view === "permissions" && account ? (
-        <div class={s.permView}>
-          <div class={s.dpermHead}>
-            <div class={s.dpermIcons}>
-              <div class={s.dpermIconBox}>
-                <i class="fas fa-globe" />
-              </div>
-              <i class={`fas fa-ellipsis ${s.dpermDots}`} />
-              <div class={s.dpermIconBox}>
-                <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
-              </div>
-            </div>
-            <h1 class={s.dpermTitle}>{requestor}</h1>
-            <p class={s.dpermSub}>wants to access your Rotur account</p>
-            <p class={s.dpermSignedIn}>
-              Signed in as <strong>{account.username}</strong>
-              <button
-                type="button"
-                class={s.dpermSwitch}
-                onClick={handleSwitchAccount}
-              >
-                Not you?
-              </button>
-            </p>
-          </div>
-
-          {requiresFullRef.current && !useFullAccess && (
-            <div class={s.permMissingWarn}>
-              <div class={s.permMissingWarnHead}>
-                <i class="fas fa-triangle-exclamation" />
-                <strong>{requestor} asked for full access</strong>
-              </div>
-              <p class={s.permMissingWarnText}>
-                You're only granting some permissions. Some features on this app
-                may not work as expected. Re-enable{" "}
-                <strong>Full account access</strong> below to grant everything.
-              </p>
-            </div>
-          )}
-
-          <div class={s.permViewActions}>
-            {/* An existing token for this site is the recommended path — another
-                token for the same origin grants nothing new and just leaves a
-                second credential to manage and revoke. The grant flow below is
-                opt-in when one already exists. */}
-            {hasExistingTokens && (
-              <div class={s.existingBlock}>
-                <div class={s.existingHead}>
-                  <i class="fas fa-circle-check" />
-                  <div>
-                    <h2 class={s.existingTitle}>
-                      You already have access for {requestor}
-                    </h2>
-                    <p class={s.existingSub}>
-                      Reuse it — nothing new is granted, and there's no extra
-                      token to revoke later.
-                    </p>
-                  </div>
-                </div>
-
-                {matchingSubTokens.map((sub) => (
-                  <button
-                    key={sub.id}
-                    class={s.existingPrimary}
-                    onClick={() => useSubTokenAndRedirect(sub, "existing")}
-                  >
-                    <i class="fas fa-key" />
-                    <span class={s.existingPrimaryBody}>
-                      <span class={s.existingPrimaryTitle}>
-                        Continue to {requestor}
-                      </span>
-                      <span class={s.existingPrimarySub}>
-                        {sub.name || "Unnamed token"} · {sub.permissions.length}{" "}
-                        permission{sub.permissions.length !== 1 ? "s" : ""}
-                      </span>
-                    </span>
-                    <i class={`fas fa-arrow-right ${s.existingPrimaryArrow}`} />
-                  </button>
-                ))}
-
-                {!createNewToken && (
-                  <button
-                    type="button"
-                    class={s.existingCreateNew}
-                    onClick={() => setCreateNewToken(true)}
-                  >
-                    Create another token instead
-                  </button>
-                )}
-              </div>
-            )}
-
-            {hasExistingTokens && createNewToken && (
-              <div class={s.duplicateWarn}>
-                <div class={s.duplicateWarnHead}>
-                  <i class="fas fa-triangle-exclamation" />
-                  <strong>You already have a token for {requestor}</strong>
-                </div>
-                <p class={s.duplicateWarnText}>
-                  Creating another one doesn't grant you anything new — it just
-                  leaves two credentials to keep track of and revoke. Reusing
-                  the existing token is almost always the better choice.
-                </p>
-                <button
-                  type="button"
-                  class={s.duplicateWarnBack}
-                  onClick={() => setCreateNewToken(false)}
-                >
-                  <i class="fas fa-arrow-left" /> Use my existing token
-                </button>
-              </div>
-            )}
-
-            {showGrantPanel && (
-              <>
-                <div class={s.dpermPanel}>
-                  <p class={s.dpermConfirm}>
-                    Confirm that you want to grant <strong>{requestor}</strong>{" "}
-                    the following permissions:
-                  </p>
-                  <div
-                    class={`${s.dpermList} ${useFullAccess ? s.dpermListOff : ""}`}
-                  >
-                    {!permSchema ? (
-                      <div class={s.permLoading}>Loading permissions…</div>
-                    ) : (
-                      Object.entries(displayedGroups).map(([cat, perms]) => (
-                        <div key={cat} class={s.dpermCat}>
-                          <div class={s.dpermCatLabel}>
-                            <i class={`fas ${permIcon(perms[0])}`} /> {cat}
-                          </div>
-                          {perms.map((p) => {
-                            const forbidden = FORBIDDEN_PERMISSIONS.has(p);
-                            const checked = selectedPerms.has(p) && !forbidden;
-                            const requested = requiredPermsRef.current.has(p);
-                            return (
-                              <label
-                                key={p}
-                                class={`${s.dpermRow} ${checked ? s.dpermRowOn : ""} ${forbidden ? s.dpermRowDisabled : ""}`}
-                                title={p}
-                              >
-                                <input
-                                  type="checkbox"
-                                  class={s.dpermInput}
-                                  checked={checked}
-                                  disabled={forbidden || useFullAccess}
-                                  onChange={() => togglePerm(p)}
-                                />
-                                <span class={s.dpermBox}>
-                                  {checked && <i class="fas fa-check" />}
-                                </span>
-                                <span class={s.dpermName}>
-                                  {describePerm(p)}
-                                </span>
-                                {requested && (
-                                  <span class={s.dpermReq}>requested</span>
-                                )}
-                                {forbidden && (
-                                  <span class={s.dpermForbidden}>
-                                    not allowed
-                                  </span>
-                                )}
-                              </label>
-                            );
-                          })}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  {hasRequiredPerms && (
-                    <button
-                      type="button"
-                      class={s.dpermToggleAll}
-                      onClick={() => setShowAllPerms((v) => !v)}
-                    >
-                      <i
-                        class={`fas fa-chevron-${showAllPermsEffective ? "up" : "down"}`}
-                      />
-                      {showAllPermsEffective
-                        ? "Show only requested permissions"
-                        : "Show all permissions"}
-                    </button>
-                  )}
-                </div>
-
-                {allowFullAccess && (
-                  <label
-                    class={`${s.permFullAccessToggle} ${useFullAccess ? s.permFullAccessToggleActive : ""} ${useFullAccess ? s.permFullAccessToggleDanger : ""}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={useFullAccess}
-                      onChange={(e: any) => {
-                        const next = e.target.checked;
-                        setUseFullAccess(next);
-                        setShowMissingWarn(false);
-                        if (next) setScopeError("");
-                      }}
-                      class={s.permFullAccessCheckbox}
-                    />
-                    <div class={s.permFullAccessCheck}>
-                      {useFullAccess && <i class="fas fa-check" />}
-                    </div>
-                    <div class={s.permFullAccessBody}>
-                      <span class={s.permFullAccessTitle}>
-                        <i class="fas fa-bolt" /> Full account access
-                      </span>
-                      <span class={s.permFullAccessSub}>
-                        Send your main account token instead of a limited
-                        sub-token
-                      </span>
-                    </div>
-                  </label>
-                )}
-
-                {useFullAccess && (
-                  <div class={s.permDangerWarning}>
-                    <div class={s.permDangerWarningHead}>
-                      <i class="fas fa-triangle-exclamation" />
-                      <strong>
-                        {requestor} will be able to do anything you can. That
-                        includes:
-                      </strong>
-                    </div>
-                    <ul class={s.permDangerList}>
-                      <li>
-                        <i class="fas fa-id-card" /> Read and change everything
-                        in your account
-                      </li>
-                      <li>
-                        <i class="fas fa-coins" /> Spend and transfer your
-                        credits
-                      </li>
-                      <li>
-                        <i class="fas fa-folder-open" /> Read, upload, and
-                        delete your files
-                      </li>
-                      <li>
-                        <i class="fas fa-key" /> View and manage your keys and
-                        tokens
-                      </li>
-                    </ul>
-                    <p class={s.permDangerWarningNote}>
-                      Only enable this if you fully trust {requestor}. Otherwise
-                      turn it off and grant just the permissions above. A scoped
-                      token is almost always the safer choice.
-                    </p>
-                  </div>
-                )}
-
-                <div class={s.dpermFooter}>
-                  <span class={s.dpermCount}>
-                    {useFullAccess ? (
-                      "Full account access"
-                    ) : (
-                      <>
-                        <strong>{selectedPerms.size}</strong> permission
-                        {selectedPerms.size !== 1 ? "s" : ""} selected
-                      </>
-                    )}
-                  </span>
-                  <div class={s.dpermFooterActions}>
-                    <button
-                      type="button"
-                      class={s.dpermBack}
-                      onClick={handleCancelAccess}
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      class={`${s.dpermAuthorize} ${useFullAccess ? s.dpermAuthorizeDanger : ""}`}
-                      onClick={
-                        useFullAccess ? handleAllowAccess : attemptSubmit
-                      }
-                      disabled={
-                        scopeBtn.disabled ||
-                        (!useFullAccess && selectedPerms.size === 0)
-                      }
-                      style={
-                        scopeBtn.color
-                          ? { background: scopeBtn.color, color: "var(--void)" }
-                          : undefined
-                      }
-                    >
-                      {scopeBtn.color ? scopeBtn.text : "Authorize"}
-                    </button>
-                  </div>
-                </div>
-                {showMissingWarn && missingRequired.length > 0 && (
-                  <div class={s.permMissingWarn}>
-                    <div class={s.permMissingWarnHead}>
-                      <i class="fas fa-triangle-exclamation" />
-                      <strong>{requestor} may not work as expected</strong>
-                    </div>
-                    <p class={s.permMissingWarnText}>
-                      You removed {missingRequired.length} requested permission
-                      {missingRequired.length !== 1 ? "s" : ""}:
-                    </p>
-                    <div class={s.permRequiredTags}>
-                      {missingRequired.map((p) => (
-                        <span
-                          key={p}
-                          class={`${s.permRequiredTag} ${s.permRequiredTagMissing}`}
-                        >
-                          <i class="fas fa-xmark" />
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-                    <p class={s.permMissingWarnSub}>
-                      Without{" "}
-                      {missingRequired.length === 1
-                        ? "this permission"
-                        : "these permissions"}
-                      , the app may break, show errors, or fail silently.
-                    </p>
-                    <div class={s.permMissingWarnActions}>
-                      <button
-                        type="button"
-                        class={s.permCancelBtn}
-                        onClick={() => setShowMissingWarn(false)}
-                      >
-                        Go back
-                      </button>
-                      <button
-                        type="button"
-                        class={s.permAllowBtn}
-                        onClick={() => {
-                          setShowMissingWarn(false);
-                          handleAllowScopedAccess();
-                        }}
-                      >
-                        Continue anyway
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {scopeError && <div class={s.permError}>{scopeError}</div>}
-              </>
-            )}
-          </div>
-
-          <AuthTosLinks>
-            <p>
-              <a href="/privacy-policy?from=auth">Privacy Policy</a> •{" "}
-              <a href="/terms-of-service?from=auth">Terms of Service</a>
-            </p>
-          </AuthTosLinks>
-        </div>
+        <PermissionsView
+          requestor={requestor}
+          username={account.username}
+          isLocalhost={isLocalhostReturn}
+          requiresFull={requiresFullRef.current}
+          requiredPerms={permissionsRequested}
+          permSchema={permSchema}
+          siteTokens={siteTokens}
+          scopeBtn={scopeBtn}
+          scopeError={scopeError}
+          updatingTokenId={updatingTokenId}
+          onUseSubToken={(t) => useSubTokenAndRedirect(t, "existing")}
+          onUpdateToken={updateTokenAndRedirect}
+          onCreateToken={createTokenAndRedirect}
+          onUseMainToken={handleAllowAccess}
+          onSwitchAccount={handleSwitchAccount}
+          onCancel={handleCancelAccess}
+        />
       ) : view === "confirm" ? (
         <div class={s.welcomeArea}>
           <div class={s.welcomeLogo}>

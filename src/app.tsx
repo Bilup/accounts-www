@@ -18,6 +18,7 @@ import { Shop } from "./pages/Shop";
 import { Notifications } from "./pages/Notifications";
 import { Groups } from "./pages/groups/Groups";
 import { GroupDetail } from "./pages/groups/GroupDetail";
+import { Gift } from "./pages/Gift";
 import { StarField } from "./components/StarField";
 
 function VanityProfile(props: { matches?: { atname?: string } }) {
@@ -52,6 +53,7 @@ export function App() {
         <Route path="/auth" component={Auth} />
         <Route path="/link" component={Link} />
         <Route path="/reset_password" component={ResetPassword} />
+        <Route path="/gift/:code" component={Gift} />
         <Route path="/:atname" component={VanityProfile} />
         <Route default component={NotFound} />
       </Router>

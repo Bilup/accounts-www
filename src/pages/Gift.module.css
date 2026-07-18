@@ -1,0 +1,142 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--void);
+  padding-top: 5rem;
+}
+
+.wrapper {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--surface-3) 0%, var(--surface) 100%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.iconRing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--accent-glow);
+  border: 1px solid var(--accent-dim);
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  background: var(--gradient-heading);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.eyebrow strong {
+  color: var(--text);
+}
+
+.avatar {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.amount {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--accent);
+  margin-top: 0.5rem;
+}
+
+.credits {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.note {
+  color: var(--text);
+  font-style: italic;
+  margin-top: 0.75rem;
+  max-width: 24rem;
+}
+
+.expiry {
+  color: var(--text-subtle);
+  font-size: 0.85rem;
+}
+
+.sub {
+  color: var(--text-muted);
+}
+
+.error {
+  color: var(--auth-danger, #f87171);
+  font-size: 0.9rem;
+}
+
+.claimBtn {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1.5rem;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--void);
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.claimBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.claimBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.linkBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-family: var(--font-heading);
+}
+
+.linkBtn:hover {
+  text-decoration: underline;
+}
