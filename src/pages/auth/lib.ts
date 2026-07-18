@@ -165,6 +165,13 @@ export function getHostname(url: string): string {
   return parseReturnUrl(url)?.hostname.toLowerCase() || "";
 }
 
+export function normalizeHost(value: string): string {
+  const v = value.trim();
+  if (!v) return "";
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) return getHostname(v);
+  return getHostname(`https://${v}`);
+}
+
 export function isRoturSubdomain(url: string): boolean {
   const host = getHostname(url).replace(/^www\./, "");
   return host === "rotur.dev" || host.endsWith(".rotur.dev");
@@ -206,10 +213,8 @@ export function isTokenUsable(t: SubToken): boolean {
 export function tokenMatchesDomain(t: SubToken, returnTo: string): boolean {
   const host = getHostname(returnTo);
   if (!host) return false;
-  if (t.origin && getHostname(t.origin) === host) return true;
-  if (t.websites && t.websites.some((w) => getHostname(w) === host))
-    return true;
-  return false;
+  const sources = [t.origin, ...(t.websites || [])].filter(Boolean) as string[];
+  return sources.some((source) => normalizeHost(source) === host);
 }
 
 export const defaultBtn = (text: string): BtnState => ({

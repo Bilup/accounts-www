@@ -33,7 +33,7 @@ import {
   sidebarForView,
   getHostname,
   isAutoLoginHost,
-  isLocalhostHost,
+  isRoturSubdomain,
   returnUrl,
   isValidEmail,
   isTokenUsable,
@@ -119,7 +119,7 @@ export function Auth() {
   const [permSchema, setPermSchema] = useState<PermissionSchema | null>(null);
   const [scopeBtn, setScopeBtn] = useState<BtnState>(defaultBtn("Allow"));
   const [scopeError, setScopeError] = useState("");
-  const [updatingTokenId, setUpdatingTokenId] = useState<string | null>(null);
+  const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null);
 
   const sidebar = useMemo(() => sidebarForView[view], [view]);
   const addBtnText = view === "welcome" ? "Use another account" : "Back";
@@ -331,23 +331,41 @@ export function Auth() {
     }
   }, []);
 
+  const deliverAuthToken = useCallback(
+    (token: string, extra: Record<string, unknown> = {}) => {
+      const returnTo = returnToRef.current;
+      const payload = {
+        type: "rotur-auth-token",
+        token,
+        return_to: returnTo,
+        ...extra,
+      };
+      if (window.opener) {
+        window.opener.postMessage(payload, "*");
+        setTimeout(() => window.close(), 300);
+        return;
+      }
+      if (window.parent !== window) {
+        window.parent.postMessage(payload, "*");
+        return;
+      }
+      const finalUrl = returnUrl(returnTo);
+      finalUrl.searchParams.set("token", token);
+      location.href = finalUrl.toString();
+    },
+    [],
+  );
+
   const useSubTokenAndRedirect = useCallback(
     (sub: SubToken, scope: "scoped" | "existing" = "existing") => {
       if (!sub.token) return;
-      const payload = {
-        type: "rotur-auth-token",
-        token: sub.token,
+      deliverAuthToken(sub.token, {
         scope,
         permissions: sub.permissions,
         id: sub.id,
-      };
-      if (window.opener) window.opener.postMessage(payload, "*");
-      if (window.parent !== window) window.parent.postMessage(payload, "*");
-      const ref = returnUrl(returnToRef.current);
-      ref.searchParams.set("token", sub.token);
-      location.href = ref.toString();
+      });
     },
-    [],
+    [deliverAuthToken],
   );
 
   const flashBtn = (
@@ -876,23 +894,30 @@ export function Auth() {
     }
   }, [tosCheckboxChecked, handleTosContinue]);
 
-  const handleAllowAccess = useCallback(() => {
+  const confirmMainToken = useCallback(() => {
     if (!account?.key) return;
     saveAccountToStorage(account);
-    if (window.opener)
-      window.opener.postMessage(
-        { type: "rotur-auth-token", token: account.key, scope: "full" },
-        "*",
-      );
-    if (window.parent !== window)
-      window.parent.postMessage(
-        { type: "rotur-auth-token", token: account.key, scope: "full" },
-        "*",
-      );
-    const ref = returnUrl(returnToRef.current);
-    ref.searchParams.set("token", account.key);
-    location.href = ref.toString();
-  }, [account]);
+    deliverAuthToken(account.key, { scope: "full" });
+  }, [account, deliverAuthToken]);
+
+  const deleteToken = useCallback(
+    async (sub: SubToken) => {
+      if (!account?.key || !sub.id) return;
+      setDeletingTokenId(sub.id);
+      try {
+        await fetch(
+          `${API}/tokens/${sub.id}?auth=${encodeURIComponent(account.key)}`,
+          { method: "DELETE" },
+        );
+        await fetchSubTokens(account.key);
+      } catch {
+        /* ignore */
+      } finally {
+        setDeletingTokenId(null);
+      }
+    },
+    [account, fetchSubTokens],
+  );
 
   const handleSwitchAccount = useCallback(() => {
     setAccount(null);
@@ -949,58 +974,17 @@ export function Auth() {
           return;
         }
         saveAccountToStorage(account);
-        const payload = {
-          type: "rotur-auth-token",
-          token: data.token as string,
+        deliverAuthToken(data.token as string, {
           scope: "scoped",
           permissions: perms,
           id: data.id,
-        };
-        if (window.opener) window.opener.postMessage(payload, "*");
-        if (window.parent !== window) window.parent.postMessage(payload, "*");
-        const ref = returnUrl(returnToRef.current);
-        ref.searchParams.set("token", data.token);
-        location.href = ref.toString();
+        });
       } catch (e: any) {
         setScopeBtn(errorBtn(e?.message || "Network error"));
         setTimeout(() => setScopeBtn(defaultBtn("Allow")), 3000);
       }
     },
-    [account, requestor],
-  );
-
-  const updateTokenAndRedirect = useCallback(
-    async (sub: SubToken) => {
-      if (!account?.key || !sub.id) return;
-      const merged = new Set<string>(sub.permissions);
-      for (const r of requiredPermsRef.current) merged.add(r);
-      setScopeError("");
-      setUpdatingTokenId(sub.id);
-      try {
-        const res = await fetch(
-          `${API}/tokens/${sub.id}?auth=${encodeURIComponent(account.key)}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ permissions: Array.from(merged) }),
-          },
-        );
-        const data = await res.json().catch(() => ({}) as any);
-        if (!res.ok) {
-          setUpdatingTokenId(null);
-          setScopeError(data.error || "Could not update the token");
-          return;
-        }
-        useSubTokenAndRedirect(
-          { ...sub, permissions: Array.from(merged) },
-          "existing",
-        );
-      } catch (e: any) {
-        setUpdatingTokenId(null);
-        setScopeError(e?.message || "Network error");
-      }
-    },
-    [account, useSubTokenAndRedirect],
+    [account, requestor, deliverAuthToken],
   );
 
   const siteTokens = useMemo(
@@ -1011,19 +995,10 @@ export function Auth() {
     [subTokens],
   );
 
-  const [schemaVersion, setSchemaVersion] = useState(0);
-  const permissionsRequested = useMemo(
-    () =>
-      Array.from(requiredPermsRef.current).filter(
-        (p) => !FORBIDDEN_PERMISSIONS.has(p),
-      ),
-    [schemaVersion],
+  const [, setSchemaVersion] = useState(0);
+  const permissionsRequested = Array.from(requiredPermsRef.current).filter(
+    (p) => !FORBIDDEN_PERMISSIONS.has(p),
   );
-  const isLocalhostReturn = useMemo(
-    () => isLocalhostHost(returnToRef.current),
-    [],
-  );
-
   useEffect(() => {
     if (!permSchema) return;
     const valid = new Set(permSchema.permissions);
@@ -1200,18 +1175,18 @@ export function Auth() {
         <PermissionsView
           requestor={requestor}
           username={account.username}
-          isLocalhost={isLocalhostReturn}
           requiresFull={requiresFullRef.current}
+          defaultAll={isRoturSubdomain(returnToRef.current)}
           requiredPerms={permissionsRequested}
           permSchema={permSchema}
           siteTokens={siteTokens}
           scopeBtn={scopeBtn}
           scopeError={scopeError}
-          updatingTokenId={updatingTokenId}
+          deletingTokenId={deletingTokenId}
           onUseSubToken={(t) => useSubTokenAndRedirect(t, "existing")}
-          onUpdateToken={updateTokenAndRedirect}
+          onDeleteToken={deleteToken}
           onCreateToken={createTokenAndRedirect}
-          onUseMainToken={handleAllowAccess}
+          onUseMainToken={confirmMainToken}
           onSwitchAccount={handleSwitchAccount}
           onCancel={handleCancelAccess}
         />
