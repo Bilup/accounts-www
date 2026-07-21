@@ -52,6 +52,7 @@ import {
   describeTransaction,
   isTransactionIncome,
 } from "../../lib/transactions";
+import { plural } from "../../lib/format";
 import s from "./Me.module.css";
 
 const API = "https://api.rotur.dev";
@@ -425,17 +426,6 @@ export function Me() {
   return (
     <AccountPage>
       {confirmDialog}
-      <ProfileCard
-        user={user}
-        editable
-        showActions={false}
-        isSelf
-        benefits={benefits?.benefits ?? null}
-        onEdit={async () => {
-          await reload();
-        }}
-      />
-
       <AccountTabs
         tabs={MAIN_TABS}
         active={activeTab}
@@ -450,10 +440,22 @@ export function Me() {
 
       <AccountTabPanel>
         {activeTab === "profile" && (
-          <CosmeticsSection
-            activeOverlay={user["sys.overlay"] || ""}
-            benefits={benefits?.benefits ?? null}
-          />
+          <>
+            <ProfileCard
+              user={user}
+              editable
+              showActions={false}
+              isSelf
+              benefits={benefits?.benefits ?? null}
+              onEdit={async () => {
+                await reload();
+              }}
+            />
+            <CosmeticsSection
+              activeOverlay={user["sys.overlay"] || ""}
+              benefits={benefits?.benefits ?? null}
+            />
+          </>
         )}
 
         {activeTab === "social" && (
@@ -530,6 +532,7 @@ export function Me() {
             <ChangePasswordSection />
             <SubTokensSection />
             <NotificationsSection />
+            <DeleteAccountSection />
           </>
         )}
       </AccountTabPanel>
@@ -960,7 +963,8 @@ function SubscriptionsSection({
                 <div class={s.subInfo}>
                   <div class={s.subName}>{sub.name}</div>
                   <div class={s.subMeta}>
-                    {sub.price} credits/mo • {subCount} subscribers
+                    {sub.price} credits/mo • {subCount}{" "}
+                    {plural(subCount, "subscriber")}
                     {sub.total_income ? ` • ${sub.total_income} earned` : ""}
                   </div>
                 </div>
@@ -1266,6 +1270,87 @@ function ChangePasswordSection() {
   );
 }
 
+function DeleteAccountSection() {
+  const { user, token, logout } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [confirm, confirmDialog] = useConfirm();
+
+  const username = user?.username ?? "";
+
+  const onDelete = useCallback(async () => {
+    if (!token || !username) return;
+    setErr(null);
+    const password = await confirm({
+      title: "Delete account permanently?",
+      message:
+        "This erases your profile, files, keys, credits and everything else. It cannot be undone. Enter your password to confirm.",
+      confirmLabel: "Delete forever",
+      danger: true,
+      input: {
+        type: "password",
+        label: "Password",
+        placeholder: "Your account password",
+      },
+    });
+    if (typeof password !== "string" || !password) return;
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `${API}/users/${encodeURIComponent(username)}?auth=${encodeURIComponent(token)}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        },
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}) as any);
+        setErr(data.error || "Failed to delete account");
+        setBusy(false);
+        return;
+      }
+      logout();
+      window.location.href = "/";
+    } catch {
+      setErr("Network error");
+      setBusy(false);
+    }
+  }, [token, username, confirm, logout]);
+
+  return (
+    <AccountSection
+      icon={<Trash2 size={18} />}
+      iconStyle={{ background: "rgba(248, 113, 113, 0.12)", color: "#f87171" }}
+      title="Delete Account"
+      subtitle="Permanently delete your account and all associated data"
+    >
+      {err && (
+        <div class={`${s.changePwMsg} ${s.changePwMsgErr}`}>
+          <i class="fas fa-circle-exclamation" />
+          <span>{err}</span>
+        </div>
+      )}
+      <div class={s.changePwActions}>
+        <button
+          type="button"
+          class={`${s.subBtn} ${s.subBtnDanger}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.375rem",
+          }}
+          disabled={busy}
+          onClick={onDelete}
+        >
+          <Trash2 size={14} /> {busy ? "Deleting…" : "Delete my account"}
+        </button>
+      </div>
+      {confirmDialog}
+    </AccountSection>
+  );
+}
+
 function SubTokensSection() {
   return (
     <AccountSection
@@ -1312,7 +1397,9 @@ function CosmeticsSection({
       icon={<Sparkles size={18} />}
       title="Cosmetics"
       subtitle={
-        activeOverlay ? `Wearing ${activeOverlay}` : "No overlay equipped"
+        activeOverlay
+          ? `Wearing ${activeOverlay.replace(/_/g, " ")}`
+          : "No overlay equipped"
       }
       actions={
         <a href="/shop" class={s.linkBtn}>
@@ -1441,9 +1528,10 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
     <AccountSection
       icon={<StickyNote size={18} />}
       title="Profile Notes"
-      subtitle={`${noteEntries.length} note${
-        noteEntries.length !== 1 ? "s" : ""
-      } • Private`}
+      subtitle={`${noteEntries.length} ${plural(
+        noteEntries.length,
+        "note",
+      )} • Private`}
     >
       <div class={s.addFriendForm}>
         <input

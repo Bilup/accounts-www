@@ -16,6 +16,7 @@ import {
   formatRelativeTime,
   formatDateTime,
 } from "../lib/auth";
+import { plural } from "../lib/format";
 import s from "./Notifications.module.css";
 
 const API_BASE_URL = "https://api.rotur.dev";
@@ -309,10 +310,9 @@ export function Notifications() {
                     Welcome, <strong>{currentUser}</strong>
                   </div>
                   <p class={s.welcomeSub}>
-                    {endpoints.length} device{endpoints.length !== 1 ? "s" : ""}{" "}
-                    · {totalSenders} allowed sender
-                    {totalSenders !== 1 ? "s" : ""} · {log.length} log entr
-                    {log.length !== 1 ? "ies" : "y"}
+                    {endpoints.length} {plural(endpoints.length, "device")} ·{" "}
+                    {totalSenders} allowed {plural(totalSenders, "sender")} ·{" "}
+                    {log.length} {plural(log.length, "log entry", "log entries")}
                   </p>
                 </div>
               </div>
@@ -496,6 +496,7 @@ export function Notifications() {
                     <button
                       class={`${s.invBtn} ${s.invBtnPrimary}`}
                       onClick={allowSender}
+                      disabled={!newSender.trim() || !newSource.trim()}
                     >
                       Allow Sender
                     </button>
@@ -519,8 +520,7 @@ export function Notifications() {
                         <div class={s.sourceGroupHeader}>
                           <span class={s.sourceTag}>{source}</span>
                           <span class={s.sourceCount}>
-                            {senders.length} sender
-                            {senders.length !== 1 ? "s" : ""}
+                            {senders.length} {plural(senders.length, "sender")}
                           </span>
                         </div>
                         {senders.map((snd) => (
@@ -531,8 +531,8 @@ export function Notifications() {
                             <div class={s.senderInfo}>
                               <div class={s.senderName}>{snd.username}</div>
                               <div class={s.senderCount}>
-                                {snd.count} notification
-                                {snd.count !== 1 ? "s" : ""} sent
+                                {snd.count} {plural(snd.count, "notification")}{" "}
+                                sent
                               </div>
                             </div>
                             <button

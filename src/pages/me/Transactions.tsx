@@ -26,6 +26,7 @@ import {
 } from "../../components/AccountPage";
 import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, type Transaction, captureTokenFromUrl } from "../../lib/auth";
+import { plural } from "../../lib/format";
 import {
   TRANSACTION_META,
   describeTransaction,
@@ -626,8 +627,7 @@ export function Transactions() {
                         {b.meta?.label || b.type}
                       </div>
                       <div class={s.breakdownMeta}>
-                        {b.count}{" "}
-                        {b.count === 1 ? "transaction" : "transactions"}
+                        {b.count} {plural(b.count, "transaction")}
                       </div>
                     </div>
                     <div class={s.breakdownValues}>
@@ -670,7 +670,7 @@ export function Transactions() {
                   <div class={s.userInfo}>
                     <div class={s.userName}>@{u.name}</div>
                     <div class={s.userMeta}>
-                      {u.count} {u.count === 1 ? "transaction" : "transactions"}
+                      {u.count} {plural(u.count, "transaction")}
                     </div>
                   </div>
                   <div class={s.userValues}>

@@ -31,6 +31,7 @@ import {
   EmptyState,
 } from "../../components/AccountPage";
 import { useAuth, getToken } from "../../lib/auth";
+import { plural } from "../../lib/format";
 import s from "./Groups.module.css";
 
 const API_BASE_URL = "https://api.rotur.dev";
@@ -503,9 +504,7 @@ export function Groups() {
           <AccountSection
             icon={<Users size={18} />}
             title="Your Groups"
-            subtitle={`${myGroups.length} group${
-              myGroups.length === 1 ? "" : "s"
-            }`}
+            subtitle={`${myGroups.length} ${plural(myGroups.length, "group")}`}
           >
             {myGroupsLoading && (
               <div class={s.loading}>Loading your groups…</div>
@@ -529,9 +528,10 @@ export function Groups() {
           <AccountSection
             icon={<Search size={18} />}
             title="Browse Public Groups"
-            subtitle={`${browseResults.length} result${
-              browseResults.length === 1 ? "" : "s"
-            }`}
+            subtitle={`${browseResults.length} ${plural(
+              browseResults.length,
+              "result",
+            )}`}
           >
             <form class={s.searchRow} onSubmit={onSearchSubmit}>
               <input
@@ -598,9 +598,10 @@ export function Groups() {
           <AccountSection
             icon={<Trophy size={18} />}
             title="Top Public Groups"
-            subtitle={`${topGroups.length} group${
-              topGroups.length === 1 ? "" : "s"
-            } ranked by members`}
+            subtitle={`${topGroups.length} ${plural(
+              topGroups.length,
+              "group",
+            )} ranked by members`}
           >
             {topLoading && <div class={s.loading}>Loading top groups…</div>}
             {!topLoading && topGroups.length === 0 && (

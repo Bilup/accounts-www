@@ -1,13 +1,13 @@
 :root {
-  --void: #07080b;
-  --surface: #16181f;
-  --surface-2: #1c1f28;
-  --surface-3: #24272f;
-  --border: #2a2d38;
-  --border-subtle: #1f222b;
-  --text: #e4e4e7;
-  --text-muted: #94959b;
-  --text-subtle: #6b6c72;
+  --void: #030303;
+  --surface: #131315;
+  --surface-2: #1a1a1d;
+  --surface-3: #212125;
+  --border: #272729;
+  --border-subtle: #1b1b1e;
+  --text: #ededf0;
+  --text-muted: #8a8a90;
+  --text-subtle: #5b5b61;
   --accent: #c299cf;
   --accent-dim: #9a6bab;
   --accent-glow: rgba(194, 153, 207, 0.15);
@@ -16,10 +16,10 @@
   --accent-5: rgba(194, 153, 207, 0.05);
   --accent-10: rgba(194, 153, 207, 0.1);
   --accent-30: rgba(194, 153, 207, 0.3);
-  --surface-a60: rgba(22, 24, 31, 0.6);
-  --surface-a80: rgba(22, 24, 31, 0.8);
-  --surface-2-a50: rgba(28, 31, 40, 0.5);
-  --void-a80: rgba(7, 8, 11, 0.8);
+  --surface-a60: var(--surface);
+  --surface-a80: var(--surface-2);
+  --surface-2-a50: var(--surface-2);
+  --void-a80: rgba(0, 0, 0, 0.8);
   --font-display: "Cal Sans", sans-serif;
   --font-heading: "Poppins", sans-serif;
   --font-body: "Inter", sans-serif;

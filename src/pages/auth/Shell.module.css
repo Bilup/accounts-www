@@ -14,77 +14,6 @@
   box-sizing: border-box;
 }
 
-.shellBg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.shellOrb1 {
-  position: absolute;
-  top: 12%;
-  left: 18%;
-  width: 28rem;
-  height: 28rem;
-  background-color: var(--accent-5);
-  border-radius: 50%;
-  filter: blur(140px);
-  opacity: 0.7;
-  animation: shellFloat 6s ease-in-out infinite;
-}
-
-.shellOrb2 {
-  position: absolute;
-  bottom: 12%;
-  right: 18%;
-  width: 24rem;
-  height: 24rem;
-  background-color: var(--accent-3);
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.65;
-  animation: shellFloat 6s ease-in-out infinite;
-  animation-delay: 300ms;
-}
-
-.shellOrb3 {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20rem;
-  height: 20rem;
-  background-color: var(--accent-5);
-  border-radius: 50%;
-  filter: blur(130px);
-  opacity: 0.35;
-  transform: translate(-50%, -50%);
-  animation: shellFloat 8s ease-in-out infinite;
-  animation-delay: 600ms;
-}
-
-.shellDots {
-  position: absolute;
-  inset: 0;
-  opacity: 0.35;
-  background-image: radial-gradient(
-    circle,
-    var(--border-subtle) 1px,
-    transparent 1px
-  );
-  background-size: 24px 24px;
-}
-
-@keyframes shellFloat {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
 .modal {
   position: relative;
   z-index: 10;
@@ -93,7 +22,7 @@
 }
 
 .modalContent {
-  background: #08090d;
+  background: var(--void);
   border: 1px solid var(--border);
   border-radius: 1rem;
   display: flex;
@@ -102,7 +31,6 @@
   position: relative;
   box-shadow:
     0 0 0 1px var(--border),
-    0 0 80px -20px var(--accent-glow),
     0 20px 60px rgba(0, 0, 0, 0.7),
     0 8px 24px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -241,8 +169,7 @@
   border-radius: 0.75rem;
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.4),
-    0 0 0 1px var(--accent-10),
-    0 0 24px -4px var(--accent-glow);
+    0 0 0 1px var(--accent-10);
 }
 
 .heading {
@@ -278,9 +205,9 @@
 
 .input {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: 0.625rem;
   background: rgba(22, 24, 31, 0.6);
   color: var(--text);
   font-family: var(--font-body);
@@ -292,13 +219,15 @@
   -webkit-appearance: none;
 }
 
+.input:hover:not(:focus) {
+  border-color: var(--text-subtle);
+}
+
 .input:focus {
   outline: none;
   border-color: var(--accent);
   background: rgba(22, 24, 31, 0.8);
-  box-shadow:
-    0 0 0 3px var(--accent-glow),
-    0 0 20px -4px var(--accent-glow);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .input::placeholder {
@@ -307,10 +236,10 @@
 
 .btnPrimary {
   width: 100%;
-  padding: 0.8rem 1.75rem;
+  padding: 0.85rem 1.75rem;
   margin-top: 0.5rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 0.625rem;
   background-color: var(--accent);
   color: var(--void);
   font-family: var(--font-heading);
@@ -325,7 +254,7 @@
 }
 
 .btnPrimary:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
 }
 
 .btnPrimary:active {
@@ -341,9 +270,9 @@
 
 .btnSecondary {
   width: 100%;
-  padding: 0.75rem 1.5rem;
+  padding: 0.8rem 1.5rem;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: 0.625rem;
   background: var(--surface-a60);
   color: var(--text-muted);
   font-family: var(--font-heading);
@@ -500,16 +429,6 @@
     align-items: flex-start;
   }
 
-  .shellOrb1 {
-    width: 14rem;
-    height: 14rem;
-  }
-
-  .shellOrb2 {
-    width: 10rem;
-    height: 10rem;
-  }
-
   .modalContent {
     flex-direction: column;
     min-height: auto;
@@ -568,22 +487,6 @@
   .shell {
     padding: 0;
     align-items: stretch;
-  }
-
-  .shellOrb1 {
-    width: 10rem;
-    height: 10rem;
-    top: 8%;
-    left: 8%;
-  }
-
-  .shellOrb2 {
-    width: 8rem;
-    height: 8rem;
-  }
-
-  .shellDots {
-    opacity: 0.15;
   }
 
   .modal {

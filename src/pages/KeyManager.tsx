@@ -19,6 +19,7 @@ import {
   EmptyState,
 } from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
+import { plural } from "../lib/format";
 import { clickable } from "../lib/clickable";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useConfirm } from "../components/ConfirmDialog";
@@ -754,7 +755,7 @@ function KeyDetailModal({
             <div class={s.modalStatItem}>
               <UserPlus size={16} />
               <span>
-                {users.length} authorized user{users.length !== 1 ? "s" : ""}
+                {users.length} authorized {plural(users.length, "user")}
               </span>
             </div>
             {isSubscription && sub && (
@@ -767,8 +768,7 @@ function KeyDetailModal({
                 >
                   {sub.active !== false ? "Active" : "Inactive"}
                   {" · "}
-                  Every {sub.frequency} {sub.period}
-                  {sub.frequency > 1 ? "s" : ""}
+                  Every {sub.frequency} {plural(sub.frequency, sub.period)}
                 </span>
               </div>
             )}

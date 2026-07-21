@@ -17,6 +17,9 @@ export function Contributors({ data }: { data: Contributor[] | null }) {
     const el = carouselRef.current;
     if (!el || !data?.length) return;
 
+    // Respect reduced-motion: leave the strip static (it's still fully readable).
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
     const onEnter = () => {
       pausedRef.current = true;
     };
@@ -68,23 +71,30 @@ export function Contributors({ data }: { data: Contributor[] | null }) {
       <div class={s.carouselOuter}>
         <div class={s.carouselInner}>
           <div ref={carouselRef} class={s.track}>
-            {items.map((c, i) => (
-              <a
-                key={`${c.name}-${i}`}
-                href={c.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={c.name}
-                class={s.avatar}
-              >
-                <img
-                  src={c.pfp}
-                  alt={c.name}
-                  class={s.avatarImg}
-                  draggable={false}
-                />
-              </a>
-            ))}
+            {items.map((c, i) => {
+              // Second copy exists only for the seamless loop — hide it from
+              // screen readers and keyboard tabbing so each name is reached once.
+              const isClone = i >= data.length;
+              return (
+                <a
+                  key={`${c.name}-${i}`}
+                  href={c.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={c.name}
+                  class={s.avatar}
+                  aria-hidden={isClone || undefined}
+                  tabIndex={isClone ? -1 : undefined}
+                >
+                  <img
+                    src={c.pfp}
+                    alt={isClone ? "" : c.name}
+                    class={s.avatarImg}
+                    draggable={false}
+                  />
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>

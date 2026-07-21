@@ -15,6 +15,7 @@ import {
   Blocks,
   Palette,
   GitBranch,
+  Sparkles,
 } from "lucide-preact";
 import type { LucideProps } from "lucide-preact";
 import type React from "preact/compat";
@@ -80,6 +81,14 @@ const services: Service[] = [
     href: "https://embed.rotur.dev",
     label: "embed.rotur.dev",
     icon: Blocks,
+    category: "Apps",
+  },
+  {
+    name: "sable",
+    desc: "An AI chatbot integrated with Rotur. Ask questions, get help, and tap into your account and the ecosystem in a conversation.",
+    href: "https://sable.rotur.dev",
+    label: "sable.rotur.dev",
+    icon: Sparkles,
     category: "Apps",
   },
   {

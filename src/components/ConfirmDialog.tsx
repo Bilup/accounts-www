@@ -1,8 +1,16 @@
-import { useState, useCallback, useEffect } from "preact/hooks";
+import { useState, useCallback, useEffect, useRef } from "preact/hooks";
 import { createPortal } from "preact/compat";
 import { X } from "lucide-preact";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import s from "./ConfirmDialog.module.css";
+
+export interface ConfirmInput {
+  label?: string;
+  type?: "text" | "password";
+  placeholder?: string;
+  /** If set, confirm stays disabled until the typed value matches exactly. */
+  requireValue?: string;
+}
 
 export interface ConfirmOptions {
   title: string;
@@ -12,6 +20,8 @@ export interface ConfirmOptions {
   cancelLabel?: string;
   /** Red confirm button for destructive actions (delete, kick, ban). */
   danger?: boolean;
+  /** Prompt for a value inside the modal; confirm resolves with the string. */
+  input?: ConfirmInput;
 }
 
 function ConfirmDialog({
@@ -20,10 +30,24 @@ function ConfirmDialog({
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   danger,
+  input,
   onConfirm,
   onCancel,
-}: ConfirmOptions & { onConfirm: () => void; onCancel: () => void }) {
+}: ConfirmOptions & {
+  onConfirm: (value: string) => void;
+  onCancel: () => void;
+}) {
   const trapRef = useFocusTrap<HTMLDivElement>(true);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState("");
+
+  const ready =
+    !input ||
+    (input.requireValue ? value === input.requireValue : value.length > 0);
+
+  useEffect(() => {
+    if (input) inputRef.current?.focus();
+  }, [input]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -32,6 +56,10 @@ function ConfirmDialog({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onCancel]);
+
+  const submit = () => {
+    if (ready) onConfirm(value);
+  };
 
   return (
     <div class={s.backdrop} role="presentation" onClick={onCancel}>
@@ -53,10 +81,28 @@ function ConfirmDialog({
           </button>
         </div>
         {message && <div class={s.message}>{message}</div>}
+        {input && (
+          <div class={s.inputGroup}>
+            {input.label && <label class={s.inputLabel}>{input.label}</label>}
+            <input
+              ref={inputRef}
+              class={s.input}
+              type={input.type ?? "text"}
+              placeholder={input.placeholder}
+              value={value}
+              autoComplete={
+                input.type === "password" ? "current-password" : "off"
+              }
+              onInput={(e: any) => setValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+            />
+          </div>
+        )}
         <div class={s.actions}>
           <button
             class={danger ? s.confirmDanger : s.confirm}
-            onClick={onConfirm}
+            onClick={submit}
+            disabled={!ready}
           >
             {confirmLabel}
           </button>
@@ -77,21 +123,27 @@ function ConfirmDialog({
  *   if (!(await confirm({ title: "Delete?" , danger: true }))) return;
  *   ...
  *   return <div>{confirmDialog}...</div>;
+ *
+ * With `input`, it acts like window.prompt(): resolves to the typed string on
+ * confirm, or false on cancel.
+ *
+ *   const pw = await confirm({ title: "Confirm", input: { type: "password" } });
+ *   if (!pw) return;
  */
 export function useConfirm() {
   const [pending, setPending] = useState<{
     opts: ConfirmOptions;
-    resolve: (ok: boolean) => void;
+    resolve: (ok: boolean | string) => void;
   } | null>(null);
 
   const confirm = useCallback(
     (opts: ConfirmOptions) =>
-      new Promise<boolean>((resolve) => setPending({ opts, resolve })),
+      new Promise<boolean | string>((resolve) => setPending({ opts, resolve })),
     [],
   );
 
   const settle = useCallback(
-    (ok: boolean) => {
+    (ok: boolean | string) => {
       pending?.resolve(ok);
       setPending(null);
     },
@@ -104,7 +156,7 @@ export function useConfirm() {
     ? createPortal(
         <ConfirmDialog
           {...pending.opts}
-          onConfirm={() => settle(true)}
+          onConfirm={(value) => settle(pending.opts.input ? value : true)}
           onCancel={() => settle(false)}
         />,
         document.body,

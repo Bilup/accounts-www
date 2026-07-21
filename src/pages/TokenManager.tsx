@@ -21,6 +21,7 @@ import {
   EmptyState,
 } from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
+import { plural } from "../lib/format";
 import { clickable } from "../lib/clickable";
 import { useConfirm } from "../components/ConfirmDialog";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -863,7 +864,7 @@ export function TokenManager() {
               <div class={s.permPickerFooter}>
                 <span>
                   <span class={s.permPickerCount}>{createPerms.size}</span>{" "}
-                  permission{createPerms.size !== 1 ? "s" : ""} selected
+                  {plural(createPerms.size, "permission")} selected
                   {createPerms.size === 0 && (
                     <span
                       style={{
@@ -1239,7 +1240,7 @@ function TokenDetailModal({
                   <div class={s.permPickerFooter}>
                     <span>
                       <span class={s.permPickerCount}>{editSet.size}</span>{" "}
-                      permission{editSet.size !== 1 ? "s" : ""} selected
+                      {plural(editSet.size, "permission")} selected
                     </span>
                     <div style={{ display: "flex", gap: "0.4rem" }}>
                       <button

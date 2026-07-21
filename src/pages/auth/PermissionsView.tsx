@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import s from "./Auth.module.css";
 import { AuthTosLinks } from "./Shell";
+import { plural } from "../../lib/format";
 import {
   describePerm,
   permIcon,
@@ -194,7 +195,7 @@ export function PermissionsView({
                       </span>
                       <span class={s.existingPrimarySub}>
                         {sub.name || "Unnamed token"} · {sub.permissions.length}{" "}
-                        permission{sub.permissions.length !== 1 ? "s" : ""}
+                        {plural(sub.permissions.length, "permission")}
                       </span>
                     </span>
                     <i class={`fas fa-arrow-right ${s.existingPrimaryArrow}`} />
@@ -374,8 +375,8 @@ export function PermissionsView({
                   "Full account access"
                 ) : (
                   <>
-                    <strong>{selectedPerms.size}</strong> permission
-                    {selectedPerms.size !== 1 ? "s" : ""} selected
+                    <strong>{selectedPerms.size}</strong>{" "}
+                    {plural(selectedPerms.size, "permission")} selected
                   </>
                 )}
               </span>
@@ -408,8 +409,8 @@ export function PermissionsView({
                   <strong>{requestor} may not work as expected</strong>
                 </div>
                 <p class={s.permMissingWarnText}>
-                  You removed {missingRequired.length} requested permission
-                  {missingRequired.length !== 1 ? "s" : ""}:
+                  You removed {missingRequired.length} requested{" "}
+                  {plural(missingRequired.length, "permission")}:
                 </p>
                 <div class={s.permRequiredTags}>
                   {missingRequired.map((p) => (

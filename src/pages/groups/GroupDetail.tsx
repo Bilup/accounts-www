@@ -41,6 +41,7 @@ import {
 } from "../../components/AccountPage";
 import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, getToken, formatRelativeTime } from "../../lib/auth";
+import { plural } from "../../lib/format";
 import s from "./GroupDetail.module.css";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { useConfirm } from "../../components/ConfirmDialog";
@@ -1146,7 +1147,7 @@ function OverviewTab({
         <AccountSection
           icon={<KeyRound size={18} />}
           title="Your Roles"
-          subtitle={`${myRoles.length} role${myRoles.length === 1 ? "" : "s"}`}
+          subtitle={`${myRoles.length} ${plural(myRoles.length, "role")}`}
         >
           <div class={s.rolesList}>
             {myRoles.map((r) => (
@@ -1942,7 +1943,7 @@ function MembersTab({
         <AccountSection
           icon={<Users size={18} />}
           title="Members"
-          subtitle={`${membersTotal} member${membersTotal === 1 ? "" : "s"}`}
+          subtitle={`${membersTotal} ${plural(membersTotal, "member")}`}
         >
           <div class={s.actionRow}>
             <input
@@ -4082,7 +4083,7 @@ function TipsTab({
       <AccountSection
         icon={<Coins size={18} />}
         title="Recent Tips"
-        subtitle={`${tips.length} tip${tips.length === 1 ? "" : "s"}`}
+        subtitle={`${tips.length} ${plural(tips.length, "tip")}`}
       >
         {loading && <div class={s.loading}>Loading…</div>}
         {!loading && tips.length === 0 && (

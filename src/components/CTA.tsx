@@ -16,13 +16,20 @@ export function CTA() {
             new, our docs and community will get you up and running in minutes.
           </p>
           <div class={s.buttons}>
-            <a href="https://docs.rotur.dev/" class={s.btnPrimary}>
+            <a
+              href="https://docs.rotur.dev/"
+              class={s.btnPrimary}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Read the Docs
               <ArrowRight size={16} />
             </a>
             <a
               href="https://extensions.mistium.com/featured/Rotur.js"
               class={s.btnSecondary}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               MistWarp Extension
             </a>

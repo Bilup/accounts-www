@@ -22,6 +22,8 @@ import {
 } from "lucide-preact";
 import s from "./ProfileCard.module.css";
 import { bannerUrl as buildBannerUrl } from "../lib/avatar";
+import { plural } from "../lib/format";
+import { clickable } from "../lib/clickable";
 import {
   type AuthUser,
   type PublicProfile,
@@ -98,6 +100,10 @@ export function ProfileCard({
   const [pronounsDraft, setPronounsDraft] = useState(user.pronouns || "");
   const [pronounsError, setPronounsError] = useState<string | null>(null);
   const [pronounsSaving, setPronounsSaving] = useState(false);
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [usernameDraft, setUsernameDraft] = useState(user.username || "");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [usernameSaving, setUsernameSaving] = useState(false);
   const [pendingFile, setPendingFile] = useState<{
     kind: CropperKind;
     file: File;
@@ -119,6 +125,7 @@ export function ProfileCard({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const pronounsInputRef = useRef<HTMLInputElement>(null);
+  const usernameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!editingBio) {
@@ -136,6 +143,16 @@ export function ProfileCard({
       pronounsInputRef.current?.select();
     }
   }, [user.pronouns, editingPronouns]);
+
+  useEffect(() => {
+    if (!editingUsername) {
+      setUsernameDraft(user.username || "");
+      setUsernameError(null);
+    } else {
+      usernameInputRef.current?.focus();
+      usernameInputRef.current?.select();
+    }
+  }, [user.username, editingUsername]);
 
   const handleFileChosen = (event: Event, kind: CropperKind) => {
     const input = event.target as HTMLInputElement;
@@ -249,6 +266,34 @@ export function ProfileCard({
     }
   };
 
+  const saveUsername = async () => {
+    const val = usernameDraft.trim();
+    if (!val || val === user.username) {
+      setEditingUsername(false);
+      setUsernameError(null);
+      return;
+    }
+    setUsernameSaving(true);
+    setUsernameError(null);
+    try {
+      const token = getToken();
+      if (!token) throw new Error("not authenticated");
+      const res = await fetch(`${API}/users`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "username", value: val, auth: token }),
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+      if (onEdit) await onEdit({ username: val });
+      setEditingUsername(false);
+    } catch (e) {
+      setUsernameError((e as Error).message || "Failed to save");
+    } finally {
+      setUsernameSaving(false);
+    }
+  };
+
   const publicProfile = isPublicProfile(user) ? user : null;
 
   const openSend = () => {
@@ -324,7 +369,7 @@ export function ProfileCard({
       const debited = Number(data?.debited ?? num);
       setCurrentBalance((b) => (b === null ? b : Math.max(0, b - debited)));
       setSendSuccess(
-        `Sent ${debited.toLocaleString()} credit${debited === 1 ? "" : "s"} to @${user.username}`,
+        `Sent ${debited.toLocaleString()} ${plural(debited, "credit")} to @${user.username}`,
       );
       setSendAmount("");
       setSendNote("");
@@ -353,6 +398,9 @@ export function ProfileCard({
   const finalFollowerCount = followerCount ?? publicProfile?.followers ?? 0;
   const finalFollowingCount = followingCount ?? publicProfile?.following ?? 0;
   const pronouns = user.pronouns;
+  // What the meta row shows, so separators only appear between real items.
+  const showHandle = editingUsername || editable || hasNickname;
+  const showPronouns = editingPronouns || editable || !!pronouns;
 
   return (
     <div class={s.card}>
@@ -373,7 +421,10 @@ export function ProfileCard({
           <>
             <div
               class={s.bannerEditOverlay}
-              onClick={() => bannerInputRef.current?.click()}
+              {...clickable(
+                () => bannerInputRef.current?.click(),
+                "Change banner",
+              )}
             >
               <ImageIcon size={28} />
               {!benefits?.free_banner_uploads && (
@@ -414,7 +465,10 @@ export function ProfileCard({
             <>
               <div
                 class={s.avatarEditOverlay}
-                onClick={() => avatarInputRef.current?.click()}
+                {...clickable(
+                  () => avatarInputRef.current?.click(),
+                  "Change profile picture",
+                )}
               >
                 <Camera size={22} />
               </div>
@@ -456,10 +510,73 @@ export function ProfileCard({
         </div>
 
         <div class={s.metaRow}>
-          {hasNickname && <span class={s.username}>@{user.username}</span>}
-          {hasNickname && (pronouns || editingPronouns) && (
+          {/* Handle — editable inline for self, plain @username otherwise */}
+          {editingUsername ? (
+            <span class={s.pronounsEditWrap}>
+              <span class={s.usernameAt}>@</span>
+              <input
+                ref={usernameInputRef}
+                class={s.pronounsInput}
+                value={usernameDraft}
+                onInput={(e: any) => setUsernameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveUsername();
+                  else if (e.key === "Escape") {
+                    setEditingUsername(false);
+                    setUsernameDraft(user.username || "");
+                    setUsernameError(null);
+                  }
+                }}
+                placeholder="username"
+                maxLength={20}
+                disabled={usernameSaving}
+              />
+              <button
+                class={`${s.pronounsIconBtn} ${s.pronounsIconBtnConfirm}`}
+                onClick={saveUsername}
+                disabled={usernameSaving}
+                aria-label="Save username"
+                title="Save"
+              >
+                <Check size={12} />
+              </button>
+              <button
+                class={s.pronounsIconBtn}
+                onClick={() => {
+                  setEditingUsername(false);
+                  setUsernameDraft(user.username || "");
+                  setUsernameError(null);
+                }}
+                disabled={usernameSaving}
+                aria-label="Cancel"
+                title="Cancel"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ) : (
+            (editable || hasNickname) && (
+              <span class={s.editableField}>
+                <span class={s.username}>@{user.username}</span>
+                {editable && (
+                  <button
+                    class={s.fieldEditBtn}
+                    onClick={() => setEditingUsername(true)}
+                    aria-label="Change username"
+                    title="Change username"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                )}
+              </span>
+            )
+          )}
+
+          {showHandle && showPronouns && (
             <span class={s.separator}>•</span>
           )}
+
+          {/* Pronouns */}
           {editingPronouns ? (
             <span class={s.pronounsEditWrap}>
               <input
@@ -502,24 +619,34 @@ export function ProfileCard({
                 <X size={12} />
               </button>
             </span>
-          ) : (
-            <>
-              {pronouns && <span class={s.pronouns}>{pronouns}</span>}
+          ) : pronouns ? (
+            <span class={s.editableField}>
+              <span class={s.pronouns}>{pronouns}</span>
               {editable && (
                 <button
-                  class={s.pronounsAddBtn}
+                  class={s.fieldEditBtn}
                   onClick={() => setEditingPronouns(true)}
-                  aria-label={pronouns ? "Edit pronouns" : "Add pronouns"}
-                  title={pronouns ? "Edit pronouns" : "Add pronouns"}
+                  aria-label="Edit pronouns"
+                  title="Edit pronouns"
                 >
                   <Pencil size={11} />
                 </button>
               )}
-            </>
+            </span>
+          ) : (
+            editable && (
+              <button
+                class={s.addFieldBtn}
+                onClick={() => setEditingPronouns(true)}
+              >
+                <Pencil size={11} /> Add pronouns
+              </button>
+            )
           )}
+
           {joined && (
             <>
-              {(hasNickname || pronouns || editingPronouns) && (
+              {(showHandle || showPronouns) && (
                 <span class={s.separator}>•</span>
               )}
               <span class={s.metaItem}>
@@ -531,12 +658,16 @@ export function ProfileCard({
         {pronounsError && editingPronouns && (
           <div class={s.pronounsError}>{pronounsError}</div>
         )}
+        {usernameError && editingUsername && (
+          <div class={s.pronounsError}>{usernameError}</div>
+        )}
 
         {editingBio ? (
           <div class={s.bioEditWrap}>
             <textarea
               class={s.bioTextarea}
               autoFocus
+              aria-label="Bio"
               value={bioDraft}
               onInput={(e: any) => setBioDraft(e.target.value)}
               onKeyDown={(e) => {
@@ -566,6 +697,10 @@ export function ProfileCard({
               </button>
             </div>
           </div>
+        ) : editable && !user.bio ? (
+          <button class={s.addBioBtn} onClick={() => setEditingBio(true)}>
+            <Pencil size={13} /> Add a bio
+          </button>
         ) : (
           <div class={s.bioRow}>
             <div class={s.bioText}>
