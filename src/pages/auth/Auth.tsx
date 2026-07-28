@@ -170,12 +170,6 @@ export function Auth() {
       return;
     }
 
-    const stylesUrl = params.get("styles") || "./auth.css";
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = stylesUrl;
-    document.head.appendChild(link);
-
     let storedToken: string | null = null;
     try {
       storedToken = localStorage.getItem("rotur_token");
