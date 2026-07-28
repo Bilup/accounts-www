@@ -69,7 +69,7 @@ function usernameFromPath(parts: string[]): string | null {
 
 async function profileMeta(username: string): Promise<Meta | null> {
   const profile = await fetchJson(
-    `https://api.rotur.dev/profile?name=${encodeURIComponent(username)}&include_posts=0`,
+    `https://api.accounts.bilup.org/profile?name=${encodeURIComponent(username)}&include_posts=0`,
   );
   if (!profile || profile.error || !profile.username || profile["sys.banned"]) {
     return null;
@@ -93,13 +93,13 @@ async function profileMeta(username: string): Promise<Meta | null> {
     !isPrivate && profile.banner ? proxyImage(String(profile.banner), true) : null;
   const avatarSource = profile.pfp
     ? String(profile.pfp)
-    : `https://avatars.rotur.dev/${name.toLowerCase()}`;
+    : `https://avatars.accounts.bilup.org/${name.toLowerCase()}`;
 
   return {
-    title: `@${name} on Rotur`,
+    title: `@${name} on Bilup`,
     description:
       [bio, statBits.join(" · ")].filter(Boolean).join(" · ") ||
-      `@${name}'s Rotur account.`,
+      `@${name}'s Bilup account.`,
     image: banner || proxyImage(avatarSource, false),
     imageAlt: `${name}'s avatar`,
     card: banner ? "summary_large_image" : "summary",
@@ -109,7 +109,7 @@ async function profileMeta(username: string): Promise<Meta | null> {
 
 async function groupMeta(tag: string): Promise<Meta | null> {
   const group = await fetchJson(
-    `https://api.rotur.dev/groups/${encodeURIComponent(tag)}`,
+    `https://api.accounts.bilup.org/groups/${encodeURIComponent(tag)}`,
   );
   if (!group || group.error || !group.name) return null;
 
@@ -124,10 +124,10 @@ async function groupMeta(tag: string): Promise<Meta | null> {
   const icon = group.icon_url ? proxyImage(String(group.icon_url), false) : null;
 
   return {
-    title: `${name} on Rotur`,
+    title: `${name} on Bilup`,
     description:
-      [desc, members].filter(Boolean).join(" · ") || `Join ${name} on Rotur.`,
-    image: banner || icon || proxyImage("https://rotur.dev/Rotur Logo.png", false),
+      [desc, members].filter(Boolean).join(" · ") || `Join ${name} on Bilup.`,
+    image: banner || icon || proxyImage("https://accounts.bilup.org/logo.png", false),
     imageAlt: `${name} group`,
     card: banner ? "summary_large_image" : "summary",
     type: "website",
@@ -136,7 +136,7 @@ async function groupMeta(tag: string): Promise<Meta | null> {
 
 async function giftMeta(code: string): Promise<Meta | null> {
   const data = await fetchJson(
-    `https://api.rotur.dev/gifts/${encodeURIComponent(code)}`,
+    `https://api.accounts.bilup.org/gifts/${encodeURIComponent(code)}`,
   );
   const gift = data?.gift;
   if (!gift || !gift.code) return null;
@@ -146,10 +146,10 @@ async function giftMeta(code: string): Promise<Meta | null> {
   const note = String(gift.note || "").trim();
 
   return {
-    title: `${from} sent you ${amount} credits on Rotur`,
-    description: note || "Open this link to claim your gift on Rotur.",
-    image: proxyImage("https://rotur.dev/Rotur Logo.png", false),
-    imageAlt: "Rotur gift",
+    title: `${from} sent you ${amount} credits on Bilup`,
+    description: note || "Open this link to claim your gift on Bilup.",
+    image: proxyImage("https://accounts.bilup.org/logo.png", false),
+    imageAlt: "Bilup gift",
     card: "summary",
     type: "website",
   };

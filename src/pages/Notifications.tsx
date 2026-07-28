@@ -19,7 +19,7 @@ import {
 import { plural } from "../lib/format";
 import s from "./Notifications.module.css";
 
-const API_BASE_URL = "https://api.rotur.dev";
+const API_BASE_URL = "https://api.accounts.bilup.org";
 
 type Tab = "devices" | "senders" | "log";
 
@@ -380,7 +380,7 @@ export function Notifications() {
                   )}
                   {!endpointsLoading && endpoints.length === 0 && (
                     <div class={s.empty}>
-                      No devices registered. Install or open a Rotur app that
+                      No devices registered. Install or open a Bilup app that
                       supports push notifications to register a device.
                     </div>
                   )}

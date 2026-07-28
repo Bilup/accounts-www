@@ -34,7 +34,7 @@ import { useAuth, getToken } from "../../lib/auth";
 import { plural } from "../../lib/format";
 import s from "./Groups.module.css";
 
-const API_BASE_URL = "https://api.rotur.dev";
+const API_BASE_URL = "https://api.accounts.bilup.org";
 
 type JoinPolicy = "OPEN" | "REQUEST" | "INVITE";
 
@@ -914,7 +914,7 @@ function OnboardingWizard({
                 {tagStatus === "available" && "Tag not used · "}
                 {tagStatus === "taken" && "Tag is already taken · "}
                 {tagStatus === "invalid" && "Letters and numbers only · "}
-                URL: <code>rotur.dev/groups/{createTag || "tag"}</code>
+                URL: <code>accounts.bilup.org/groups/{createTag || "tag"}</code>
               </small>
             </div>
 

@@ -5,7 +5,7 @@ import { AuthRequired } from "../components/AccountPage";
 import { useAuth, getToken, formatDateTime } from "../lib/auth";
 import s from "./Gift.module.css";
 
-const API_BASE_URL = "https://api.rotur.dev";
+const API_BASE_URL = "https://api.accounts.bilup.org";
 
 interface PublicGift {
   code: string;
@@ -42,7 +42,7 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
         }
       } catch {
         if (live) {
-          setMessage("Could not reach Rotur. Try again later.");
+          setMessage("Could not reach Bilup Accounts. Try again later.");
           setStatus("error");
         }
       }
@@ -70,7 +70,7 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
         if (res.status === 410) setStatus("gone");
       }
     } catch {
-      setMessage("Could not reach Rotur. Try again later.");
+      setMessage("Could not reach Bilup Accounts. Try again later.");
     } finally {
       setClaiming(false);
     }
@@ -120,7 +120,7 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
                     <>
                       <img
                         class={s.avatar}
-                        src={`https://avatars.rotur.dev/${from.toLowerCase()}`}
+                        src={`https://avatars.accounts.bilup.org/${from.toLowerCase()}`}
                         alt=""
                       />
                       <span>
@@ -146,7 +146,7 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
                   <AuthRequired
                     icon={<GiftIcon size={28} />}
                     title="Sign in to claim your gift"
-                    text="Sign in to your Rotur account to add these credits to your balance."
+                    text="Sign in to your Bilup account to add these credits to your balance."
                     href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/gift/" + code)}`}
                     label="Sign in to claim"
                   />

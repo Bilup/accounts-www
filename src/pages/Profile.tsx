@@ -5,7 +5,7 @@ import { ProfileCard } from "../components/ProfileCard";
 import { useAuth, usePublicProfile, useBenefits } from "../lib/auth";
 import s from "./Profile.module.css";
 
-const API = "https://api.rotur.dev";
+const API = "https://api.accounts.bilup.org";
 
 export function Profile(props: { matches?: { username?: string } }) {
   const username = props.matches?.username || getUsernameFromUrl();
@@ -40,7 +40,7 @@ function ProfileLookup() {
         <div class={s.lookupIcon}>
           <Search size={28} />
         </div>
-        <div class={s.lookupTitle}>Look up a Rotur user</div>
+        <div class={s.lookupTitle}>Look up a Bilup user</div>
         <p class={s.lookupText}>
           Enter a username to view their public profile.
         </p>
@@ -228,7 +228,7 @@ function ProfileView({ username }: { username: string }) {
             <UserX size={28} />
           </div>
           <div class={s.errorTitle}>This user has been banned</div>
-          <p class={s.errorText}>This Rotur account is no longer available.</p>
+          <p class={s.errorText}>This Bilup account is no longer available.</p>
           <a
             href="/profile"
             class={s.lookupBtn}
@@ -252,7 +252,7 @@ function ProfileView({ username }: { username: string }) {
           </div>
           <div class={s.errorTitle}>User not found</div>
           <p class={s.errorText}>
-            We couldn't find a Rotur user named <strong>@{username}</strong>.
+            We couldn't find a Bilup user named <strong>@{username}</strong>.
           </p>
           <a
             href="/profile"

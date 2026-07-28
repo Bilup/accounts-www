@@ -49,7 +49,7 @@ interface MyCosmetics {
   owned_cosmetics: (Cosmetic | string)[];
 }
 
-const COSMETICS_API_BASE = "https://api.rotur.dev";
+const COSMETICS_API_BASE = "https://api.accounts.bilup.org";
 
 const COSMETIC_TYPES = [
   { value: "", label: "All Items" },
@@ -855,7 +855,7 @@ function ItemCardBody({
 }) {
   const formatPrice = (price: number, pricingType: string) => {
     if (pricingType === "free" || price === 0) return "Free";
-    return `${price} rotur credits`;
+    return `${price} credits`;
   };
   return (
     <div class={s.itemContent}>
@@ -1143,7 +1143,7 @@ function ItemModal({
   const trapRef = useFocusTrap<HTMLDivElement>(true);
   const formatPrice = (price: number, pricingType: string) => {
     if (pricingType === "free" || price === 0) return "Free";
-    return `${price} rotur credits`;
+    return `${price} credits`;
   };
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -1243,7 +1243,7 @@ function ItemModal({
                     ? "Obtaining..."
                     : item.pricing_type === "free" || item.price === 0
                       ? "Obtain for Free"
-                      : `Obtain for ${item.price} Rotur Credits`}
+                      : `Obtain for ${item.price} Bilup Credits`}
                 </ActionButton>
               )}
             </div>

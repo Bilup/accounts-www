@@ -27,7 +27,7 @@ import { useConfirm } from "../components/ConfirmDialog";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import s from "./TokenManager.module.css";
 
-const API_BASE_URL = "https://api.rotur.dev";
+const API_BASE_URL = "https://api.accounts.bilup.org";
 
 interface SubToken {
   id: string;

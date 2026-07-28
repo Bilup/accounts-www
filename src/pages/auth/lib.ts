@@ -1,4 +1,4 @@
-export const API = "https://api.rotur.dev";
+export const API = "https://api.accounts.bilup.org";
 
 export interface AccountData {
   username: string;
@@ -52,7 +52,7 @@ export const FORBIDDEN_PERMISSIONS = new Set([
   "account:delete",
 ]);
 
-const AUTO_LOGIN_HOSTNAMES = new Set(["rotur.dev", "originchats.com"]);
+const AUTO_LOGIN_HOSTNAMES = new Set(["accounts.bilup.org"]);
 
 const PERMISSION_DESCRIPTIONS: Record<string, string> = {
   "account:delete": "Delete your account",
@@ -129,15 +129,15 @@ const PERMISSION_CATEGORY_ICONS: Record<string, string> = {
 };
 
 export const sidebarForView: Record<View, { title: string; sub: string }> = {
-  welcome: { title: "Choose an account", sub: "to continue to Rotur" },
-  signin: { title: "Sign in", sub: "to continue to Rotur" },
-  signup: { title: "Create account", sub: "Join Rotur today" },
+  welcome: { title: "Choose an account", sub: "to continue to Bilup Accounts" },
+  signin: { title: "Sign in", sub: "to continue to Bilup Accounts" },
+  signup: { title: "Create account", sub: "Join Bilup Accounts today" },
   verify: { title: "Verify email", sub: "Check your inbox" },
   tos: { title: "Terms of Service", sub: "Review and accept to continue" },
   permissions: { title: "Account Access", sub: "Choose account to continue" },
   forgot: { title: "Reset password", sub: "We'll email you a link" },
   reset: { title: "Set new password", sub: "Enter the code from your email" },
-  confirm: { title: "Choose an account", sub: "to continue to Rotur" },
+  confirm: { title: "Choose an account", sub: "to continue to Bilup Accounts" },
 };
 
 export function describePerm(p: string): string {
@@ -174,7 +174,7 @@ export function normalizeHost(value: string): string {
 
 export function isRoturSubdomain(url: string): boolean {
   const host = getHostname(url).replace(/^www\./, "");
-  return host === "rotur.dev" || host.endsWith(".rotur.dev");
+  return host === "accounts.bilup.org" || host.endsWith(".bilup.org");
 }
 
 export function isAutoLoginHost(url: string): boolean {
@@ -196,7 +196,7 @@ export function isLocalhostHost(url: string): boolean {
 }
 
 export function returnUrl(url: string): URL {
-  return parseReturnUrl(url) || new URL("https://rotur.dev/me");
+  return parseReturnUrl(url) || new URL("https://accounts.bilup.org/me");
 }
 
 export function isValidEmail(email: string): boolean {
@@ -255,7 +255,7 @@ export function saveAccountToStorage(data: AccountData) {
     accounts.unshift({
       username: data.username,
       lastUsed: Date.now(),
-      avatar: `https://avatars.rotur.dev/${data.username}`,
+      avatar: `https://avatars.accounts.bilup.org/${data.username}`,
       token: data.key || existing?.token,
     });
     accounts = accounts.slice(0, 5);

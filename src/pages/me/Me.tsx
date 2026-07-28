@@ -55,7 +55,7 @@ import {
 import { plural } from "../../lib/format";
 import s from "./Me.module.css";
 
-const API = "https://api.rotur.dev";
+const API = "https://api.accounts.bilup.org";
 
 interface KeyRecord {
   key: string;
@@ -415,7 +415,7 @@ export function Me() {
       <AuthRequired
         icon={<LogIn size={28} />}
         title="Sign in to view your account"
-        text="You need to be signed in to view your Rotur account dashboard."
+        text="You need to be signed in to view your Bilup account dashboard."
         href={`/auth?return_to=${encodeURIComponent(`${window.location.origin}/me`)}`}
       />
     );
@@ -1434,7 +1434,7 @@ function CosmeticsSection({
         <div class={s.subCard}>
           <div class={s.subAvatar}>
             <img
-              src={`https://api.rotur.dev/cosmetics/overlays/${encodeURIComponent(activeOverlay)}.gif`}
+              src={`https://api.accounts.bilup.org/cosmetics/overlays/${encodeURIComponent(activeOverlay)}.gif`}
               alt={activeOverlay}
               class={s.subAvatarImg}
               onError={(e) => {
@@ -1735,7 +1735,7 @@ const STANDING_INFO: Record<
   banned: {
     label: "Banned",
     description:
-      "Your account has been permanently banned. You cannot sign in or use Rotur services.",
+      "Your account has been permanently banned. You cannot sign in or use Bilup Accounts services.",
     allowed: "Nothing",
     restricted: "All features",
     color: "#ef4444",

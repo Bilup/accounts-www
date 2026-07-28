@@ -46,7 +46,7 @@ import s from "./GroupDetail.module.css";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { useConfirm } from "../../components/ConfirmDialog";
 
-const API_BASE_URL = "https://api.rotur.dev";
+const API_BASE_URL = "https://api.accounts.bilup.org";
 
 type JoinPolicy = "OPEN" | "REQUEST" | "INVITE";
 type EventVisibility = "MEMBERS" | "PUBLIC";

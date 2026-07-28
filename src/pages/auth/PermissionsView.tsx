@@ -136,11 +136,11 @@ export function PermissionsView({
           </div>
           <i class={`fas fa-ellipsis ${s.dpermDots}`} />
           <div class={s.dpermIconBox}>
-            <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
+            <img src="/logo.png" alt="Bilup Accounts" draggable={false} />
           </div>
         </div>
         <h1 class={s.dpermTitle}>{requestor}</h1>
-        <p class={s.dpermSub}>wants to access your Rotur account</p>
+        <p class={s.dpermSub}>wants to access your Bilup account</p>
         <p class={s.dpermSignedIn}>
           Signed in as <strong>{username}</strong>
           <button type="button" class={s.dpermSwitch} onClick={onSwitchAccount}>

@@ -66,7 +66,7 @@ export function PrivacyPolicy() {
               <li>
                 <p>
                   <strong>Company</strong> (referred to as either "the Company",
-                  "We", "Us" or "Our" in this Agreement) refers to rotur.
+                  "We", "Us" or "Our" in this Agreement) refers to Bilup.
                 </p>
               </li>
               <li>
@@ -79,7 +79,7 @@ export function PrivacyPolicy() {
               </li>
               <li>
                 <p>
-                  <strong>Country</strong> refers to: United Kingdom
+                  <strong>Country</strong> refers to: People's Republic of China
                 </p>
               </li>
               <li>
@@ -120,13 +120,13 @@ export function PrivacyPolicy() {
               </li>
               <li>
                 <p>
-                  <strong>Website</strong> refers to rotur, accessible from{" "}
+                  <strong>Website</strong> refers to Bilup Accounts, accessible from{" "}
                   <a
-                    href="https://rotur.dev"
+                    href="https://accounts.bilup.org"
                     rel="external nofollow noopener"
                     target="_blank"
                   >
-                    https://rotur.dev
+                    https://accounts.bilup.org
                   </a>
                 </p>
               </li>
@@ -544,14 +544,14 @@ export function PrivacyPolicy() {
               contact us:
             </p>
             <ul>
-              <li>By email: mistium@icloud.com</li>
+              <li>By email: support@bilup.org</li>
             </ul>
           </div>
 
           <div class={s.contactInfo}>
             <h3>Need Help?</h3>
             <p>
-              <strong>Contact us:</strong> mistium@icloud.com
+              <strong>Contact us:</strong> support@bilup.org
             </p>
             <p>
               We're here to help answer any questions about your privacy and

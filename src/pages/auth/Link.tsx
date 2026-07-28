@@ -15,7 +15,7 @@ import {
 } from "./Shell";
 import { setToken, getToken } from "../../lib/auth";
 
-const API_BASE = "https://api.rotur.dev/link";
+const API_BASE = "https://api.accounts.bilup.org/link";
 
 type Phase = "input" | "verifying" | "redirecting" | "linking" | "done";
 type ResultType = "" | "success" | "error";
@@ -259,7 +259,7 @@ export function Link() {
               Enter that code here and sign in (or create an account & accept
               TOS).
             </li>
-            <li>We'll securely attach that device to your Rotur account.</li>
+            <li>We'll securely attach that device to your Bilup account.</li>
           </ol>
           <AuthNotice
             variant="warning"

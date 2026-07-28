@@ -6,7 +6,7 @@ import "./TermsOfService.css";
 async function callAcceptTosAPI(token: string): Promise<boolean> {
   try {
     const response = await fetch(
-      `https://api.rotur.dev/accept_tos?auth=${encodeURIComponent(token)}`,
+      `https://api.accounts.bilup.org/accept_tos?auth=${encodeURIComponent(token)}`,
       { method: "POST", headers: { "Content-Type": "application/json" } },
     );
     if (response.ok) {
@@ -167,7 +167,7 @@ export function TermsOfService() {
                 <label htmlFor="accept-terms">
                   I have read and agree to the Terms of Service. I understand
                   that by checking this box and clicking "Accept Terms", I am
-                  entering into a legally binding agreement with Rotur.
+                  entering into a legally binding agreement with Bilup Accounts.
                 </label>
               </div>
               <button
@@ -183,7 +183,7 @@ export function TermsOfService() {
             <div className="contact-info">
               <p className="title">Need help?</p>
               <p className="sub">
-                Contact us at mistium@icloud.com for any questions about these
+                Contact us at support@bilup.org for any questions about these
                 terms.
               </p>
             </div>
@@ -215,8 +215,8 @@ export function TermsOfService() {
             </div>
             <div className="contact-info">
               <p className="sub">
-                You can now safely close this window or proceed to use Rotur
-                services.
+                You can now safely close this window or proceed to use Bilup 
+                Accounts services.
               </p>
             </div>
           </div>

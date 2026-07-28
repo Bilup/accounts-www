@@ -40,7 +40,7 @@ export function AuthMain({ children }: { children: any }) {
 export function AuthLogo() {
   return (
     <div class={s.logo}>
-      <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
+      <img src="/logo.png" alt="Bilup Accounts" draggable={false} />
     </div>
   );
 }

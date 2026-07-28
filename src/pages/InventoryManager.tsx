@@ -23,7 +23,7 @@ import { useAuth, getToken } from "../lib/auth";
 import { useConfirm } from "../components/ConfirmDialog";
 import s from "./InventoryManager.module.css";
 
-const API_BASE_URL = "https://api.rotur.dev";
+const API_BASE_URL = "https://api.accounts.bilup.org";
 
 interface InventoryItem {
   name: string;

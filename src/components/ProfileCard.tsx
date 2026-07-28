@@ -33,7 +33,7 @@ import {
 import { UserAvatar } from "./UserAvatar";
 import { ImageCropper, type CropperKind } from "./ImageCropper";
 
-const API = "https://api.rotur.dev";
+const API = "https://api.accounts.bilup.org";
 
 type FriendState = "self" | "friend" | "pending" | "blocked" | "none";
 

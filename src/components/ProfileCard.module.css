@@ -678,12 +678,12 @@
 
 .actionBtnAccent {
   background-color: transparent;
-  border-color: rgba(194, 153, 207, 0.45);
+  border-color: rgba(117, 193, 196, 0.45);
   color: var(--accent);
 }
 
 .actionBtnAccent:hover {
-  background-color: rgba(194, 153, 207, 0.08);
+  background-color: rgba(117, 193, 196, 0.08);
   border-color: var(--accent);
 }
 

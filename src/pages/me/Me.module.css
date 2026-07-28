@@ -812,8 +812,8 @@
   padding: 1rem 1.25rem;
   background: linear-gradient(
     135deg,
-    rgba(194, 153, 207, 0.08) 0%,
-    rgba(194, 153, 207, 0.03) 100%
+    rgba(117, 193, 196, 0.08) 0%,
+    rgba(117, 193, 196, 0.03) 100%
   );
   border: 1px solid var(--accent-10);
   border-radius: 0.625rem;

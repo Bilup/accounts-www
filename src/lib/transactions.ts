@@ -173,8 +173,7 @@ export function transactionCounterparty(tx: Transaction): string {
   if (
     !meta.showCounterparty ||
     !user ||
-    user === "rotur" ||
-    user === "roturBOT"
+    user === "Bilup"
   ) {
     return "";
   }

@@ -1,4 +1,4 @@
-const AVATARS_BASE = "https://avatars.rotur.dev";
+const AVATARS_BASE = "https://avatars.accounts.bilup.org";
 
 export function avatarUrl(username: string): string {
   return `${AVATARS_BASE}/${username}`;

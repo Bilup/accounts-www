@@ -84,7 +84,7 @@ export function UserAvatar({
           : pfp;
     } else {
       const stripped = pfp.replace(/^\/+/, "");
-      const full = `https://avatars.rotur.dev/${stripped}`;
+      const full = `https://avatars.accounts.bilup.org/${stripped}`;
       src = pfpBust > 0 ? `${full}?v=${pfpBust}` : full;
     }
   } else {

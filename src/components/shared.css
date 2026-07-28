@@ -43,8 +43,7 @@
 :root {
   --gradient-heading: linear-gradient(
     135deg,
-    #f5f7fa 0%,
-    var(--accent) 60%,
+    var(--accent) 0%,
     var(--accent-dim) 100%
   );
   --section-padding: 6rem 1.5rem;

@@ -25,7 +25,7 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useConfirm } from "../components/ConfirmDialog";
 import s from "./KeyManager.module.css";
 
-const API_BASE_URL = "https://api.rotur.dev";
+const API_BASE_URL = "https://api.accounts.bilup.org";
 
 interface KeyData {
   key: string;

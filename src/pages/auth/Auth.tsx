@@ -102,7 +102,7 @@ export function Auth() {
   const [resetMsg, setResetMsg] = useState<string>("");
 
   // Scope-aware auth state
-  const returnToRef = useRef<string>("https://rotur.dev/me");
+  const returnToRef = useRef<string>("https://accounts.bilup.org/me");
   const systemNameRef = useRef<string>("rotur");
   const pendingVerificationRef = useRef<{
     token: string;
@@ -135,7 +135,7 @@ export function Auth() {
     const params = new URLSearchParams(location.search);
     const savedReturnTo = sessionStorage.getItem("rotur_return_to");
     returnToRef.current =
-      params.get("return_to") ?? savedReturnTo ?? "https://rotur.dev/me";
+      params.get("return_to") ?? savedReturnTo ?? "https://accounts.bilup.org/me";
     const systemParam = params.get("system");
     if (systemParam?.trim()) systemNameRef.current = systemParam.trim();
     sessionStorage.removeItem("rotur_return_to");
@@ -937,7 +937,7 @@ export function Auth() {
     quickLogin({
       username: pending.username,
       lastUsed: Date.now(),
-      avatar: `https://avatars.rotur.dev/${pending.username}`,
+      avatar: `https://avatars.accounts.bilup.org/${pending.username}`,
       token: pending.token,
     });
   }, [quickLogin]);
@@ -1107,7 +1107,7 @@ export function Auth() {
             />
             <div class={s.accountItemInfo}>
               <h3>{account.username}</h3>
-              <p>Rotur Account</p>
+              <p>Bilup Account</p>
             </div>
           </button>
         ) : savedAccounts.length === 0 ? (
@@ -1144,7 +1144,7 @@ export function Auth() {
                       ? quickLoginBusy === a.username
                         ? "Signing in..."
                         : "Click to sign in"
-                      : "Rotur Account"}
+                      : "Bilup Account"}
                   </p>
                 </div>
                 {a.token && quickLoginBusy !== a.username && (
@@ -1193,15 +1193,15 @@ export function Auth() {
       ) : view === "confirm" ? (
         <div class={s.welcomeArea}>
           <div class={s.welcomeLogo}>
-            <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
+            <img src="/logo.png" alt="Bilup Accounts" draggable={false} />
           </div>
           <div class={s.welcomeContent}>
             <h1>
               {pendingAutoLoginRef.current?.username
                 ? `Continue as ${pendingAutoLoginRef.current.username}?`
-                : "Continue to Rotur?"}
+                : "Continue to Bilup Accounts?"}
             </h1>
-            <p>You're already signed in to Rotur. Continue to {requestor}?</p>
+            <p>You're already signed in to Bilup Accounts. Continue to {requestor}?</p>
           </div>
           <button
             type="button"
@@ -1216,7 +1216,7 @@ export function Auth() {
             />
             <div class={s.confirmCardInfo}>
               <h3>{pendingAutoLoginRef.current?.username || "Your account"}</h3>
-              <p>Rotur Account</p>
+              <p>Bilup Account</p>
             </div>
             {quickLoginBusy ? (
               <i class={`fas fa-spinner fa-spin ${s.confirmCardArrow}`} />
@@ -1236,7 +1236,7 @@ export function Auth() {
           <AuthTosLinks>
             <p>
               <a
-                href="https://rotur.dev/terms-of-service?from=auth"
+                href="https://accounts.bilup.org/terms-of-service?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1244,7 +1244,7 @@ export function Auth() {
               </a>{" "}
               •{" "}
               <a
-                href="https://rotur.dev/privacy-policy?from=auth"
+                href="https://accounts.bilup.org/privacy-policy?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1256,10 +1256,10 @@ export function Auth() {
       ) : view === "welcome" ? (
         <div class={s.welcomeArea}>
           <div class={s.welcomeLogo}>
-            <img src="/Rotur Logo.png" alt="Rotur" draggable={false} />
+            <img src="/logo.png" alt="Bilup Accounts" draggable={false} />
           </div>
           <div class={s.welcomeContent}>
-            <h1>Welcome to Rotur</h1>
+            <h1>Welcome to Bilup Accounts</h1>
             <p>Sign in to access your account or create a new one.</p>
           </div>
           <div class={s.welcomeButtons}>
@@ -1276,7 +1276,7 @@ export function Auth() {
           <AuthTosLinks>
             <p>
               <a
-                href="https://rotur.dev/terms-of-service?from=auth"
+                href="https://accounts.bilup.org/terms-of-service?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1284,7 +1284,7 @@ export function Auth() {
               </a>{" "}
               •{" "}
               <a
-                href="https://rotur.dev/privacy-policy?from=auth"
+                href="https://accounts.bilup.org/privacy-policy?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1296,8 +1296,8 @@ export function Auth() {
       ) : view === "signin" ? (
         <AuthMain>
           <AuthLogo />
-          <AuthHeading>Sign in to Rotur</AuthHeading>
-          <AuthSubheading>Use your Rotur account</AuthSubheading>
+          <AuthHeading>Sign in to Bilup Accounts</AuthHeading>
+          <AuthSubheading>Use your Bilup account</AuthSubheading>
           <form class={s.signinForm} onSubmit={handleSigninSubmit}>
             <AuthFormGroup>
               <AuthInput
@@ -1345,7 +1345,7 @@ export function Auth() {
             </p>
             <p style={{ marginTop: "0.25rem" }}>
               <a
-                href="https://rotur.dev/terms-of-service?from=auth"
+                href="https://accounts.bilup.org/terms-of-service?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1353,7 +1353,7 @@ export function Auth() {
               </a>{" "}
               •{" "}
               <a
-                href="https://rotur.dev/privacy-policy?from=auth"
+                href="https://accounts.bilup.org/privacy-policy?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1397,7 +1397,7 @@ export function Auth() {
           <AuthLogo />
           <AuthHeading>Accept the Terms of Service</AuthHeading>
           <AuthSubheading>
-            One last step before you can use Rotur. Please read and accept our
+            One last step before you can use Bilup Accounts. Please read and accept our
             terms to continue.
           </AuthSubheading>
           <div ref={tosContentRef} class={s.tosFrameContent}>
@@ -1436,7 +1436,7 @@ export function Auth() {
         <AuthMain>
           <AuthLogo />
           <AuthHeading>Create account</AuthHeading>
-          <AuthSubheading>Join Rotur today</AuthSubheading>
+          <AuthSubheading>Join Bilup Accounts today</AuthSubheading>
           <form onSubmit={handleSignupSubmit}>
             <AuthFormGroup>
               <AuthInput
@@ -1510,7 +1510,7 @@ export function Auth() {
             </p>
             <p style={{ marginTop: "0.25rem" }}>
               <a
-                href="https://rotur.dev/terms-of-service?from=auth"
+                href="https://accounts.bilup.org/terms-of-service?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1518,7 +1518,7 @@ export function Auth() {
               </a>{" "}
               •{" "}
               <a
-                href="https://rotur.dev/privacy-policy?from=auth"
+                href="https://accounts.bilup.org/privacy-policy?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1573,7 +1573,7 @@ export function Auth() {
             </p>
             <p style={{ marginTop: "0.25rem" }}>
               <a
-                href="https://rotur.dev/terms-of-service?from=auth"
+                href="https://accounts.bilup.org/terms-of-service?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -1581,7 +1581,7 @@ export function Auth() {
               </a>{" "}
               •{" "}
               <a
-                href="https://rotur.dev/privacy-policy?from=auth"
+                href="https://accounts.bilup.org/privacy-policy?from=auth"
                 target="_blank"
                 rel="noopener noreferrer"
               >

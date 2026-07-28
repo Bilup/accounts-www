@@ -1,7 +1,4 @@
 import { Router, Route } from "preact-router";
-import { Home } from "./pages/Home";
-import { Services } from "./pages/Services";
-import { Premium } from "./pages/Premium";
 import { NotFound } from "./pages/NotFound";
 import { Auth } from "./pages/auth/Auth";
 import { Link } from "./pages/auth/Link";
@@ -29,14 +26,17 @@ function VanityProfile(props: { matches?: { atname?: string } }) {
   return <NotFound />;
 }
 
+function Home() {
+  window.location.href = "/me";
+  return null;
+}
+
 export function App() {
   return (
     <>
       <StarField />
       <Router>
         <Route path="/" component={Home} />
-        <Route path="/services" component={Services} />
-        <Route path="/premium" component={Premium} />
         <Route path="/inventory-manager" component={InventoryManager} />
         <Route path="/key-manager" component={KeyManager} />
         <Route path="/token-manager" component={TokenManager} />

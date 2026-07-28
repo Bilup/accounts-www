@@ -267,7 +267,7 @@ export type PublicProfile = {
 };
 
 const STORAGE_KEY = "rotur_token";
-const API_BASE = "https://api.rotur.dev";
+const API_BASE = "https://api.accounts.bilup.org";
 
 let currentUser: AuthUser | null = null;
 let currentToken: string | null = null;

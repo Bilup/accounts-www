@@ -6,9 +6,9 @@ export function Footer() {
       <div class={s.inner}>
         <div class={s.top}>
           <div class={s.brand}>
-            <img src="/Rotur Logo.png" alt="Rotur" class={s.brandImg} />
-            <span class={s.brandName}>Rotur</span>
-            <span class={s.brandTagline}>- Connecting worlds</span>
+            <img src="/logo.png" alt="Bilup Accounts" class={s.brandImg} />
+            <span class={s.brandName}>Bilup Accounts</span>
+            <span class={s.brandTagline}>Based on <a href="https://rotur.dev">Rotur</a></span>
           </div>
           <div class={s.legal}>
             <a href="/terms-of-service" class={s.legalLink}>
@@ -20,7 +20,7 @@ export function Footer() {
             </a>
           </div>
         </div>
-        <p class={s.copyright}>&copy; 2026 Rotur. All rights reserved.</p>
+        <p class={s.copyright}>&copy; 2026 Bilup Accounts. All rights reserved.</p>
       </div>
     </footer>
   );

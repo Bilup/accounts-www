@@ -13,7 +13,7 @@ import {
   AuthNotice,
 } from "./Shell";
 
-const API = "https://api.rotur.dev";
+const API = "https://api.accounts.bilup.org";
 
 type BtnState = { text: string; disabled: boolean; color: string };
 
