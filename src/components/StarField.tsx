@@ -45,7 +45,6 @@ export function StarField() {
       stars.push(createStar(width, height));
     }
 
-    let lastTime = performance.now();
     let animId = 0;
 
     function drawStar(star: Star, time: number) {
@@ -65,8 +64,6 @@ export function StarField() {
     }
 
     function update(time: number) {
-      lastTime = time;
-
       ctx!.clearRect(0, 0, width, height);
 
       for (const star of stars) {
@@ -100,7 +97,6 @@ export function StarField() {
       if (reduceMotion.matches) {
         drawStatic();
       } else {
-        lastTime = performance.now();
         animId = requestAnimationFrame(update);
       }
     }
