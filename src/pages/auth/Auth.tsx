@@ -1043,7 +1043,7 @@ export function Auth() {
       }
       try {
         captchaWidgetIdRef.current = hcaptcha.render(el, {
-          sitekey: "09def114-5bba-4ba6-8302-640aec7c1df2",
+          sitekey: "6532c9dc-2f18-4352-8a6a-6c08b6c2a6c4",
         });
       } catch {}
     };
