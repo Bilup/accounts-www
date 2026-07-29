@@ -103,7 +103,7 @@ export function Auth() {
 
   // Scope-aware auth state
   const returnToRef = useRef<string>("https://accounts.bilup.org/me");
-  const systemNameRef = useRef<string>("rotur");
+  const systemNameRef = useRef<string>("web");
   const pendingVerificationRef = useRef<{
     token: string;
     username: string;
