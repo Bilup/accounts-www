@@ -1,3 +1,4 @@
+import { useI18n } from "../../i18n/i18n";
 import { useState, useEffect, useMemo, useCallback } from "preact/hooks";
 import {
   Users,
@@ -95,14 +96,15 @@ interface GroupProductSubscription {
 
 type MainTab = "profile" | "social" | "billing" | "security";
 
-const MAIN_TABS: { id: MainTab; label: string; icon: typeof Users }[] = [
-  { id: "profile", label: "Profile", icon: LayoutGrid },
-  { id: "social", label: "Social", icon: Users },
-  { id: "billing", label: "Billing", icon: CreditCard },
-  { id: "security", label: "Security", icon: Shield },
+const MAIN_TABS: { id: MainTab; labelKey: string; icon: typeof Users }[] = [
+  { id: "profile", labelKey: "me.profile", icon: LayoutGrid },
+  { id: "social", labelKey: "me.social", icon: Users },
+  { id: "billing", labelKey: "me.billing", icon: CreditCard },
+  { id: "security", labelKey: "me.security", icon: Shield },
 ];
 
 export function Me() {
+  const { t } = useI18n();
   const { user, isLoggedIn, token, reload, logout } = useAuth();
   const [confirm, confirmDialog] = useConfirm();
   const { benefits } = useBenefits();
@@ -414,8 +416,8 @@ export function Me() {
     return (
       <AuthRequired
         icon={<LogIn size={28} />}
-        title="Sign in to view your account"
-        text="You need to be signed in to view your Bilup account dashboard."
+        title={t("me.signInToView")}
+        text={t("me.signInText")}
         href={`/auth?return_to=${encodeURIComponent(`${window.location.origin}/me`)}`}
       />
     );
@@ -427,13 +429,13 @@ export function Me() {
     <AccountPage>
       {confirmDialog}
       <AccountTabs
-        tabs={MAIN_TABS}
+        tabs={MAIN_TABS.map((tab) => ({ ...tab, label: t(tab.labelKey) }))}
         active={activeTab}
         onChange={setActiveTab}
-        ariaLabel="Account sections"
+        ariaLabel={t("me.accountSections")}
         actions={
-          <button class={s.logoutBtn} onClick={logout} title="Sign out">
-            <LogOut size={14} /> Logout
+          <button class={s.logoutBtn} onClick={logout} title={t("me.logout")}>
+            <LogOut size={14} /> {t("me.logout")}
           </button>
         }
       />
@@ -571,21 +573,22 @@ function FriendsSection({
   onAction,
   onCancelRequest,
 }: FriendsSectionProps) {
+  const { t } = useI18n();
   const list = tab === "all" ? friends : requests;
   const pendingCount = requests.length + outgoingRequests.length;
 
   return (
     <AccountSection
       icon={<Users size={18} />}
-      title="Friends"
-      subtitle={`${friends.length} connected • ${pendingCount} pending`}
+      title={t("me.friends")}
+      subtitle={`${friends.length} ${t("me.connected")} • ${pendingCount} ${t("me.pending")}`}
     >
       <div class={s.addFriendForm}>
         <input
           type="text"
           class={s.addFriendInput}
-          placeholder="Add a friend by username..."
-          aria-label="Add a friend by username"
+          placeholder={t("me.addFriendPlaceholder")}
+          aria-label={t("me.addFriendPlaceholder")}
           value={input}
           disabled={sending}
           onInput={(e: any) => setInput(e.target.value)}
@@ -596,7 +599,7 @@ function FriendsSection({
           onClick={onSend}
           disabled={!input.trim() || sending}
         >
-          <UserPlus size={14} /> {sending ? "Sending…" : "Add"}
+          <UserPlus size={14} /> {sending ? t("me.sending") : t("me.add")}
         </button>
       </div>
       {error && (
@@ -610,13 +613,13 @@ function FriendsSection({
           class={`${s.friendsTab} ${tab === "all" ? s.active : ""}`}
           onClick={() => setTab("all")}
         >
-          All <span class={s.friendsTabCount}>{friends.length}</span>
+          {t("me.all")} <span class={s.friendsTabCount}>{friends.length}</span>
         </button>
         <button
           class={`${s.friendsTab} ${tab === "requests" ? s.active : ""}`}
           onClick={() => setTab("requests")}
         >
-          Requests <span class={s.friendsTabCount}>{pendingCount}</span>
+          {t("me.requests")} <span class={s.friendsTabCount}>{pendingCount}</span>
         </button>
       </div>
 
@@ -631,8 +634,8 @@ function FriendsSection({
       ) : list.length === 0 ? (
         <EmptyState
           icon={<Users size={24} />}
-          title="No friends yet"
-          text="Add a friend by their username to get started."
+          title={t("me.noFriends")}
+          text={t("me.addFriendStart")}
         />
       ) : (
         <div class={s.friendGrid}>
@@ -643,7 +646,7 @@ function FriendsSection({
                 <div class={s.friendInfo}>
                   <div class={s.friendName}>@{username}</div>
                   <div class={s.friendHandle}>
-                    {tab === "all" ? "Connected" : "Wants to connect"}
+                    {tab === "all" ? t("me.connectedState") : t("me.wantsToConnect")}
                   </div>
                 </div>
               </a>
@@ -651,8 +654,8 @@ function FriendsSection({
                 <button
                   class={`${s.iconBtn} ${s.iconBtnDanger}`}
                   onClick={() => onAction("remove", username)}
-                  title="Remove friend"
-                  aria-label="Remove friend"
+                  title={t("me.removeFriend")}
+                  aria-label={t("me.removeFriend")}
                 >
                   <UserMinus size={14} />
                 </button>
@@ -678,6 +681,7 @@ function RequestsSection({
   onAction: (action: "accept" | "reject" | "remove", username: string) => void;
   onCancelRequest: (username: string) => void;
 }) {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const q = search.trim().toLowerCase();
   const filteredIncoming = q
@@ -696,8 +700,8 @@ function RequestsSection({
     return (
       <EmptyState
         icon={<Inbox size={24} />}
-        title="No pending requests"
-        text="Friend requests you send and receive will appear here."
+        title={t("me.noPendingRequests")}
+        text={t("me.friendRequestsAppear")}
       />
     );
   }
@@ -710,7 +714,7 @@ function RequestsSection({
           <input
             type="text"
             class={s.requestSearchInput}
-            placeholder="Search requests..."
+            placeholder={t("me.searchRequests")}
             value={search}
             onInput={(e: any) => setSearch(e.target.value)}
           />
@@ -720,28 +724,28 @@ function RequestsSection({
       {incoming.length > 0 && (
         <RequestGroup
           icon={<ArrowRightLeft size={13} />}
-          title="Incoming"
+          title={t("me.incoming")}
           count={filteredIncoming.length}
         >
           {filteredIncoming.map((username) => (
             <RequestCard
               key={username}
               username={username}
-              subtitle="Wants to connect"
+              subtitle={t("me.wantsToConnect")}
             >
               <button
                 class={`${s.iconBtn} ${s.iconBtnSuccess}`}
                 onClick={() => onAction("accept", username)}
-                title="Accept"
-                aria-label={`Accept ${username}'s request`}
+                title={t("me.accept")}
+                aria-label={`${t("me.accept")} ${username}`}
               >
                 <Check size={14} />
               </button>
               <button
                 class={`${s.iconBtn} ${s.iconBtnDanger}`}
                 onClick={() => onAction("reject", username)}
-                title="Reject"
-                aria-label={`Reject ${username}'s request`}
+                title={t("me.reject")}
+                aria-label={`${t("me.reject")} ${username}`}
               >
                 <X size={14} />
               </button>
@@ -753,23 +757,23 @@ function RequestsSection({
       {(outgoing.length > 0 || outgoingLoading) && (
         <RequestGroup
           icon={<Send size={13} />}
-          title="Outgoing"
+          title={t("me.outgoing")}
           count={filteredOutgoing.length}
         >
           {outgoingLoading && outgoing.length === 0 ? (
-            <div class={s.requestsLoading}>Loading...</div>
+            <div class={s.requestsLoading}>{t("me.sending")}</div>
           ) : (
             filteredOutgoing.map((username) => (
               <RequestCard
                 key={username}
                 username={username}
-                subtitle="Outgoing request"
+                subtitle={t("me.outgoingRequest")}
               >
                 <button
                   class={`${s.iconBtn} ${s.iconBtnDanger}`}
                   onClick={() => onCancelRequest(username)}
-                  title="Cancel request"
-                  aria-label={`Cancel request to ${username}`}
+                  title={t("me.cancelRequest")}
+                  aria-label={`${t("me.cancelRequest")} ${username}`}
                 >
                   <X size={14} />
                 </button>
@@ -782,8 +786,8 @@ function RequestsSection({
       {noResults && (
         <EmptyState
           icon={<Search size={24} />}
-          title="No requests found"
-          text="Try a different search."
+          title={t("me.noRequestsFound")}
+          text={t("me.tryDifferentSearch")}
         />
       )}
     </div>
@@ -855,16 +859,17 @@ function SubscriptionsSection({
   error,
   loading,
 }: SubscriptionsSectionProps) {
+  const { t } = useI18n();
   return (
     <AccountSection
       icon={<CreditCard size={18} />}
-      title="Subscriptions"
-      subtitle={`${paying.length + groupSubs.length} active • ${
+      title={t("me.subscriptions")}
+      subtitle={`${paying.length + groupSubs.length} ${t("me.activeCreated")} • ${
         created.length
-      } created`}
+      } ${t("me.created")}`}
       actions={
         <a href="/key-manager" class={s.linkBtn}>
-          <Key size={14} /> Manage Keys
+          <Key size={14} /> {t("me.manageKeys")}
         </a>
       }
     >
@@ -876,7 +881,7 @@ function SubscriptionsSection({
 
       {paying.length > 0 && (
         <>
-          <div class={s.sectionDivider}>Key Subscriptions</div>
+          <div class={s.sectionDivider}>{t("me.keySubscriptions")}</div>
           {paying.map((sub) => {
             const mine = keyUserData(sub, username);
             return (
@@ -889,25 +894,25 @@ function SubscriptionsSection({
                   <div class={s.subInfo}>
                     <div class={s.subName}>{sub.name}</div>
                     <div class={s.subMeta}>
-                      by @{sub.creator} • {sub.price} credits
+                      {t("me.by")} @{sub.creator} • {sub.price} {t("me.credits")}
                       {mine?.cancel_at
-                        ? ` • Active until ${formatBillingDate(mine.cancel_at)}`
+                        ? ` • ${t("me.activeUntil")} ${formatBillingDate(mine.cancel_at)}`
                         : mine?.next_billing
-                          ? ` • Next ${formatBillingDate(mine.next_billing)}`
+                          ? ` • ${t("me.next")} ${formatBillingDate(mine.next_billing)}`
                           : ""}
                     </div>
                   </div>
                 </a>
                 {mine?.cancel_at ? (
                   <span class={s.statusPill}>
-                    Cancels {formatBillingDate(mine.cancel_at)}
+                    {t("me.cancelsOn")} {formatBillingDate(mine.cancel_at)}
                   </span>
                 ) : (
                   <button
                     class={`${s.subBtn} ${s.subBtnDanger}`}
                     onClick={() => onCancel(sub.key)}
                   >
-                    Cancel
+                    {t("me.cancel")}
                   </button>
                 )}
               </div>
@@ -918,7 +923,7 @@ function SubscriptionsSection({
 
       {groupSubs.length > 0 && (
         <>
-          <div class={s.sectionDivider}>Group Role Subscriptions</div>
+          <div class={s.sectionDivider}>{t("me.groupRoleSubs")}</div>
           {groupSubs.map((sub) => {
             const paidThrough = sub.cancel_at || sub.next_billing;
             return (
@@ -926,22 +931,22 @@ function SubscriptionsSection({
                 <div class={s.subInfo}>
                   <div class={s.subName}>{sub.product_name}</div>
                   <div class={s.subMeta}>
-                    @{sub.group_tag} • {sub.role_name || "Role"}
+                    @{sub.group_tag} • {sub.role_name || t("me.role")}
                     {sub.cancel_at
-                      ? ` • Cancels ${formatBillingDate(paidThrough)}`
-                      : ` • Next ${formatBillingDate(sub.next_billing)}`}
+                      ? ` • ${t("me.cancelsOn")} ${formatBillingDate(paidThrough)}`
+                      : ` • ${t("me.next")} ${formatBillingDate(sub.next_billing)}`}
                   </div>
                 </div>
                 {sub.cancel_at ? (
                   <span class={s.statusPill}>
-                    Active until {formatBillingDate(paidThrough)}
+                    {t("me.activeUntil")} {formatBillingDate(paidThrough)}
                   </span>
                 ) : (
                   <button
                     class={`${s.subBtn} ${s.subBtnDanger}`}
                     onClick={() => onCancelGroup(sub.group_tag, sub.product_id)}
                   >
-                    Cancel
+                    {t("me.cancel")}
                   </button>
                 )}
               </div>
@@ -952,7 +957,7 @@ function SubscriptionsSection({
 
       {created.length > 0 && (
         <>
-          <div class={s.sectionDivider}>Your Services</div>
+          <div class={s.sectionDivider}>{t("me.yourServices")}</div>
           {created.map((sub) => {
             const subCount = Array.isArray(sub.users)
               ? sub.users.length
@@ -963,9 +968,9 @@ function SubscriptionsSection({
                 <div class={s.subInfo}>
                   <div class={s.subName}>{sub.name}</div>
                   <div class={s.subMeta}>
-                    {sub.price} credits/mo • {subCount}{" "}
-                    {plural(subCount, "subscriber")}
-                    {sub.total_income ? ` • ${sub.total_income} earned` : ""}
+                    {sub.price} {t("me.creditsPerMonth")} • {subCount}{" "}
+                    {plural(subCount, t("me.subscriber"), t("me.subscribers"))}
+                    {sub.total_income ? ` • ${sub.total_income} ${t("me.earned")}` : ""}
                   </div>
                 </div>
               </div>
@@ -974,7 +979,7 @@ function SubscriptionsSection({
         </>
       )}
 
-      {loading && <div class={s.loading}>Loading subscriptions…</div>}
+      {loading && <div class={s.loading}>{t("me.loadingSubs")}</div>}
 
       {!loading &&
         paying.length === 0 &&
@@ -982,8 +987,8 @@ function SubscriptionsSection({
         groupSubs.length === 0 && (
           <EmptyState
             icon={<CreditCard size={24} />}
-            title="No subscriptions"
-            text="Create or subscribe to services to see them here."
+            title={t("me.noSubscriptions")}
+            text={t("me.noSubsText")}
           />
         )}
     </AccountSection>
@@ -1001,24 +1006,25 @@ function TransactionsSection({
   stats,
   recent,
 }: TransactionsSectionProps) {
+  const { t } = useI18n();
   return (
     <AccountSection
       icon={<Receipt size={18} />}
-      title="Transactions"
-      subtitle="Last 30 days"
+      title={t("me.transactions")}
+      subtitle={t("me.last30Days")}
       actions={
         <a href="/me/transactions" class={s.linkBtn}>
-          <ArrowUpRight size={14} /> View all
+          <ArrowUpRight size={14} /> {t("me.viewAll")}
         </a>
       }
     >
       <div class={s.txSummary}>
         <div class={s.summaryCard}>
-          <div class={s.summaryLabel}>Balance</div>
+          <div class={s.summaryLabel}>{t("me.balance")}</div>
           <div class={s.summaryValue}>{credits.toLocaleString()}</div>
         </div>
         <div class={s.summaryCard}>
-          <div class={s.summaryLabel}>Income</div>
+          <div class={s.summaryLabel}>{t("me.income")}</div>
           <div class={`${s.summaryValue} ${s.income}`}>
             +
             {stats.totalIncome.toLocaleString(undefined, {
@@ -1027,7 +1033,7 @@ function TransactionsSection({
           </div>
         </div>
         <div class={s.summaryCard}>
-          <div class={s.summaryLabel}>Spent</div>
+          <div class={s.summaryLabel}>{t("me.spent")}</div>
           <div class={`${s.summaryValue} ${s.expense}`}>
             -
             {stats.totalExpense.toLocaleString(undefined, {
@@ -1036,7 +1042,7 @@ function TransactionsSection({
           </div>
         </div>
         <div class={s.summaryCard}>
-          <div class={s.summaryLabel}>Net</div>
+          <div class={s.summaryLabel}>{t("me.net")}</div>
           <div
             class={`${s.summaryValue} ${stats.net >= 0 ? s.income : s.expense}`}
           >
@@ -1075,8 +1081,8 @@ function TransactionsSection({
       ) : (
         <EmptyState
           icon={<Receipt size={24} />}
-          title="No transactions yet"
-          text="Your transaction history will appear here."
+          title={t("me.noTransactions")}
+          text={t("me.transactionHistory")}
         />
       )}
     </AccountSection>
@@ -1084,28 +1090,29 @@ function TransactionsSection({
 }
 
 function NotificationsSection() {
+  const { t } = useI18n();
   return (
     <AccountSection
       icon={<Bell size={18} />}
-      title="Notifications"
-      subtitle="Manage devices, allowed senders, and delivery log"
+      title={t("me.notifications")}
+      subtitle={t("me.notificationsSub")}
       actions={
         <a href="/notifications" class={s.linkBtn}>
-          <ArrowUpRight size={14} /> Open
+          <ArrowUpRight size={14} /> {t("me.open")}
         </a>
       }
     >
       <EmptyState
         icon={<Bell size={24} />}
-        title="Notification settings"
-        text="Register devices, choose which sources can notify you, and review your recent delivery history."
+        title={t("me.notificationSettings")}
+        text={t("me.notificationsDesc")}
       >
         <a
           href="/notifications"
           class={s.btnPrimary}
           style={{ marginTop: "0.75rem" }}
         >
-          <Bell size={14} /> View notifications
+          <Bell size={14} /> {t("me.viewNotifications")}
         </a>
       </EmptyState>
     </AccountSection>
@@ -1113,6 +1120,7 @@ function NotificationsSection() {
 }
 
 function ChangePasswordSection() {
+  const { t } = useI18n();
   const { token, logout } = useAuth();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -1127,28 +1135,19 @@ function ChangePasswordSection() {
       e.preventDefault();
       setMsg(null);
       if (next.length < 8) {
-        setMsg({
-          kind: "err",
-          text: "New password must be at least 8 characters",
-        });
+        setMsg({ kind: "err", text: t("me.password8Chars") });
         return;
       }
       if (next !== confirm) {
-        setMsg({ kind: "err", text: "New passwords do not match" });
+        setMsg({ kind: "err", text: t("me.passwordsNotMatch") });
         return;
       }
       if (current === next) {
-        setMsg({
-          kind: "err",
-          text: "New password must be different from the current one",
-        });
+        setMsg({ kind: "err", text: t("me.passwordDifferent") });
         return;
       }
       if (!token) {
-        setMsg({
-          kind: "err",
-          text: "Please sign in again to change your password",
-        });
+        setMsg({ kind: "err", text: t("me.signInAgain") });
         return;
       }
       setBusy(true);
@@ -1168,15 +1167,12 @@ function ChangePasswordSection() {
         if (!res.ok) {
           setMsg({
             kind: "err",
-            text: data.error || "Failed to change password",
+            text: data.error || t("me.failedChangePassword"),
           });
           setBusy(false);
           return;
         }
-        setMsg({
-          kind: "ok",
-          text: "Password updated. Please sign in again.",
-        });
+        setMsg({ kind: "ok", text: t("me.passwordUpdated") });
         setCurrent("");
         setNext("");
         setConfirm("");
@@ -1184,24 +1180,24 @@ function ChangePasswordSection() {
           logout();
         }, 1500);
       } catch {
-        setMsg({ kind: "err", text: "Network error" });
+        setMsg({ kind: "err", text: t("me.networkError") });
       } finally {
         setBusy(false);
       }
     },
-    [current, next, confirm, token, logout],
+    [current, next, confirm, token, logout, t],
   );
 
   return (
     <AccountSection
       icon={<Key size={18} />}
-      title="Change Password"
-      subtitle="Update the password used to sign in to your account"
+      title={t("me.changePassword")}
+      subtitle={t("me.changePasswordSub")}
     >
       <form onSubmit={onSubmit} class={s.changePwForm}>
         <div class={s.changePwField}>
           <label class={s.changePwLabel} for="cp-current">
-            Current password
+            {t("me.currentPassword")}
           </label>
           <input
             id="cp-current"
@@ -1216,7 +1212,7 @@ function ChangePasswordSection() {
         </div>
         <div class={s.changePwField}>
           <label class={s.changePwLabel} for="cp-new">
-            New password
+            {t("me.newPassword")}
           </label>
           <input
             id="cp-new"
@@ -1232,7 +1228,7 @@ function ChangePasswordSection() {
         </div>
         <div class={s.changePwField}>
           <label class={s.changePwLabel} for="cp-confirm">
-            Confirm new password
+            {t("me.confirmNewPassword")}
           </label>
           <input
             id="cp-confirm"
@@ -1262,7 +1258,7 @@ function ChangePasswordSection() {
             class={s.btnPrimary}
             disabled={busy || !current || !next || !confirm}
           >
-            <Key size={14} /> {busy ? "Updating…" : "Update password"}
+            <Key size={14} /> {busy ? t("me.updating") : t("me.updatePassword")}
           </button>
         </div>
       </form>
@@ -1271,6 +1267,7 @@ function ChangePasswordSection() {
 }
 
 function DeleteAccountSection() {
+  const { t } = useI18n();
   const { user, token, logout } = useAuth();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -1282,15 +1279,14 @@ function DeleteAccountSection() {
     if (!token || !username) return;
     setErr(null);
     const password = await confirm({
-      title: "Delete account permanently?",
-      message:
-        "This erases your profile, files, keys, credits and everything else. It cannot be undone. Enter your password to confirm.",
-      confirmLabel: "Delete forever",
+      title: t("me.deleteAccountTitle"),
+      message: t("me.deleteAccountMsg"),
+      confirmLabel: t("me.deleteForever"),
       danger: true,
       input: {
         type: "password",
-        label: "Password",
-        placeholder: "Your account password",
+        label: t("me.password"),
+        placeholder: t("me.yourPassword"),
       },
     });
     if (typeof password !== "string" || !password) return;
@@ -1306,24 +1302,24 @@ function DeleteAccountSection() {
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}) as any);
-        setErr(data.error || "Failed to delete account");
+        setErr(data.error || t("me.failedDeleteAccount"));
         setBusy(false);
         return;
       }
       logout();
       window.location.href = "/";
     } catch {
-      setErr("Network error");
+      setErr(t("me.networkError"));
       setBusy(false);
     }
-  }, [token, username, confirm, logout]);
+  }, [token, username, confirm, logout, t]);
 
   return (
     <AccountSection
       icon={<Trash2 size={18} />}
       iconStyle={{ background: "rgba(248, 113, 113, 0.12)", color: "#f87171" }}
-      title="Delete Account"
-      subtitle="Permanently delete your account and all associated data"
+      title={t("me.deleteAccount")}
+      subtitle={t("me.deleteAccountSub")}
     >
       {err && (
         <div class={`${s.changePwMsg} ${s.changePwMsgErr}`}>
@@ -1343,7 +1339,7 @@ function DeleteAccountSection() {
           disabled={busy}
           onClick={onDelete}
         >
-          <Trash2 size={14} /> {busy ? "Deleting…" : "Delete my account"}
+          <Trash2 size={14} /> {busy ? t("me.deleting") : t("me.deleteMyAccount")}
         </button>
       </div>
       {confirmDialog}
@@ -1352,28 +1348,29 @@ function DeleteAccountSection() {
 }
 
 function SubTokensSection() {
+  const { t } = useI18n();
   return (
     <AccountSection
       icon={<Shield size={18} />}
-      title="Sub-Tokens"
-      subtitle="Permission-scoped tokens for the apps you use"
+      title={t("me.subTokens")}
+      subtitle={t("me.subTokensSub")}
       actions={
         <a href="/token-manager" class={s.linkBtn}>
-          <ArrowUpRight size={14} /> Manage
+          <ArrowUpRight size={14} /> {t("me.manage")}
         </a>
       }
     >
       <EmptyState
         icon={<Shield size={24} />}
-        title="Manage app permissions"
-        text="Sub-tokens let you give apps limited, scoped access to your account instead of sharing your main token."
+        title={t("me.manageAppPerms")}
+        text={t("me.subTokensDesc")}
       >
         <a
           href="/token-manager"
           class={s.btnPrimary}
           style={{ marginTop: "0.75rem" }}
         >
-          <Shield size={14} /> Open Token Manager
+          <Shield size={14} /> {t("me.openTokenManager")}
         </a>
       </EmptyState>
     </AccountSection>
@@ -1387,6 +1384,7 @@ function CosmeticsSection({
   activeOverlay: string;
   benefits: Benefits | null;
 }) {
+  const { t } = useI18n();
   const hasAnimatedPfp = benefits?.animated_pfp;
   const hasAnimatedBanner = benefits?.animated_banner;
   const hasFreeBanners = benefits?.free_banner_uploads;
@@ -1395,15 +1393,15 @@ function CosmeticsSection({
   return (
     <AccountSection
       icon={<Sparkles size={18} />}
-      title="Cosmetics"
+      title={t("me.cosmetics")}
       subtitle={
         activeOverlay
-          ? `Wearing ${activeOverlay.replace(/_/g, " ")}`
-          : "No overlay equipped"
+          ? `${t("me.wearing")} ${activeOverlay.replace(/_/g, " ")}`
+          : t("me.noOverlay")
       }
       actions={
         <a href="/shop" class={s.linkBtn}>
-          <Sparkles size={14} /> Open Shop
+          <Sparkles size={14} /> {t("me.openShop")}
         </a>
       }
     >
@@ -1413,11 +1411,8 @@ function CosmeticsSection({
             <Heart size={16} />
           </div>
           <div class={s.upsellContent}>
-            <div class={s.upsellTitle}>Unlock animated uploads & more</div>
-            <div class={s.upsellText}>
-              Get animated profile pictures, animated banners, free banner
-              uploads, profile notes, and more daily credits.
-            </div>
+            <div class={s.upsellTitle}>{t("me.upsellTitle")}</div>
+            <div class={s.upsellText}>{t("me.upsellText")}</div>
           </div>
           <a
             href="https://ko-fi.com/mistium"
@@ -1425,7 +1420,7 @@ function CosmeticsSection({
             rel="noopener noreferrer"
             class={s.upsellBtn}
           >
-            <Heart size={14} /> Subscribe
+            <Heart size={14} /> {t("me.subscribe")}
           </a>
         </div>
       )}
@@ -1444,20 +1439,20 @@ function CosmeticsSection({
           </div>
           <div class={s.subInfo}>
             <div class={s.subName}>{activeOverlay.replace(/_/g, " ")}</div>
-            <div class={s.subMeta}>Active overlay on your avatar</div>
+            <div class={s.subMeta}>{t("me.activeOverlayOn")}</div>
           </div>
           <a href="/shop" class={s.subBtn}>
-            Change
+            {t("me.change")}
           </a>
         </div>
       ) : (
         <EmptyState
           icon={<Sparkles size={24} />}
-          title="No overlay equipped"
-          text="Browse the shop to find overlays, badges, and more to customise your avatar."
+          title={t("me.noOverlayEquipped")}
+          text={t("me.noOverlayText")}
         >
           <a href="/shop" class={s.btnPrimary} style={{ marginTop: "0.75rem" }}>
-            <Sparkles size={14} /> Visit the Shop
+            <Sparkles size={14} /> {t("me.visitShop")}
           </a>
         </EmptyState>
       )}
@@ -1472,6 +1467,7 @@ interface NotesSectionProps {
 }
 
 function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
+  const { t } = useI18n();
   const [editUser, setEditUser] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [addInput, setAddInput] = useState("");
@@ -1502,13 +1498,13 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
     return (
       <AccountSection
         icon={<StickyNote size={18} />}
-        title="Profile Notes"
-        subtitle="Privately remember things about other users"
+        title={t("me.profileNotes")}
+        subtitle={t("me.profileNotesSub")}
       >
         <EmptyState
           icon={<Heart size={24} />}
-          title="Premium Feature"
-          text="Profile Notes let you privately store reminders and context about other users. Only you can see them."
+          title={t("me.premiumFeature")}
+          text={t("me.profileNotesDesc")}
         >
           <a
             href="https://ko-fi.com/mistium"
@@ -1517,7 +1513,7 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
             class={s.btnPrimary}
             style={{ marginTop: "0.75rem" }}
           >
-            <Heart size={14} /> Subscribe to unlock
+            <Heart size={14} /> {t("me.subscribeToUnlock")}
           </a>
         </EmptyState>
       </AccountSection>
@@ -1527,17 +1523,18 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
   return (
     <AccountSection
       icon={<StickyNote size={18} />}
-      title="Profile Notes"
+      title={t("me.profileNotes")}
       subtitle={`${noteEntries.length} ${plural(
         noteEntries.length,
-        "note",
-      )} • Private`}
+        t("me.notes"),
+        t("me.notesPlural"),
+      )} • ${t("me.privateNotes")}`}
     >
       <div class={s.addFriendForm}>
         <input
           type="text"
           class={s.addFriendInput}
-          placeholder="Add a note for a username..."
+          placeholder={t("me.addNotePlaceholder")}
           value={addInput}
           onInput={(e: any) => setAddInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addNote()}
@@ -1547,13 +1544,13 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
           onClick={addNote}
           disabled={!addInput.trim()}
         >
-          <StickyNote size={14} /> Add
+          <StickyNote size={14} /> {t("me.add")}
         </button>
       </div>
 
       {editUser && (
         <div class={s.noteEditPanel}>
-          <div class={s.noteEditHeader}>Note for @{editUser}</div>
+          <div class={s.noteEditHeader}>{t("me.noteFor")} @{editUser}</div>
           <textarea
             class={s.noteTextarea}
             value={editDraft}
@@ -1564,15 +1561,15 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
                 setEditDraft("");
               }
             }}
-            placeholder={`Add a note about @${editUser}...`}
+            placeholder={`${t("me.addNoteAbout")} @${editUser}...`}
             maxLength={300}
           />
           <div class={s.noteEditActions}>
             <button
               class={`${s.iconBtn} ${s.iconBtnSuccess}`}
               onClick={saveNote}
-              title="Save"
-              aria-label="Save note"
+              title={t("me.saveNote")}
+              aria-label={t("me.saveNote")}
             >
               <Check size={14} />
             </button>
@@ -1582,8 +1579,8 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
                 setEditUser(null);
                 setEditDraft("");
               }}
-              title="Cancel"
-              aria-label="Cancel"
+              title={t("me.cancel")}
+              aria-label={t("me.cancel")}
             >
               <X size={14} />
             </button>
@@ -1594,8 +1591,8 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
       {noteEntries.length === 0 ? (
         <EmptyState
           icon={<StickyNote size={24} />}
-          title="No notes yet"
-          text="Add a note about any user to privately remember things about them."
+          title={t("me.noNotesYet")}
+          text={t("me.noNotesText")}
         />
       ) : (
         <div class={s.noteList}>
@@ -1612,16 +1609,16 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
                 <button
                   class={s.iconBtn}
                   onClick={() => startEdit(username)}
-                  title="Edit note"
-                  aria-label="Edit note"
+                  title={t("me.editNote")}
+                  aria-label={t("me.editNote")}
                 >
                   <StickyNote size={14} />
                 </button>
                 <button
                   class={`${s.iconBtn} ${s.iconBtnDanger}`}
                   onClick={() => onNoteUpdate(username, "")}
-                  title="Delete note"
-                  aria-label="Delete note"
+                  title={t("me.deleteNote")}
+                  aria-label={t("me.deleteNote")}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -1640,21 +1637,22 @@ interface BlockedSectionProps {
 }
 
 function BlockedSection({ blocked, onUnblock }: BlockedSectionProps) {
+  const { t } = useI18n();
   return (
     <AccountSection
       icon={<Ban size={18} />}
-      title="Blocked Users"
+      title={t("me.blockedUsers")}
       subtitle={
         blocked.length === 0
-          ? "You haven't blocked anyone"
-          : `${blocked.length} blocked`
+          ? t("me.notBlockedAnyone")
+          : `${blocked.length} ${t("me.blockedCount")}`
       }
     >
       {blocked.length === 0 ? (
         <EmptyState
           icon={<Ban size={24} />}
-          title="No blocked users"
-          text="Users you block won't be able to follow you, send you friend requests, or interact with your content."
+          title={t("me.noBlockedUsers")}
+          text={t("me.blockedDesc")}
         />
       ) : (
         <div class={s.friendGrid}>
@@ -1664,15 +1662,15 @@ function BlockedSection({ blocked, onUnblock }: BlockedSectionProps) {
                 <UserAvatar username={username} className={s.friendAvatar} />
                 <div class={s.friendInfo}>
                   <div class={s.friendName}>@{username}</div>
-                  <div class={s.friendHandle}>Blocked</div>
+                  <div class={s.friendHandle}>{t("me.blocked")}</div>
                 </div>
               </a>
               <div class={s.friendActions}>
                 <button
                   class={`${s.iconBtn} ${s.iconBtnSuccess}`}
                   onClick={() => onUnblock(username)}
-                  title="Unblock user"
-                  aria-label="Unblock user"
+                  title={t("me.unblockUser")}
+                  aria-label={t("me.unblockUser")}
                 >
                   <ShieldOff size={14} />
                 </button>
@@ -1753,6 +1751,7 @@ function StandingSection({
   recoverAt,
   history,
 }: StandingSectionProps) {
+  const { t } = useI18n();
   const info = STANDING_INFO[standing] || STANDING_INFO.good;
   const recoversMs = recoverAt > 0 ? recoverAt * 1000 : 0;
   const willRecover =
@@ -1768,11 +1767,11 @@ function StandingSection({
         backgroundColor: `${info.color}22`,
         color: info.color,
       }}
-      title="Account Standing"
+      title={t("standing.title")}
       subtitle={
         willRecover
-          ? `Recovers ${new Date(recoversMs).toLocaleString()}`
-          : "Current account status"
+          ? `${t("standing.recovers")} ${new Date(recoversMs).toLocaleString()}`
+          : t("standing.currentStatus")
       }
       actions={
         <span
@@ -1822,13 +1821,13 @@ function StandingSection({
                 <div class={s.standingLevelBody}>
                   <div class={s.standingLevelLabel}>{li.label}</div>
                   <div class={s.standingLevelAllowed}>
-                    <span class={s.standingLevelAllowedLabel}>Allowed:</span>{" "}
+                    <span class={s.standingLevelAllowedLabel}>{t("standing.allowed")}</span>{" "}
                     {li.allowed}
                   </div>
                   {li.restricted !== "None" && (
                     <div class={s.standingLevelRestricted}>
                       <span class={s.standingLevelAllowedLabel}>
-                        Restricted:
+                        {t("standing.restricted")}
                       </span>{" "}
                       {li.restricted}
                     </div>
@@ -1843,7 +1842,7 @@ function StandingSection({
       {reverseHistory.length > 0 && (
         <div class={s.standingHistoryWrap}>
           <div class={s.standingHistoryTitle}>
-            <Clock size={14} /> Recent standing changes
+            <Clock size={14} /> {t("standing.recentChanges")}
           </div>
           <div class={s.standingHistory}>
             {reverseHistory.slice(0, 5).map((entry, i) => {

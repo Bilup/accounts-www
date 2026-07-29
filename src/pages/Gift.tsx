@@ -3,6 +3,7 @@ import { Gift as GiftIcon, ArrowRight } from "lucide-preact";
 import { PageChrome } from "../components/PageChrome";
 import { AuthRequired } from "../components/AccountPage";
 import { useAuth, getToken, formatDateTime } from "../lib/auth";
+import { useI18n } from "../i18n/i18n";
 import s from "./Gift.module.css";
 
 const API_BASE_URL = "https://api.accounts.bilup.org";
@@ -20,6 +21,7 @@ type Status = "loading" | "ready" | "claimed" | "gone" | "error";
 export function Gift({ matches }: { matches?: { code?: string } }) {
   const code = matches?.code || "";
   const { user, isLoggedIn, reload } = useAuth();
+  const { t } = useI18n();
   const [status, setStatus] = useState<Status>("loading");
   const [gift, setGift] = useState<PublicGift | null>(null);
   const [message, setMessage] = useState("");
@@ -89,26 +91,26 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
               <GiftIcon size={40} />
             </div>
 
-            {status === "loading" && <p class={s.sub}>Loading gift…</p>}
+            {status === "loading" && <p class={s.sub}>{t("gift.loading")}</p>}
 
             {(status === "error" || status === "gone") && (
               <>
-                <h1 class={s.title}>Gift unavailable</h1>
+                <h1 class={s.title}>{t("gift.unavailable")}</h1>
                 <p class={s.sub}>{message}</p>
                 <a href="/me" class={s.linkBtn}>
-                  Go to your account
+                  {t("gift.goToAccount")}
                 </a>
               </>
             )}
 
             {status === "claimed" && (
               <>
-                <h1 class={s.title}>Gift claimed</h1>
+                <h1 class={s.title}>{t("gift.claimed")}</h1>
                 <p class={s.sub}>
-                  {amount} credits have been added to your balance.
+                  {amount} {t("gift.claimedText")}
                 </p>
                 <a href="/me" class={s.linkBtn}>
-                  View your wallet <ArrowRight size={16} />
+                  {t("gift.viewWallet")} <ArrowRight size={16} />
                 </a>
               </>
             )}
@@ -124,19 +126,19 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
                         alt=""
                       />
                       <span>
-                        <strong>@{from}</strong> sent you a gift
+                        <strong>@{from}</strong> {t("gift.sentYouGift")}
                       </span>
                     </>
                   ) : (
-                    <span>You've received a gift</span>
+                    <span>{t("gift.receivedGift")}</span>
                   )}
                 </p>
                 <div class={s.amount}>{amount}</div>
-                <div class={s.credits}>credits</div>
-                {gift.note && <p class={s.note}>“{gift.note}”</p>}
+                <div class={s.credits}>{t("gift.credits")}</div>
+                {gift.note && <p class={s.note}>"{gift.note}"</p>}
                 {gift.expires_at > 0 && (
                   <p class={s.expiry}>
-                    Expires {formatDateTime(gift.expires_at)}
+                    {t("gift.expires")} {formatDateTime(gift.expires_at)}
                   </p>
                 )}
 
@@ -145,13 +147,13 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
                 {!isLoggedIn ? (
                   <AuthRequired
                     icon={<GiftIcon size={28} />}
-                    title="Sign in to claim your gift"
-                    text="Sign in to your Bilup account to add these credits to your balance."
+                    title={t("gift.signInToClaim")}
+                    text={t("gift.signInToClaimText")}
                     href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/gift/" + code)}`}
-                    label="Sign in to claim"
+                    label={t("gift.signInToClaimBtn")}
                   />
                 ) : isOwnGift ? (
-                  <p class={s.sub}>You can't claim a gift you created.</p>
+                  <p class={s.sub}>{t("gift.cantClaimOwn")}</p>
                 ) : (
                   <button
                     type="button"
@@ -159,7 +161,7 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
                     disabled={claiming}
                     onClick={claim}
                   >
-                    {claiming ? "Claiming…" : `Claim ${amount} credits`}
+                    {claiming ? t("gift.claiming") : t("gift.claimCredits", { amount })}
                   </button>
                 )}
               </>

@@ -24,6 +24,7 @@ import {
 import { UserAvatar } from "../../components/UserAvatar";
 import { TosContent } from "../../components/TosContent";
 import { PermissionsView } from "./PermissionsView";
+import { useI18n } from "../../i18n/i18n";
 
 declare const hcaptcha: any;
 
@@ -59,18 +60,19 @@ import type {
 } from "./lib";
 
 export function Auth() {
+  const { t } = useI18n();
   const [view, setView] = useState<View>("welcome");
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
 
   const [siUsername, setSiUsername] = useState("");
   const [siPassword, setSiPassword] = useState("");
-  const [siBtn, setSiBtn] = useState<BtnState>(defaultBtn("Sign in"));
+  const [siBtn, setSiBtn] = useState<BtnState>(defaultBtn(t("auth.signIn")));
 
   const [suUsername, setSuUsername] = useState("");
   const [suEmail, setSuEmail] = useState("");
   const [suPassword, setSuPassword] = useState("");
   const [suConfirm, setSuConfirm] = useState("");
-  const [suBtn, setSuBtn] = useState<BtnState>(defaultBtn("Create Account"));
+  const [suBtn, setSuBtn] = useState<BtnState>(defaultBtn(t("auth.createAccount")));
   const captchaRef = useRef<HTMLDivElement | null>(null);
   const captchaWidgetIdRef = useRef<string | null>(null);
 
@@ -89,7 +91,7 @@ export function Auth() {
 
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotBtn, setForgotBtn] = useState<BtnState>(
-    defaultBtn("Send reset link"),
+    defaultBtn(t("auth.sendResetLink")),
   );
   const [forgotMsg, setForgotMsg] = useState<string>("");
 
@@ -97,7 +99,7 @@ export function Auth() {
   const [resetNewPw, setResetNewPw] = useState("");
   const [resetConfirm, setResetConfirm] = useState("");
   const [resetBtn, setResetBtn] = useState<BtnState>(
-    defaultBtn("Reset password"),
+    defaultBtn(t("auth.resetPassword")),
   );
   const [resetMsg, setResetMsg] = useState<string>("");
 
@@ -117,7 +119,7 @@ export function Auth() {
   } | null>(null);
 
   const [permSchema, setPermSchema] = useState<PermissionSchema | null>(null);
-  const [scopeBtn, setScopeBtn] = useState<BtnState>(defaultBtn("Allow"));
+  const [scopeBtn, setScopeBtn] = useState<BtnState>(defaultBtn(t("auth.allow")));
   const [scopeError, setScopeError] = useState("");
   const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null);
 
@@ -423,7 +425,7 @@ export function Auth() {
         return;
       }
       setForgotMsg("");
-      setForgotBtn(loadingBtn("Sending..."));
+      setForgotBtn(loadingBtn(t("auth.sending")));
       try {
         const res = await fetch(`${API}/auth/request_reset`, {
           method: "POST",
@@ -626,7 +628,7 @@ export function Auth() {
       e.preventDefault();
       e.stopPropagation();
       setCookie("username", siUsername, 7);
-      setSiBtn(loadingBtn("Signing in..."));
+      setSiBtn(loadingBtn(t("auth.signingIn")));
 
       try {
         const data = await requestAccount(siUsername, siPassword);
@@ -642,7 +644,7 @@ export function Auth() {
           setTosScrolledToBottom(false);
           setTosCheckboxChecked(false);
           setView("tos");
-          setSiBtn(defaultBtn("Sign in"));
+          setSiBtn(defaultBtn(t("auth.signIn")));
         } else if ((data as any).requiresEmailVerification) {
           pendingVerificationRef.current = {
             token: (data as any).token,
@@ -651,16 +653,16 @@ export function Auth() {
           };
           setView("verify");
           setVerifyMsg("");
-          setSiBtn(defaultBtn("Sign in"));
+          setSiBtn(defaultBtn(t("auth.signIn")));
         } else {
           flashBtn(
             setSiBtn,
-            "Sign in",
-            errorBtn(data.error || "Invalid credentials"),
+            t("auth.signIn"),
+            errorBtn(data.error || t("auth.invalidCredentials")),
           );
         }
       } catch {
-        flashBtn(setSiBtn, "Sign in", errorBtn("Error occurred"));
+        flashBtn(setSiBtn, t("auth.signIn"), errorBtn(t("auth.errorOccurred")));
       }
     },
     [siUsername, siPassword, handleAccountLogin],
@@ -674,14 +676,14 @@ export function Auth() {
         typeof hcaptcha !== "undefined" ? hcaptcha.getResponse() : "";
 
       if (!htoken) {
-        flashBtn(setSuBtn, "Create Account", errorBtn("Complete the captcha"));
+        flashBtn(setSuBtn, t("auth.createAccount"), errorBtn(t("auth.completeCaptcha")));
         return;
       }
       if (suPassword !== suConfirm) {
         flashBtn(
           setSuBtn,
-          "Create Account",
-          errorBtn("Passwords do not match"),
+          t("auth.createAccount"),
+          errorBtn(t("auth.passwordsDoNotMatch")),
         );
         if (typeof hcaptcha !== "undefined") hcaptcha.reset();
         return;
@@ -689,14 +691,14 @@ export function Auth() {
       if (suPassword.length < 8) {
         flashBtn(
           setSuBtn,
-          "Create Account",
-          errorBtn("Password must be 8+ characters"),
+          t("auth.createAccount"),
+          errorBtn(t("auth.password8Chars")),
         );
         if (typeof hcaptcha !== "undefined") hcaptcha.reset();
         return;
       }
 
-      setSuBtn(loadingBtn("Creating..."));
+      setSuBtn(loadingBtn(t("auth.creating")));
 
       try {
         const res = await fetch(`${API}/create_user`, {
@@ -714,7 +716,7 @@ export function Auth() {
 
         if (result.error) {
           if (typeof hcaptcha !== "undefined") hcaptcha.reset();
-          flashBtn(setSuBtn, "Create Account", errorBtn(result.error));
+          flashBtn(setSuBtn, t("auth.createAccount"), errorBtn(result.error));
         } else {
           setCookie("username", suUsername, 7);
           const data = await requestAccount(suUsername, suPassword);
@@ -730,12 +732,12 @@ export function Auth() {
             setTosScrolledToBottom(false);
             setTosCheckboxChecked(false);
             setView("tos");
-            setSuBtn(defaultBtn("Create Account"));
+            setSuBtn(defaultBtn(t("auth.createAccount")));
           } else {
             flashBtn(
               setSuBtn,
-              "Create Account",
-              successBtn("Account created! Please sign in"),
+              t("auth.createAccount"),
+              successBtn(t("auth.accountCreated")),
             );
             setTimeout(() => {
               showSignInForm(suUsername);
@@ -1121,8 +1123,8 @@ export function Auth() {
                 disabled={!!quickLoginBusy}
                 title={
                   a.token
-                    ? "Click to sign in"
-                    : "Click to sign in with password"
+                    ? t("auth.clickToSignIn")
+                    : t("auth.clickToSignInPw")
                 }
               >
                 <UserAvatar
@@ -1133,13 +1135,13 @@ export function Auth() {
                 />
                 <div class={s.accountItemInfo}>
                   <h3>{a.username}</h3>
-                  <p>
-                    {a.token
-                      ? quickLoginBusy === a.username
-                        ? "Signing in..."
-                        : "Click to sign in"
-                      : "Bilup Account"}
-                  </p>
+                <p>
+                  {a.token
+                    ? quickLoginBusy === a.username
+                      ? t("auth.quickSignInBusy")
+                      : t("auth.clickToSignIn")
+                    : t("auth.bilupAccount")}
+                </p>
                 </div>
                 {a.token && quickLoginBusy !== a.username && (
                   <i class={`fas fa-bolt ${s.accountItemQuick}`} />
@@ -1155,7 +1157,7 @@ export function Auth() {
                   removeAccountFromStorage(a.username);
                   setSavedAccounts(loadSavedAccounts());
                 }}
-                title={`Remove ${a.username}`}
+                title={t("auth.removeUserTitle", { username: a.username })}
                 aria-label={`Remove ${a.username}`}
               >
                 <i class="fas fa-xmark" />
@@ -1192,10 +1194,10 @@ export function Auth() {
           <div class={s.welcomeContent}>
             <h1>
               {pendingAutoLoginRef.current?.username
-                ? `Continue as ${pendingAutoLoginRef.current.username}?`
-                : "Continue to Bilup Accounts?"}
+                ? t("auth.continueAsName", { name: pendingAutoLoginRef.current.username })
+                : t("auth.continueTo")}
             </h1>
-            <p>You're already signed in to Bilup Accounts. Continue to {requestor}?</p>
+            <p>{t("auth.alreadySignedInTo", { requestor })}</p>
           </div>
           <button
             type="button"
@@ -1209,8 +1211,8 @@ export function Auth() {
               size={44}
             />
             <div class={s.confirmCardInfo}>
-              <h3>{pendingAutoLoginRef.current?.username || "Your account"}</h3>
-              <p>Bilup Account</p>
+              <h3>{pendingAutoLoginRef.current?.username || t("auth.yourAccount")}</h3>
+              <p>{t("auth.bilupAccount")}</p>
             </div>
             {quickLoginBusy ? (
               <i class={`fas fa-spinner fa-spin ${s.confirmCardArrow}`} />
@@ -1224,7 +1226,7 @@ export function Auth() {
               onClick={handleConfirmReject}
               disabled={!!quickLoginBusy}
             >
-              <i class="fas fa-user-group" /> Use another account
+              <i class="fas fa-user-group" /> {t("auth.useAnother")}
             </button>
           </div>
           <AuthTosLinks>
@@ -1253,18 +1255,18 @@ export function Auth() {
             <img src="/logo.png" alt="Bilup Accounts" draggable={false} />
           </div>
           <div class={s.welcomeContent}>
-            <h1>Welcome to Bilup Accounts</h1>
-            <p>Sign in to access your account or create a new one.</p>
+            <h1>{t("auth.welcome")}</h1>
+            <p>{t("auth.welcomeSub")}</p>
           </div>
           <div class={s.welcomeButtons}>
             <button
               class={s.btnWelcomePrimary}
               onClick={() => showSignInForm()}
             >
-              <i class="fas fa-sign-in-alt" /> Sign In
+              <i class="fas fa-sign-in-alt" /> {t("auth.signIn")}
             </button>
             <button class={s.btnWelcomeSecondary} onClick={showSignUpForm}>
-              <i class="fas fa-user-plus" /> Create Account
+              <i class="fas fa-user-plus" /> {t("auth.createAccount")}
             </button>
           </div>
           <AuthTosLinks>
@@ -1290,15 +1292,15 @@ export function Auth() {
       ) : view === "signin" ? (
         <AuthMain>
           <AuthLogo />
-          <AuthHeading>Sign in to Bilup Accounts</AuthHeading>
-          <AuthSubheading>Use your Bilup account</AuthSubheading>
+          <AuthHeading>{t("auth.signInToBilup")}</AuthHeading>
+          <AuthSubheading>{t("auth.useYourAccount")}</AuthSubheading>
           <form class={s.signinForm} onSubmit={handleSigninSubmit}>
             <AuthFormGroup>
               <AuthInput
                 type="text"
                 name="username"
-                placeholder="Username"
-                aria-label="Username"
+                placeholder={t("auth.username")}
+                aria-label={t("auth.username")}
                 autoComplete="username"
                 required
                 value={siUsername}
@@ -1309,8 +1311,8 @@ export function Auth() {
               <AuthInput
                 type="password"
                 name="password"
-                placeholder="Password"
-                aria-label="Password"
+                placeholder={t("auth.password")}
+                aria-label={t("auth.password")}
                 autoComplete="current-password"
                 required
                 value={siPassword}
@@ -1332,9 +1334,9 @@ export function Auth() {
               </AuthTosLinkBtn>
             </p>
             <p>
-              Don't have an account?{" "}
+              {t("auth.noAccount")}{" "}
               <AuthTosLinkBtn onClick={showSignUpForm}>
-                Create one
+                {t("auth.createOne")}
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>
@@ -1359,29 +1361,28 @@ export function Auth() {
       ) : view === "verify" ? (
         <AuthMain>
           <AuthLogo />
-          <AuthHeading>Verify your email</AuthHeading>
+          <AuthHeading>{t("auth.verifyTitle")}</AuthHeading>
           <AuthSubheading>
-            We've sent a verification link to{" "}
+            {t("auth.verifySub")}{" "}
             <strong>
               {pendingVerificationRef.current?.email ||
                 pendingVerificationRef.current?.username ||
                 "your email"}
             </strong>
-            . You'll be signed in automatically once verified.
+            . {t("auth.verifySub2")}
           </AuthSubheading>
           <p class={s.verifyInstruction}>
-            Click the link in the email to continue. You can also press{" "}
-            <strong>Done</strong> once you've verified, or resend the email.
+            {t("auth.verifyInstruction")}
           </p>
           <div class={s.verifyBtns}>
             <AuthBtnPrimary onClick={handleVerifyDone}>
-              I've verified - continue
+              {t("auth.verifiedContinue")}
             </AuthBtnPrimary>
             <AuthBtnSecondary onClick={handleVerifyResend}>
-              Resend email
+              {t("auth.resendEmail")}
             </AuthBtnSecondary>
             <AuthBtnSecondary onClick={handleVerifyCancel}>
-              Cancel
+              {t("auth.cancel")}
             </AuthBtnSecondary>
           </div>
           {verifyMsg && <div class={s.verifyMsg}>{verifyMsg}</div>}
@@ -1389,17 +1390,14 @@ export function Auth() {
       ) : view === "tos" ? (
         <AuthMain>
           <AuthLogo />
-          <AuthHeading>Accept the Terms of Service</AuthHeading>
-          <AuthSubheading>
-            One last step before you can use Bilup Accounts. Please read and accept our
-            terms to continue.
-          </AuthSubheading>
+          <AuthHeading>{t("auth.acceptTOS")}</AuthHeading>
+          <AuthSubheading>{t("auth.acceptTOSSub")}</AuthSubheading>
           <div ref={tosContentRef} class={s.tosFrameContent}>
             <TosContent />
           </div>
           {!tosScrolledToBottom && (
             <p class={s.tosScrollHint}>
-              <i class="fas fa-arrow-down" /> Scroll to the bottom to accept
+              <i class="fas fa-arrow-down" /> {t("auth.scrollToAcceptHint")}
             </p>
           )}
           <label class={s.tosCheckboxLabel}>
@@ -1410,7 +1408,7 @@ export function Auth() {
               disabled={!tosScrolledToBottom || tosAccepted}
               onChange={(e: any) => setTosCheckboxChecked(e.target.checked)}
             />
-            I have read and agree to the Terms of Service
+            {t("auth.agreeToTOS")}
           </label>
           <div class={s.verifyBtns}>
             <AuthBtnPrimary
@@ -1420,7 +1418,7 @@ export function Auth() {
             >
               {tosBtn.text || (
                 <>
-                  <i class="fas fa-check" /> Accept Terms & Continue
+                  <i class="fas fa-check" /> {t("auth.acceptTerms")}
                 </>
               )}
             </AuthBtnPrimary>
@@ -1429,15 +1427,15 @@ export function Auth() {
       ) : view === "signup" ? (
         <AuthMain>
           <AuthLogo />
-          <AuthHeading>Create account</AuthHeading>
-          <AuthSubheading>Join Bilup Accounts today</AuthSubheading>
+          <AuthHeading>{t("auth.createAccountTitle")}</AuthHeading>
+          <AuthSubheading>{t("auth.joinBilup")}</AuthSubheading>
           <form onSubmit={handleSignupSubmit}>
             <AuthFormGroup>
               <AuthInput
                 type="text"
                 name="username"
-                placeholder="Choose a username"
-                aria-label="Choose a username"
+                placeholder={t("auth.chooseUsername")}
+                aria-label={t("auth.chooseUsername")}
                 autoComplete="username"
                 required
                 minlength={3}
@@ -1450,8 +1448,8 @@ export function Auth() {
               <AuthInput
                 type="email"
                 name="email"
-                placeholder="Email address"
-                aria-label="Email address"
+                placeholder={t("auth.emailAddress")}
+                aria-label={t("auth.emailAddress")}
                 autoComplete="email"
                 required
                 value={suEmail}
@@ -1462,8 +1460,8 @@ export function Auth() {
               <AuthInput
                 type="password"
                 name="password"
-                placeholder="Create password"
-                aria-label="Create password"
+                placeholder={t("auth.createPassword")}
+                aria-label={t("auth.createPassword")}
                 autoComplete="new-password"
                 required
                 minlength={8}
@@ -1475,8 +1473,8 @@ export function Auth() {
               <AuthInput
                 type="password"
                 name="confirm-password"
-                placeholder="Confirm password"
-                aria-label="Confirm password"
+                placeholder={t("auth.confirmPassword")}
+                aria-label={t("auth.confirmPassword")}
                 autoComplete="new-password"
                 required
                 minlength={8}
@@ -1497,9 +1495,9 @@ export function Auth() {
           </form>
           <AuthTosLinks>
             <p>
-              Already have an account?{" "}
+              {t("auth.haveAccount")}{" "}
               <AuthTosLinkBtn onClick={() => showSignInForm()}>
-                Sign in
+                {t("auth.signInLink")}
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>
@@ -1524,18 +1522,15 @@ export function Auth() {
       ) : view === "forgot" ? (
         <AuthMain>
           <AuthLogo />
-          <AuthHeading>Forgot your password?</AuthHeading>
-          <AuthSubheading>
-            Enter the email address on your account and we'll send you a reset
-            link.
-          </AuthSubheading>
+          <AuthHeading>{t("auth.forgotTitle")}</AuthHeading>
+          <AuthSubheading>{t("auth.forgotSub")}</AuthSubheading>
           <form onSubmit={handleForgotSubmit} class={s.signinForm}>
             <AuthFormGroup>
               <AuthInput
                 type="email"
                 name="email"
-                placeholder="Email address"
-                aria-label="Email address"
+                placeholder={t("auth.emailAddress")}
+                aria-label={t("auth.emailAddress")}
                 autoComplete="email"
                 required
                 value={forgotEmail}
@@ -1560,9 +1555,9 @@ export function Auth() {
           )}
           <AuthTosLinks>
             <p>
-              Remembered it?{" "}
+              {t("auth.remembered")}{" "}
               <AuthTosLinkBtn onClick={() => showSignInForm()}>
-                Back to sign in
+                {t("auth.backToSignIn")}
               </AuthTosLinkBtn>
             </p>
             <p style={{ marginTop: "0.25rem" }}>

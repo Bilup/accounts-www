@@ -10,6 +10,7 @@ import {
   type PermissionSchema,
   type SubToken,
 } from "./lib";
+import { useI18n } from "../../i18n/i18n";
 
 interface Props {
   requestor: string;
@@ -48,6 +49,7 @@ export function PermissionsView({
   onSwitchAccount,
   onCancel,
 }: Props) {
+  const { t } = useI18n();
   const requiredSet = useMemo(() => new Set(requiredPerms), [requiredPerms]);
   const hasRequiredPerms = requiredPerms.length > 0;
   const allowFullAccess = !hasRequiredPerms || requiresFull;
@@ -129,330 +131,166 @@ export function PermissionsView({
 
   return (
     <div class={s.permView}>
-      <div class={s.dpermHead}>
-        <div class={s.dpermIcons}>
-          <div class={s.dpermIconBox}>
-            <i class="fas fa-globe" />
-          </div>
-          <i class={`fas fa-ellipsis ${s.dpermDots}`} />
-          <div class={s.dpermIconBox}>
-            <img src="/logo.png" alt="Bilup Accounts" draggable={false} />
-          </div>
-        </div>
-        <h1 class={s.dpermTitle}>{requestor}</h1>
-        <p class={s.dpermSub}>wants to access your Bilup account</p>
-        <p class={s.dpermSignedIn}>
-          Signed in as <strong>{username}</strong>
-          <button type="button" class={s.dpermSwitch} onClick={onSwitchAccount}>
-            Not you?
-          </button>
+      {/* Header */}
+      <div class={s.permHeader}>
+        <h2 class={s.permTitle}>{t("perms.title")}</h2>
+        <p class={s.permSub}>{t("perms.subtitle", { name: requestor })}</p>
+        <p class={s.permUser}>
+          <i class="fas fa-user" /> {username}
         </p>
       </div>
 
-      {requiresFull && !useFullAccess && (
-        <div class={s.permMissingWarn}>
-          <div class={s.permMissingWarnHead}>
-            <i class="fas fa-triangle-exclamation" />
-            <strong>{requestor} asked for full access</strong>
-          </div>
-          <p class={s.permMissingWarnText}>
-            You're only granting some permissions. Some features on this app may
-            not work as expected. Re-enable <strong>Full account access</strong>{" "}
-            below to grant everything.
+      {/* Existing token prompt */}
+      {hasExistingTokens && !createNewToken && (
+        <div class={s.existingTokensBanner}>
+          <p>
+            <i class="fas fa-info-circle" /> You have existing tokens that cover
+            the requested permissions.
           </p>
+          {matchingSubTokens.map((st) => (
+            <button
+              key={st.id}
+              class={s.existingTokenBtn}
+              onClick={() => onUseSubToken(st)}
+            >
+              <i class="fas fa-key" /> Use {st.name || "token"} (created{" "}
+              {new Date(st.created).toLocaleDateString()})
+            </button>
+          ))}
+          <button
+            class={s.newTokenLink}
+            onClick={() => setCreateNewToken(true)}
+          >
+            <i class="fas fa-plus" /> Create new token instead
+          </button>
         </div>
       )}
 
-      <div class={s.permViewActions}>
-        {hasExistingTokens && (
-          <div class={s.existingBlock}>
-            <div class={s.existingHead}>
-              <i class="fas fa-circle-check" />
-              <div>
-                <h2 class={s.existingTitle}>
-                  You already have access for {requestor}
-                </h2>
-                <p class={s.existingSub}>
-                  Reuse it — nothing new is granted, and there's no extra token
-                  to revoke later.
-                </p>
+      {/* Grant panel */}
+      {showGrantPanel && (
+        <div class={s.permGrant}>
+          {/* Full access option */}
+          {allowFullAccess && (
+            <label class={s.fullAccessToggle}>
+              <input
+                type="checkbox"
+                checked={useFullAccess}
+                onChange={(e) => setUseFullAccess((e.target as HTMLInputElement).checked)}
+              />
+              <div class={s.fullAccessContent}>
+                <strong>{t("perms.fullAccess")}</strong>
+                <p>{t("perms.fullAccessDesc")}</p>
               </div>
-            </div>
+            </label>
+          )}
 
-            {matchingSubTokens.map((sub) => {
-              const deleting = deletingTokenId === sub.id;
-              return (
-                <div key={sub.id} class={s.tokenRow}>
-                  <button
-                    class={`${s.existingPrimary} ${s.tokenMain}`}
-                    disabled={deleting}
-                    onClick={() => onUseSubToken(sub)}
-                  >
-                    <i class="fas fa-key" />
-                    <span class={s.existingPrimaryBody}>
-                      <span class={s.existingPrimaryTitle}>
-                        Continue to {requestor}
-                      </span>
-                      <span class={s.existingPrimarySub}>
-                        {sub.name || "Unnamed token"} · {sub.permissions.length}{" "}
-                        {plural(sub.permissions.length, "permission")}
-                      </span>
-                    </span>
-                    <i class={`fas fa-arrow-right ${s.existingPrimaryArrow}`} />
-                  </button>
-                  <button
-                    type="button"
-                    class={s.tokenDelete}
-                    title="Delete this token"
-                    aria-label="Delete this token"
-                    disabled={deleting}
-                    onClick={() => onDeleteToken(sub)}
-                  >
-                    <i class={`fas ${deleting ? "fa-spinner fa-spin" : "fa-trash"}`} />
-                  </button>
-                </div>
-              );
-            })}
+          {/* Scoped access */}
+          {permSchema && (
+            <div class={s.scopedSection}>
+              <div class={s.scopedHeader}>
+                <strong>{t("perms.scopedAccess")}</strong>
+                <p>{t("perms.scopedAccessDesc")}</p>
+              </div>
 
-            {!createNewToken && (
-              <button
-                type="button"
-                class={s.existingCreateNew}
-                onClick={() => setCreateNewToken(true)}
-              >
-                Create another token instead
-              </button>
-            )}
-          </div>
-        )}
-
-        {hasExistingTokens && createNewToken && (
-          <div class={s.duplicateWarn}>
-            <div class={s.duplicateWarnHead}>
-              <i class="fas fa-triangle-exclamation" />
-              <strong>You already have a token for {requestor}</strong>
-            </div>
-            <p class={s.duplicateWarnText}>
-              Creating another one doesn't grant you anything new — it just
-              leaves two credentials to keep track of and revoke. Reusing the
-              existing token is almost always the better choice.
-            </p>
-            <button
-              type="button"
-              class={s.duplicateWarnBack}
-              onClick={() => setCreateNewToken(false)}
-            >
-              <i class="fas fa-arrow-left" /> Use my existing token
-            </button>
-          </div>
-        )}
-
-        {showGrantPanel && (
-          <>
-            <div class={s.dpermPanel}>
-              <p class={s.dpermConfirm}>
-                Confirm that you want to grant <strong>{requestor}</strong> the
-                following permissions:
-              </p>
-              <div class={`${s.dpermList} ${useFullAccess ? s.dpermListOff : ""}`}>
-                {!permSchema ? (
-                  <div class={s.permLoading}>Loading permissions…</div>
-                ) : (
-                  Object.entries(displayedGroups).map(([cat, perms]) => (
-                    <div key={cat} class={s.dpermCat}>
-                      <div class={s.dpermCatLabel}>
-                        <i class={`fas ${permIcon(perms[0])}`} /> {cat}
+              {/* Required permissions */}
+              {hasRequiredPerms && (
+                <div class={s.permGroup}>
+                  <div class={s.permGroupTitle}>
+                    <i class="fas fa-lock" /> {t("perms.requiredPerms")}
+                  </div>
+                  <div class={s.permList}>
+                    {requiredPerms.map((p) => (
+                      <div key={p} class={`${s.permItem} ${s.permRequired}`}>
+                        <i class={`fas ${permIcon(p)}`} />
+                        <span>{describePerm(p) || p}</span>
+                        <span class={s.permRequiredBadge}>{t("perms.requiredPerms")}</span>
                       </div>
-                      {perms.map((p) => {
-                        const forbidden = FORBIDDEN_PERMISSIONS.has(p);
-                        const checked = selectedPerms.has(p) && !forbidden;
-                        const requested = requiredSet.has(p);
-                        return (
-                          <label
-                            key={p}
-                            class={`${s.dpermRow} ${checked ? s.dpermRowOn : ""} ${forbidden ? s.dpermRowDisabled : ""}`}
-                            title={p}
-                          >
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* All permissions */}
+              {permSchema.permissions.length > 0 && (
+                <div class={s.permGroup}>
+                  <div class={s.permGroupTitle}>
+                    <button
+                      class={s.permToggleBtn}
+                      onClick={() => setShowAllPerms(!showAllPerms)}
+                    >
+                      {showAllPerms ? t("perms.hidePerms") : t("perms.viewAllPerms")}
+                      <i class={`fas fa-chevron-${showAllPerms ? "up" : "down"}`} />
+                    </button>
+                  </div>
+                  {showAllPermsEffective && (
+                    <div class={s.permList}>
+                      {permSchema.permissions
+                        .filter((p) => !requiredSet.has(p))
+                        .map((p) => (
+                          <label key={p} class={s.permCheckItem}>
                             <input
                               type="checkbox"
-                              class={s.dpermInput}
-                              checked={checked}
-                              disabled={forbidden || useFullAccess}
+                              checked={selectedPerms.has(p)}
+                              disabled={FORBIDDEN_PERMISSIONS.has(p)}
                               onChange={() => togglePerm(p)}
                             />
-                            <span class={s.dpermBox}>
-                              {checked && <i class="fas fa-check" />}
-                            </span>
-                            <span class={s.dpermName}>{describePerm(p)}</span>
-                            {requested && <span class={s.dpermReq}>requested</span>}
-                            {forbidden && (
-                              <span class={s.dpermForbidden}>not allowed</span>
-                            )}
+                            <i class={`fas ${permIcon(p)}`} />
+                            <span>{describePerm(p) || p}</span>
                           </label>
-                        );
-                      })}
+                        ))}
                     </div>
-                  ))
-                )}
-              </div>
-              {hasRequiredPerms && (
-                <button
-                  type="button"
-                  class={s.dpermToggleAll}
-                  onClick={() => setShowAllPerms((v) => !v)}
-                >
-                  <i class={`fas fa-chevron-${showAllPermsEffective ? "up" : "down"}`} />
-                  {showAllPermsEffective
-                    ? "Show only requested permissions"
-                    : "Show all permissions"}
-                </button>
+                  )}
+                </div>
               )}
             </div>
+          )}
 
-            {allowFullAccess && (
-              <label
-                class={`${s.permFullAccessToggle} ${useFullAccess ? s.permFullAccessToggleActive : ""} ${useFullAccess ? s.permFullAccessToggleDanger : ""}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={useFullAccess}
-                  onChange={(e: any) => {
-                    setUseFullAccess(e.target.checked);
-                    setShowMissingWarn(false);
-                  }}
-                  class={s.permFullAccessCheckbox}
-                />
-                <div class={s.permFullAccessCheck}>
-                  {useFullAccess && <i class="fas fa-check" />}
-                </div>
-                <div class={s.permFullAccessBody}>
-                  <span class={s.permFullAccessTitle}>
-                    <i class="fas fa-bolt" /> Full account access
-                  </span>
-                  <span class={s.permFullAccessSub}>
-                    Send your main account token instead of a limited sub-token
-                  </span>
-                </div>
-              </label>
-            )}
-
-            {useFullAccess && (
-              <div class={s.permDangerWarning}>
-                <div class={s.permDangerWarningHead}>
-                  <i class="fas fa-triangle-exclamation" />
-                  <strong>
-                    {requestor} will be able to do anything you can. That
-                    includes:
-                  </strong>
-                </div>
-                <ul class={s.permDangerList}>
-                  <li>
-                    <i class="fas fa-id-card" /> Read and change everything in
-                    your account
-                  </li>
-                  <li>
-                    <i class="fas fa-coins" /> Spend and transfer your credits
-                  </li>
-                  <li>
-                    <i class="fas fa-folder-open" /> Read, upload, and delete
-                    your files
-                  </li>
-                  <li>
-                    <i class="fas fa-key" /> View and manage your keys and tokens
-                  </li>
-                </ul>
-                <p class={s.permDangerWarningNote}>
-                  Only enable this if you fully trust {requestor}. Otherwise turn
-                  it off and grant just the permissions above. A scoped token is
-                  almost always the safer choice.
-                </p>
-              </div>
-            )}
-
-            <div class={s.dpermFooter}>
-              <span class={s.dpermCount}>
-                {useFullAccess ? (
-                  "Full account access"
-                ) : (
-                  <>
-                    <strong>{selectedPerms.size}</strong>{" "}
-                    {plural(selectedPerms.size, "permission")} selected
-                  </>
-                )}
-              </span>
-              <div class={s.dpermFooterActions}>
-                <button type="button" class={s.dpermBack} onClick={onCancel}>
-                  Back
-                </button>
-                <button
-                  type="button"
-                  class={`${s.dpermAuthorize} ${useFullAccess ? s.dpermAuthorizeDanger : ""}`}
-                  onClick={useFullAccess ? onUseMainToken : attemptSubmit}
-                  disabled={
-                    scopeBtn.disabled || (!useFullAccess && selectedPerms.size === 0)
-                  }
-                  style={
-                    scopeBtn.color
-                      ? { background: scopeBtn.color, color: "var(--void)" }
-                      : undefined
-                  }
-                >
-                  {scopeBtn.color ? scopeBtn.text : "Authorize"}
-                </button>
-              </div>
+          {/* Missing warning */}
+          {showMissingWarn && (
+            <div class={s.permWarning}>
+              <i class="fas fa-exclamation-triangle" />{" "}
+              {t("perms.missingPerms")}
             </div>
+          )}
 
-            {showMissingWarn && missingRequired.length > 0 && (
-              <div class={s.permMissingWarn}>
-                <div class={s.permMissingWarnHead}>
-                  <i class="fas fa-triangle-exclamation" />
-                  <strong>{requestor} may not work as expected</strong>
-                </div>
-                <p class={s.permMissingWarnText}>
-                  You removed {missingRequired.length} requested{" "}
-                  {plural(missingRequired.length, "permission")}:
-                </p>
-                <div class={s.permRequiredTags}>
-                  {missingRequired.map((p) => (
-                    <span
-                      key={p}
-                      class={`${s.permRequiredTag} ${s.permRequiredTagMissing}`}
-                    >
-                      <i class="fas fa-xmark" />
-                      {p}
-                    </span>
-                  ))}
-                </div>
-                <div class={s.permMissingWarnActions}>
-                  <button
-                    type="button"
-                    class={s.permCancelBtn}
-                    onClick={() => setShowMissingWarn(false)}
-                  >
-                    Go back
-                  </button>
-                  <button
-                    type="button"
-                    class={s.permAllowBtn}
-                    onClick={() => {
-                      setShowMissingWarn(false);
-                      onCreateToken(Array.from(selectedPerms));
-                    }}
-                  >
-                    Continue anyway
-                  </button>
-                </div>
-              </div>
-            )}
-            {scopeError && <div class={s.permError}>{scopeError}</div>}
-          </>
-        )}
+          {/* Scope error */}
+          {scopeError && (
+            <div class={s.permError}>
+              <i class="fas fa-times-circle" /> {scopeError}
+            </div>
+          )}
+
+          {/* Actions */}
+          <div class={s.permActions}>
+            <button class={s.permBtnPrimary} onClick={attemptSubmit} disabled={scopeBtn.disabled}>
+              {scopeBtn.text || t("perms.saveToken")}
+            </button>
+            <button class={s.permBtnSecondary} onClick={onCancel}>
+              {t("perms.deny")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main token info */}
+      <div class={s.permTokenInfo}>
+        <p>
+          <i class="fas fa-shield-alt" /> {t("perms.tokenNotShared")}
+        </p>
+        <div class={s.permTokenActions}>
+          <button class={s.permLink} onClick={onUseMainToken}>
+            {t("perms.useMainToken")}
+          </button>
+          <button class={s.permLink} onClick={onSwitchAccount}>
+            {t("perms.switchAccount")}
+          </button>
+        </div>
       </div>
 
       <AuthTosLinks>
         <p>
-          <a href="/privacy-policy?from=auth">Privacy Policy</a> •{" "}
-          <a href="/terms-of-service?from=auth">Terms of Service</a>
+          <a href="/terms-of-service?from=auth">Terms of Service</a> &bull;{" "}
+          <a href="/privacy-policy?from=auth">Privacy Policy</a>
         </p>
       </AuthTosLinks>
     </div>

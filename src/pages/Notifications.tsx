@@ -17,6 +17,7 @@ import {
   formatDateTime,
 } from "../lib/auth";
 import { plural } from "../lib/format";
+import { useI18n } from "../i18n/i18n";
 import s from "./Notifications.module.css";
 
 const API_BASE_URL = "https://api.accounts.bilup.org";
@@ -59,6 +60,7 @@ export function Notifications() {
   const [confirm, confirmDialog] = useConfirm();
   const currentUser = user?.username || "";
   const [tab, setTab] = useState<Tab>("devices");
+  const { t } = useI18n();
 
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
   const [endpointsLoading, setEndpointsLoading] = useState(false);
@@ -171,9 +173,9 @@ export function Notifications() {
 
   async function deleteDevice(deviceId: string) {
     const ok = await confirm({
-      title: "Remove this device?",
-      message: "It will no longer receive notifications.",
-      confirmLabel: "Remove device",
+      title: t("notifications.removeDevicePrompt"),
+      message: t("notifications.deviceNoMoreNotify"),
+      confirmLabel: t("notifications.removeDevice"),
       danger: true,
     });
     if (!ok) return;
@@ -185,7 +187,7 @@ export function Notifications() {
       );
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        flash("Device removed", "success");
+        flash(t("notifications.deviceRemoved"), "success");
         fetchEndpoints();
       } else {
         flash(data.error || "Failed to remove device", "error");
@@ -283,8 +285,8 @@ export function Notifications() {
     return (
       <AuthRequired
         icon={<Bell size={28} />}
-        title="Sign in to manage notifications"
-        text="Sign in to manage your push notification devices and control who can send you notifications."
+        title={t("notifications.signInToManage")}
+        text={t("notifications.signInToManageText")}
         href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/notifications")}`}
       />
     );
@@ -295,11 +297,10 @@ export function Notifications() {
       {confirmDialog}
       <div class={s.page}>
         <div class={s.wrapper}>
-          <h1 class={s.title}>Notifications</h1>
+          <h1 class={s.title}>{t("notifications.title")}</h1>
           <div class={s.rule} />
           <p class={s.sub}>
-            Manage your push notification devices, control who is allowed to
-            send you notifications, and review your recent notification history.
+            {t("notifications.sub")}
           </p>
 
           {user && (
@@ -307,12 +308,12 @@ export function Notifications() {
               <div class={s.userInfo}>
                 <div>
                   <div class={s.welcomeText}>
-                    Welcome, <strong>{currentUser}</strong>
+                    {t("notifications.welcome")} <strong>{currentUser}</strong>
                   </div>
                   <p class={s.welcomeSub}>
-                    {endpoints.length} {plural(endpoints.length, "device")} ·{" "}
-                    {totalSenders} allowed {plural(totalSenders, "sender")} ·{" "}
-                    {log.length} {plural(log.length, "log entry", "log entries")}
+                    {endpoints.length} {plural(endpoints.length, t("notifications.device"))} ·{" "}
+                    {totalSenders} {t("notifications.allowedSender")}{(totalSenders !== 1 ? "s" : "")} ·{" "}
+                    {log.length} {log.length === 1 ? t("notifications.logEntry") : t("notifications.logEntry") + "s"}
                   </p>
                 </div>
               </div>
@@ -325,7 +326,7 @@ export function Notifications() {
                   class={`${s.tab} ${tab === "devices" ? s.tabActive : ""}`}
                   onClick={() => setTab("devices")}
                 >
-                  <Smartphone size={15} /> Devices
+                  <Smartphone size={15} /> {t("notifications.devicesTab")}
                   <span class={s.tabCount}>{endpoints.length}</span>
                 </button>
                 <button
@@ -334,7 +335,7 @@ export function Notifications() {
                   class={`${s.tab} ${tab === "senders" ? s.tabActive : ""}`}
                   onClick={() => setTab("senders")}
                 >
-                  <UserCheck size={15} /> Allowed Senders
+                  <UserCheck size={15} /> {t("notifications.allowedSenders")}
                   <span class={s.tabCount}>{totalSenders}</span>
                 </button>
                 <button
@@ -343,7 +344,7 @@ export function Notifications() {
                   class={`${s.tab} ${tab === "log" ? s.tabActive : ""}`}
                   onClick={() => setTab("log")}
                 >
-                  <ScrollText size={15} /> Log
+                  <ScrollText size={15} /> {t("notifications.logTab")}
                   <span class={s.tabCount}>{log.length}</span>
                 </button>
               </div>
@@ -359,29 +360,25 @@ export function Notifications() {
                 <div class={s.section}>
                   <div class={s.sectionHeader}>
                     <div>
-                      <h2 class={s.sectionTitle}>Registered Devices</h2>
+                      <h2 class={s.sectionTitle}>{t("notifications.registeredDevices")}</h2>
                       <p class={s.sectionSub}>
-                        Each device is identified by a server-generated ID
-                        derived from your username, the source app, and a device
-                        fingerprint. Removing a device stops it from receiving
-                        notifications.
+                        {t("notifications.devicesDesc")}
                       </p>
                     </div>
                     <button
                       class={`${s.invBtn} ${s.invBtnSecondary}`}
                       onClick={fetchEndpoints}
                     >
-                      Refresh
+                      {t("notifications.refresh")}
                     </button>
                   </div>
 
                   {endpointsLoading && (
-                    <div class={s.loading}>Loading devices…</div>
+                    <div class={s.loading}>{t("notifications.loadingDevices")}</div>
                   )}
                   {!endpointsLoading && endpoints.length === 0 && (
                     <div class={s.empty}>
-                      No devices registered. Install or open a Bilup app that
-                      supports push notifications to register a device.
+                      {t("notifications.noDevices")}
                     </div>
                   )}
 
@@ -404,7 +401,7 @@ export function Notifications() {
                           <div class={s.cardMeta}>
                             <span class={s.sourceTag}>{ep.source}</span>
                             <span>
-                              Added {formatRelativeTime(ep.created_at)}
+                              {t("notifications.added")} {formatRelativeTime(ep.created_at)}
                             </span>
                             <span title={formatDateTime(ep.created_at)}>
                               {formatDateTime(ep.created_at)}
@@ -415,7 +412,7 @@ export function Notifications() {
                           class={`${s.invBtn} ${s.invBtnDanger}`}
                           onClick={() => deleteDevice(ep.device_id)}
                         >
-                          <Trash2 size={12} /> Remove
+                          <Trash2 size={12} /> {t("notifications.remove")}
                         </button>
                       </div>
                       <div class={s.endpointBox} title={ep.endpoint}>
@@ -435,7 +432,7 @@ export function Notifications() {
                 <div class={s.section}>
                   <div class={s.sectionHeader}>
                     <div>
-                      <h2 class={s.sectionTitle}>Allowed Senders</h2>
+                      <h2 class={s.sectionTitle}>{t("notifications.allowedSenders")}</h2>
                       <p class={s.sectionSub}>
                         By default, no one can send you notifications. Allow
                         specific users per source to receive alerts from them.
@@ -447,15 +444,15 @@ export function Notifications() {
                       class={`${s.invBtn} ${s.invBtnSecondary}`}
                       onClick={fetchAllowed}
                     >
-                      Refresh
+                      {t("notifications.refresh")}
                     </button>
                   </div>
 
                   <div class={s.addForm}>
-                    <h3 class={s.addFormTitle}>Allow a New Sender</h3>
+                    <h3 class={s.addFormTitle}>{t("notifications.allowSenders")}</h3>
                     <div class={s.formRow}>
                       <div class={s.formGroup}>
-                        <label for="allow-username">Username</label>
+                        <label for="allow-username">{t("notifications.username")}</label>
                         <input
                           id="allow-username"
                           type="text"
@@ -474,7 +471,7 @@ export function Notifications() {
                         />
                       </div>
                       <div class={s.formGroup}>
-                        <label for="allow-source">Source</label>
+                        <label for="allow-source">{t("notifications.source")}</label>
                         <input
                           id="allow-source"
                           type="text"
@@ -498,17 +495,16 @@ export function Notifications() {
                       onClick={allowSender}
                       disabled={!newSender.trim() || !newSource.trim()}
                     >
-                      Allow Sender
+                      {t("notifications.allowSender")}
                     </button>
                   </div>
 
                   {allowedLoading && (
-                    <div class={s.loading}>Loading allowed senders…</div>
+                    <div class={s.loading}>{t("notifications.loadingSenders")}</div>
                   )}
                   {!allowedLoading && senderSources.length === 0 && (
                     <div class={s.empty}>
-                      You haven't allowed any senders yet. Add one above to get
-                      started.
+                      {t("notifications.noSenders")}
                     </div>
                   )}
 
@@ -531,15 +527,15 @@ export function Notifications() {
                             <div class={s.senderInfo}>
                               <div class={s.senderName}>{snd.username}</div>
                               <div class={s.senderCount}>
-                                {snd.count} {plural(snd.count, "notification")}{" "}
-                                sent
+                                {snd.count} {snd.count === 1 ? t("notifications.senderCount") : `${t("notifications.senderCount")}s`}{" "}
+                                {t("notifications.sent")}
                               </div>
                             </div>
                             <button
                               class={`${s.invBtn} ${s.invBtnSecondary}`}
                               onClick={() => removeSender(snd.username, source)}
                             >
-                              <Trash2 size={12} /> Revoke
+                              <Trash2 size={12} /> {t("notifications.revoke")}
                             </button>
                           </div>
                         ))}
@@ -554,23 +550,23 @@ export function Notifications() {
                 <div class={s.section}>
                   <div class={s.sectionHeader}>
                     <div>
-                      <h2 class={s.sectionTitle}>Notification Log</h2>
+                      <h2 class={s.sectionTitle}>{t("notifications.notificationLog")}</h2>
                       <p class={s.sectionSub}>
-                        The most recent 200 notifications you've received.
+                        {t("notifications.logDesc")}
                       </p>
                     </div>
                     <button
                       class={`${s.invBtn} ${s.invBtnSecondary}`}
                       onClick={fetchLog}
                     >
-                      Refresh
+                      {t("notifications.refresh")}
                     </button>
                   </div>
 
-                  {logLoading && <div class={s.loading}>Loading log…</div>}
+                  {logLoading && <div class={s.loading}>{t("notifications.loadingLog")}</div>}
                   {!logLoading && log.length === 0 && (
                     <div class={s.empty}>
-                      No notifications have been delivered yet.
+                      {t("notifications.noNotifications")}
                     </div>
                   )}
 
@@ -586,7 +582,7 @@ export function Notifications() {
                       <div class={s.logMeta}>
                         <span class={s.sourceTag}>{entry.source}</span>
                         <span>
-                          from <strong>@{entry.from}</strong>
+                          {t("notifications.from")} <strong>@{entry.from}</strong>
                         </span>
                       </div>
                     </div>
@@ -600,7 +596,7 @@ export function Notifications() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Read the full notifications API documentation →
+                  {t("notifications.readDocs")}
                 </a>
               </p>
             </>

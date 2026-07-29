@@ -14,6 +14,7 @@ import {
   AuthTosLinks,
 } from "./Shell";
 import { setToken, getToken } from "../../lib/auth";
+import { useI18n } from "../../i18n/i18n";
 
 const API_BASE = "https://api.accounts.bilup.org/link";
 
@@ -21,14 +22,13 @@ type Phase = "input" | "verifying" | "redirecting" | "linking" | "done";
 type ResultType = "" | "success" | "error";
 
 export function Link() {
+  const { t } = useI18n();
   const [code, setCode] = useState<string[]>(Array(6).fill(""));
   const [phase, setPhase] = useState<Phase>("input");
   const [errorMsg, setErrorMsg] = useState("");
   const [resultType, setResultType] = useState<ResultType>("");
   const [resultMsg, setResultMsg] = useState("");
-  const [subtitle, setSubtitle] = useState(
-    "Enter the 6-character code to begin",
-  );
+  const [subtitle, setSubtitle] = useState(t("link.enterCode"));
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -45,7 +45,7 @@ export function Link() {
   const sendLinkRequest = useCallback(
     async (linkCode: string, token: string) => {
       setPhase("linking");
-      setSubtitle("Linking device...");
+      setSubtitle(t("link.linking"));
       try {
         const postUrl =
           API_BASE +
@@ -67,13 +67,13 @@ export function Link() {
 
         if (res.ok) {
           const msg =
-            typeof data === "string" ? data : "Device linked successfully";
+            typeof data === "string" ? data : t("link.deviceLinked");
           showResult(
             "success",
             msg +
-              " Your session token has been applied. You may close this window.",
+              " " + t("link.deviceLinkedMsg"),
           );
-          setSubtitle("Device linked");
+          setSubtitle(t("link.deviceLinked"));
           setToken(token);
           setPhase("done");
         } else {
@@ -85,7 +85,7 @@ export function Link() {
             typeof errMsg === "string" &&
             errMsg.toLowerCase().includes("no auth code found");
           showResult("error", errMsg || "Invalid code or token. Try again.");
-          setSubtitle("Link failed");
+          setSubtitle(t("link.linkFailed"));
           setPhase("input");
           if (expired) {
             setPhase("done");
@@ -93,7 +93,7 @@ export function Link() {
         }
       } catch (err: any) {
         showResult("error", "Link failed: " + err.message);
-        setSubtitle("Link failed");
+        setSubtitle(t("link.linkFailed"));
         setPhase("input");
       }
     },
@@ -105,11 +105,11 @@ export function Link() {
     setResultType("");
     const fullCode = getFullCode();
     if (fullCode.length !== 6) {
-      setErrorMsg("Enter the full 6-character code");
+      setErrorMsg(t("link.enterFullCode"));
       return;
     }
     setPhase("verifying");
-    setSubtitle("Verifying code...");
+    setSubtitle(t("link.verify"));
     sessionStorage.setItem("rotur_link_code", fullCode);
     window.location.href =
       "/auth?return_to=" +
@@ -121,11 +121,11 @@ export function Link() {
     setResultType("");
     const fullCode = getFullCode();
     if (fullCode.length !== 6) {
-      setErrorMsg("Enter the full 6-character code");
+      setErrorMsg(t("link.enterFullCode"));
       return;
     }
     setPhase("verifying");
-    setSubtitle("Verifying code...");
+    setSubtitle(t("link.verify"));
     sessionStorage.setItem("rotur_link_code", fullCode);
     window.location.href =
       "/auth?signup=1&return_to=" +
@@ -224,9 +224,9 @@ export function Link() {
 
   const statusText =
     phase === "verifying"
-      ? "Verifying code..."
+      ? t("link.verify")
       : phase === "linking"
-        ? "Linking device..."
+        ? t("link.linking")
         : "";
 
   const resultCls =
@@ -241,40 +241,33 @@ export function Link() {
   return (
     <AuthShell>
       <AuthSidebar
-        title="Device Linking"
-        subtitle="Connect a console or another device"
+        title={t("link.title")}
+        subtitle={t("link.subtitle")}
         footer={
           <AuthSidebarAction onClick={beginAuth} disabled={isBusy}>
-            <i class="fas fa-link" /> Link Device
+            <i class="fas fa-link" /> {t("link.linkDevice")}
           </AuthSidebarAction>
         }
       >
         <div class={s.sidebarInfo}>
           <ol>
-            <li>
-              On the device you want to link, generate or view a 6-character
-              code.
-            </li>
-            <li>
-              Enter that code here and sign in (or create an account & accept
-              TOS).
-            </li>
-            <li>We'll securely attach that device to your Bilup account.</li>
+            <li>{t("link.step1")}</li>
+            <li>{t("link.step2")}</li>
+            <li>{t("link.step3")}</li>
           </ol>
           <AuthNotice
             variant="warning"
             icon="fas fa-shield-alt"
-            title="Security Tip"
+            title={t("link.securityTip")}
           >
-            Only enter codes from devices you physically control. This grants
-            full account access.
+            {t("link.securityTipText")}
           </AuthNotice>
         </div>
       </AuthSidebar>
 
       <AuthMain>
         <AuthLogo />
-        <AuthHeading>Link a Device</AuthHeading>
+        <AuthHeading>{t("link.heading")}</AuthHeading>
         <AuthSubheading>{subtitle}</AuthSubheading>
 
         <form
@@ -296,7 +289,7 @@ export function Link() {
                 class={s.codeInput}
                 maxlength={1}
                 inputmode="latin"
-                aria-label={`Code character ${i + 1}`}
+                aria-label={`Code char ${i + 1}`}
                 value={code[i]}
                 onInput={(e: any) => handleInput(i, e.target.value)}
                 onKeyDown={(e: KeyboardEvent) => handleKeyDown(i, e)}
@@ -304,37 +297,37 @@ export function Link() {
               />
             ))}
           </div>
-          <div class={s.inlineHelp}>
-            Need to sign in first? We'll redirect you automatically.
+            <div class={s.inlineHelp}>
+            {t("link.needSignIn")}
           </div>
           {errorMsg && <div class={s.errorText}>{errorMsg}</div>}
 
           <div class={s.linkActions}>
             <AuthBtnPrimary type="button" disabled={isBusy} onClick={beginAuth}>
               {phase === "verifying"
-                ? "Verifying..."
+                ? t("link.verify")
                 : phase === "linking"
-                  ? "Linking..."
-                  : "Sign in & Link"}
+                  ? t("link.linkingBtn")
+                  : t("link.signInLink")}
             </AuthBtnPrimary>
             <AuthBtnSecondary
               type="button"
               disabled={isBusy}
               onClick={handlePaste}
             >
-              Paste Code
+              {t("link.pasteCode")}
             </AuthBtnSecondary>
           </div>
 
           <div class={s.inlineHelp} style={{ marginTop: "6px" }}>
-            Don't have an account yet?{" "}
+            {t("link.noAccount")}{" "}
             <button
               type="button"
               class={s.createAccountLink}
               onClick={beginSignup}
               disabled={isBusy}
             >
-              Create one
+              {t("link.createOne")}
             </button>
           </div>
         </form>
@@ -350,9 +343,9 @@ export function Link() {
 
         <AuthTosLinks>
           <p>
-            By linking you agree to the{" "}
-            <a href="/terms-of-service?from=auth">Terms</a> &{" "}
-            <a href="/privacy-policy?from=auth">Privacy Policy</a>.
+            {t("link.agreeTerms")}{" "}
+            <a href="/terms-of-service?from=auth">{t("link.terms")}</a> &{" "}
+            <a href="/privacy-policy?from=auth">{t("link.privacy")}</a>.
           </p>
         </AuthTosLinks>
       </AuthMain>

@@ -18,6 +18,7 @@ import {
   AuthRequired,
   EmptyState,
 } from "../components/AccountPage";
+import { useI18n } from "../i18n/i18n";
 import { useAuth, getToken } from "../lib/auth";
 import { plural } from "../lib/format";
 import { clickable } from "../lib/clickable";
@@ -88,6 +89,7 @@ function keyUserSubscriptionText(data: any): string {
 }
 
 export function KeyManager() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const currentUser = user?.username || "";
   const [confirm, confirmDialog] = useConfirm();

@@ -1,18 +1,20 @@
 import { PageChrome } from "../components/PageChrome";
+import { useI18n } from "../i18n/i18n";
 import s from "./PrivacyPolicy.module.css";
 
 export function PrivacyPolicy() {
+  const { t } = useI18n();
   return (
     <PageChrome className={s.page}>
       <div class={s.wrapper}>
-        <h1 class={s.title}>Privacy Policy</h1>
+        <h1 class={s.title}>{t("privacy.title")}</h1>
         <div class={s.rule} />
         <p class={s.sub}>
-          Your privacy rights and how we protect your information
+          {t("privacy.sub")}
         </p>
 
         <div class={s.policyContainer}>
-          <div class={s.lastUpdated}>Last updated: July 16, 2025</div>
+          <div class={s.lastUpdated}>{t("privacy.lastUpdated")} July 16, 2025</div>
 
           <div class={s.policyContent}>
             <p>
@@ -549,13 +551,12 @@ export function PrivacyPolicy() {
           </div>
 
           <div class={s.contactInfo}>
-            <h3>Need Help?</h3>
+            <h3>{t("privacy.needHelp")}</h3>
             <p>
-              <strong>Contact us:</strong> support@bilup.org
+              <strong>{t("privacy.contactUs")}</strong> support@bilup.org
             </p>
             <p>
-              We're here to help answer any questions about your privacy and
-              data protection.
+              {t("privacy.helpText")}
             </p>
           </div>
         </div>

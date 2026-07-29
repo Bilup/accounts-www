@@ -1,6 +1,7 @@
 import { PageChrome } from "../components/PageChrome";
 import { TosContent } from "../components/TosContent";
 import { useState, useCallback, useRef, useEffect } from "preact/hooks";
+import { useI18n } from "../i18n/i18n";
 import "./TermsOfService.css";
 
 async function callAcceptTosAPI(token: string): Promise<boolean> {
@@ -27,6 +28,7 @@ async function callAcceptTosAPI(token: string): Promise<boolean> {
 }
 
 export function TermsOfService() {
+  const { t } = useI18n();
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -118,23 +120,23 @@ export function TermsOfService() {
 
   const btnText = token
     ? loading
-      ? "Accepting Terms..."
+      ? t("tos.acceptingTerms")
       : error
-        ? "Error – Try Again"
-        : "Accept Terms & Continue"
+        ? t("tos.errorTryAgain")
+        : t("tos.acceptTermsContinue")
     : loading
-      ? "Accepting Terms..."
+      ? t("tos.acceptingTerms")
       : error
-        ? "Error – Try Again"
-        : "Accept Terms & Authenticate";
+        ? t("tos.errorTryAgain")
+        : t("tos.acceptTermsAuth");
 
   return (
     <PageChrome className="page">
       <div className="wrapper">
-        <p className="title">Terms of Service</p>
+        <p className="title">{t("tos.title")}</p>
         <div className="rule" />
         <p className="sub">
-          Please review and accept our terms of service to continue
+          {t("tos.sub")}
         </p>
 
         {!success ? (
@@ -150,8 +152,7 @@ export function TermsOfService() {
                   className="sub"
                   style={{ marginBottom: "0.75rem", textAlign: "left" }}
                 >
-                  ⬇️ Please scroll to the bottom of the terms above before
-                  accepting.
+                  {t("tos.scrollToAccept")}
                 </p>
               )}
               <div className="checkbox-container">
@@ -165,9 +166,7 @@ export function TermsOfService() {
                   }
                 />
                 <label htmlFor="accept-terms">
-                  I have read and agree to the Terms of Service. I understand
-                  that by checking this box and clicking "Accept Terms", I am
-                  entering into a legally binding agreement with Bilup Accounts.
+                  {t("tos.haveRead")}
                 </label>
               </div>
               <button
@@ -181,42 +180,38 @@ export function TermsOfService() {
 
             {/* Contact info */}
             <div className="contact-info">
-              <p className="title">Need help?</p>
+              <p className="title">{t("tos.needHelp")}</p>
               <p className="sub">
-                Contact us at support@bilup.org for any questions about these
-                terms.
+                {t("tos.contactUs")}
               </p>
             </div>
           </div>
         ) : fromAuth ? (
           /* Opened from the auth flow - close this tab on success */
           <div className="success-container">
-            <p className="title">Terms Accepted!</p>
+            <p className="title">{t("tos.acceptedTitle")}</p>
             <p className="sub">
-              You can return to the previous tab - we'll continue signing you in
-              automatically.
+              {t("tos.returnTab")}
             </p>
             <div className="token-display">
-              This tab will close automatically. You can also close it manually.
+              {t("tos.tabClose")}
             </div>
           </div>
         ) : (
           /* Success state – matches the HTML's #success-container */
           <div className="success-container">
-            <p className="title">Terms Accepted Successfully!</p>
+            <p className="title">{t("tos.acceptedTitleSuccess")}</p>
             <p className="sub">
-              You have successfully accepted the Terms of Service and completed
-              authentication.
+              {t("tos.authComplete")}
             </p>
             <div className="token-display">
-              <strong>Terms of Service accepted successfully!</strong>
+              <strong>{t("tos.acceptedTitleSuccess")}</strong>
               <br />
-              Redirecting you back to continue...
+              {t("tos.redirecting")}
             </div>
             <div className="contact-info">
               <p className="sub">
-                You can now safely close this window or proceed to use Bilup 
-                Accounts services.
+                {t("tos.safeToClose")}
               </p>
             </div>
           </div>

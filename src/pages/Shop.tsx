@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "preact/hooks";
+import { useI18n } from "../i18n/i18n";
 import { PageChrome } from "../components/PageChrome";
 import { UserAvatar } from "../components/UserAvatar";
 import { useAuth, getToken } from "../lib/auth";
@@ -52,15 +53,15 @@ interface MyCosmetics {
 const COSMETICS_API_BASE = "https://api.accounts.bilup.org";
 
 const COSMETIC_TYPES = [
-  { value: "", label: "All Items" },
-  { value: "overlay", label: "Overlays" },
+  { value: "", labelKey: "shop.allItems" },
+  { value: "overlay", labelKey: "shop.overlays" },
 ];
 
 const SORT_OPTIONS = [
-  { value: "newest", label: "Newest First" },
-  { value: "popular", label: "Most Popular" },
-  { value: "price_low", label: "Price: Low to High" },
-  { value: "price_high", label: "Price: High to Low" },
+  { value: "newest", labelKey: "shop.newestFirst" },
+  { value: "popular", labelKey: "shop.mostPopular" },
+  { value: "price_low", labelKey: "shop.priceLowHigh" },
+  { value: "price_high", labelKey: "shop.priceHighLow" },
 ];
 
 const AUTH_REDIRECT_BASE = "/auth?return_to=";
@@ -162,6 +163,7 @@ function ActionButton({
 }
 
 export function Shop() {
+  const { t } = useI18n();
   const { user, reload: reloadUser } = useAuth();
   const { toasts, showInfo, showError, dismiss } = useToasts();
 
@@ -429,11 +431,11 @@ export function Shop() {
                 <ShoppingBag size={24} />
               </div>
               <div>
-                <h2 class={s.shopTitle}>Cosmetics Shop</h2>
+                <h2 class={s.shopTitle}>{t("shop.cosmeticsShop")}</h2>
                 <p class={s.shopSubtitle}>
                   {total > 0
-                    ? `${total} cosmetics available`
-                    : "Browse and collect cosmetics for your profile"}
+                    ? `${total} ${t("shop.allCosmetics").toLowerCase()}`
+                    : t("shop.browseCollect")}
                 </p>
               </div>
             </div>
@@ -441,7 +443,7 @@ export function Shop() {
               <div class={s.balance}>
                 <Coins size={16} />
                 <span>
-                  {(user["sys.currency"] ?? 0).toLocaleString()} credits
+                  {(user["sys.currency"] ?? 0).toLocaleString()} {t("shop.credits")}
                 </span>
               </div>
             )}
@@ -455,7 +457,7 @@ export function Shop() {
               class={`${s.tab} ${tab === "shop" ? s.tabActive : ""}`}
               onClick={() => setTab("shop")}
             >
-              <ShoppingBag size={14} /> Browse Shop
+              <ShoppingBag size={14} /> {t("shop.browseShop")}
             </button>
             <button
               type="button"
@@ -464,7 +466,7 @@ export function Shop() {
               class={`${s.tab} ${tab === "owned" ? s.tabActive : ""}`}
               onClick={() => setTab("owned")}
             >
-              <UserIcon size={14} /> My Cosmetics
+              <UserIcon size={14} /> {t("shop.myCosmetics")}
               {ownedItems.length > 0 && (
                 <span class={s.tabBadge}>{ownedItems.length}</span>
               )}
@@ -584,6 +586,8 @@ function ShopTab({
   onClearFilters: () => void;
   onRetry: () => void;
 }) {
+  const { t } = useI18n();
+  const getLabel = (labelKey: string) => t(labelKey);
   return (
     <>
       <div class={s.controlsRow}>
@@ -592,8 +596,8 @@ function ShopTab({
           <input
             type="text"
             class={s.searchInput}
-            placeholder="Search by name, description, or creator..."
-            aria-label="Search cosmetics"
+            placeholder={t("shop.search")}
+            aria-label={t("shop.search")}
             value={searchQuery}
             onInput={(e) =>
               onSearchQueryChange((e.target as HTMLInputElement).value)
@@ -613,7 +617,7 @@ function ShopTab({
         <div class={s.filters}>
           <select
             class={s.filterSelect}
-            aria-label="Filter by item type"
+            aria-label={t("shop.filterLabel")}
             value={typeFilter}
             onChange={(e) =>
               onTypeFilterChange((e.target as HTMLSelectElement).value)
@@ -621,13 +625,13 @@ function ShopTab({
           >
             {COSMETIC_TYPES.map((type) => (
               <option key={type.value} value={type.value}>
-                {type.label}
+                {getLabel(type.labelKey)}
               </option>
             ))}
           </select>
           <select
             class={s.filterSelect}
-            aria-label="Sort items"
+            aria-label={t("shop.sortLabel")}
             value={sortBy}
             onChange={(e) =>
               onSortByChange((e.target as HTMLSelectElement).value)
@@ -635,7 +639,7 @@ function ShopTab({
           >
             {SORT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {getLabel(option.labelKey)}
               </option>
             ))}
           </select>
@@ -643,17 +647,17 @@ function ShopTab({
             class={`${s.featuredBtn} ${showFeatured ? s.active : ""}`}
             onClick={onShowFeaturedToggle}
           >
-            <Star size={14} /> Featured
+            <Star size={14} /> {t("shop.featured")}
           </button>
         </div>
       </div>
 
       {hasActiveFilters && (
         <div class={s.activeFilters}>
-          <span class={s.filterLabel}>Filtering by:</span>
+          <span class={s.filterLabel}>{t("shop.filteringBy")}</span>
           {typeFilter && (
             <span class={s.filterTag}>
-              Type: {COSMETIC_TYPES.find((t) => t.value === typeFilter)?.label}
+              Type: {getLabel(COSMETIC_TYPES.find((t) => t.value === typeFilter)?.labelKey || "")}
               <button
                 onClick={() => onTypeFilterChange("")}
                 aria-label="Remove type filter"
@@ -675,7 +679,7 @@ function ShopTab({
           )}
           {showFeatured && (
             <span class={s.filterTag}>
-              Featured only
+              {t("shop.featuredOnly")}
               <button
                 onClick={onShowFeaturedToggle}
                 aria-label="Remove featured filter"
@@ -685,7 +689,7 @@ function ShopTab({
             </span>
           )}
           <button class={s.clearAll} onClick={onClearFilters}>
-            Clear all
+            {t("shop.clearAll")}
           </button>
         </div>
       )}
@@ -704,10 +708,10 @@ function ShopTab({
           <div class={s.errorIcon}>
             <AlertCircle size={40} />
           </div>
-          <h3>Unable to load cosmetics</h3>
+          <h3>{t("shop.cannotLoad")}</h3>
           <p>{error}</p>
           <ActionButton variant="primary" onClick={onRetry}>
-            <RefreshCw size={16} /> Try Again
+            <RefreshCw size={16} /> {t("shop.tryAgain")}
           </ActionButton>
         </div>
       )}
@@ -719,10 +723,10 @@ function ShopTab({
               <div class={s.emptyIcon}>
                 <Search size={48} />
               </div>
-              <h3>No cosmetics found</h3>
-              <p>Try adjusting your search or filters.</p>
+              <h3>{t("shop.noCosmetics")}</h3>
+              <p>{t("shop.tryAdjusting")}</p>
               <ActionButton variant="secondary" onClick={onClearFilters}>
-                Clear Filters
+                {t("shop.clearFilters")}
               </ActionButton>
             </div>
           ) : (
@@ -731,7 +735,7 @@ function ShopTab({
                 <div class={s.section}>
                   <div class={s.sectionHeader}>
                     <Star size={18} class={s.sectionIcon} />
-                    <h3>Featured</h3>
+                    <h3>{t("shop.featured")}</h3>
                     <span class={s.sectionCount}>
                       {featuredItems.length} items
                     </span>
@@ -759,8 +763,8 @@ function ShopTab({
                 <div class={s.sectionHeader}>
                   <h3>
                     {hasActiveFilters
-                      ? `Results (${filteredItems.length})`
-                      : "All Cosmetics"}
+                      ? `${t("shop.results")} (${filteredItems.length})`
+                      : t("shop.allCosmetics")}
                   </h3>
                 </div>
                 <div class={s.itemsGrid}>
@@ -853,9 +857,10 @@ function ItemCardBody({
   showCreator?: boolean;
   showStats?: boolean;
 }) {
+  const { t } = useI18n();
   const formatPrice = (price: number, pricingType: string) => {
-    if (pricingType === "free" || price === 0) return "Free";
-    return `${price} credits`;
+    if (pricingType === "free" || price === 0) return t("shop.free");
+    return `${price} ${t("shop.credits")}`;
   };
   return (
     <div class={s.itemContent}>
@@ -863,7 +868,7 @@ function ItemCardBody({
       <h4 class={s.itemName}>{item.name}</h4>
       <div class={s.itemMeta}>
         <span class={s.itemPrice}>
-          {owned ? "Owned" : formatPrice(item.price, item.pricing_type)}
+          {owned ? t("shop.owned") : formatPrice(item.price, item.pricing_type)}
         </span>
         {showCreator && <span class={s.itemCreator}>by {item.creator}</span>}
         {showStats && (
@@ -905,14 +910,15 @@ function OwnedTab({
   onEquip: (item: Cosmetic) => void;
   onUnequip: (item: Cosmetic) => void;
 }) {
+  const { t } = useI18n();
   if (!user) {
     return (
       <div class={s.emptyContainer}>
         <div class={s.emptyIcon}>
           <UserIcon size={48} />
         </div>
-        <h3>Sign in to view your cosmetics</h3>
-        <p>Track and equip everything you've collected.</p>
+        <h3>{t("shop.signInCosmetics")}</h3>
+        <p>{t("shop.trackEquip")}</p>
         <ActionButton
           variant="primary"
           onClick={() => {
@@ -923,7 +929,7 @@ function OwnedTab({
             )}`;
           }}
         >
-          Sign in
+          {t("shop.signIn")}
         </ActionButton>
       </div>
     );
@@ -947,10 +953,10 @@ function OwnedTab({
         <div class={s.emptyIcon}>
           <AlertCircle size={48} />
         </div>
-        <h3>Couldn't load your cosmetics</h3>
+        <h3>{t("shop.couldntLoad")}</h3>
         <p>{error}</p>
         <button class={s.clearAll} onClick={onRetry}>
-          <RefreshCw size={14} /> Retry
+          <RefreshCw size={14} /> {t("shop.retry")}
         </button>
       </div>
     );
@@ -962,8 +968,8 @@ function OwnedTab({
         <div class={s.emptyIcon}>
           <Sparkles size={48} />
         </div>
-        <h3>No cosmetics yet</h3>
-        <p>Visit the Browse Shop tab to grab your first cosmetic.</p>
+        <h3>{t("shop.noCosmeticsYet")}</h3>
+        <p>{t("shop.visitShopTab")}</p>
       </div>
     );
   }
@@ -980,8 +986,8 @@ function OwnedTab({
               size={18}
               class={`${s.sectionIcon} ${s.sectionIconEquipped}`}
             />
-            <h3>Equipped</h3>
-            <span class={s.sectionCount}>{equipped.length} active</span>
+            <h3>{t("shop.equipped")}</h3>
+            <span class={s.sectionCount}>{equipped.length} {t("shop.active")}</span>
           </div>
           <div class={s.itemsGrid}>
             {equipped.map((item) => (
@@ -1002,12 +1008,12 @@ function OwnedTab({
       <div class={s.section}>
         <div class={s.sectionHeader}>
           <UserIcon size={18} class={s.sectionIcon} />
-          <h3>Owned</h3>
-          <span class={s.sectionCount}>{ownedItems.length} items</span>
+          <h3>{t("shop.owned")}</h3>
+          <span class={s.sectionCount}>{ownedItems.length} {t("shop.items")}</span>
         </div>
         {unequipped.length === 0 ? (
           <div class={s.emptyContainer}>
-            <p>Everything you own is currently equipped.</p>
+            <p>{t("shop.everythingEquipped")}</p>
           </div>
         ) : (
           <div class={s.itemsGrid}>
@@ -1047,6 +1053,7 @@ function OwnedCard({
   onEquip: (item: Cosmetic) => void;
   onUnequip: (item: Cosmetic) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div class={`${s.itemCard} ${s.owned} ${equipped ? s.equipped : ""}`}>
       <div
@@ -1068,7 +1075,7 @@ function OwnedCard({
           </div>
         )}
         <div class={s.ownedBadge}>
-          <Check size={12} /> {equipped ? "Equipped" : "Owned"}
+          <Check size={12} /> {equipped ? t("shop.equipped") : t("shop.owned")}
         </div>
       </div>
       <div class={s.itemContent}>
@@ -1089,7 +1096,7 @@ function OwnedCard({
               disabled={!!equipping}
             >
               <X size={14} />{" "}
-              {equipping === item.id ? "Unequipping…" : "Unequip"}
+              {equipping === item.id ? t("shop.unequipping") : t("shop.unequip")}
             </button>
           ) : (
             <button
@@ -1099,7 +1106,7 @@ function OwnedCard({
               disabled={!!equipping}
             >
               <Check size={14} />{" "}
-              {equipping === item.id ? "Equipping…" : "Equip"}
+              {equipping === item.id ? t("shop.equipping") : t("shop.equip")}
             </button>
           )}
           <button
@@ -1107,7 +1114,7 @@ function OwnedCard({
             class={`${s.actionButton} ${s.action_details} ${s.actionCompact}`}
             onClick={() => onItemClick(item)}
           >
-            Details
+            {t("shop.details")}
           </button>
         </div>
       </div>
@@ -1140,10 +1147,11 @@ function ItemModal({
   onEquip: (item: Cosmetic) => void;
   onUnequip: (item: Cosmetic) => void;
 }) {
+  const { t } = useI18n();
   const trapRef = useFocusTrap<HTMLDivElement>(true);
   const formatPrice = (price: number, pricingType: string) => {
-    if (pricingType === "free" || price === 0) return "Free";
-    return `${price} credits`;
+    if (pricingType === "free" || price === 0) return t("shop.free");
+    return `${price} ${t("shop.credits")}`;
   };
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -1165,7 +1173,7 @@ function ItemModal({
         aria-label={item.name}
         onClick={(e) => e.stopPropagation()}
       >
-        <button class={s.modalClose} onClick={onClose} aria-label="Close">
+        <button class={s.modalClose} onClick={onClose} aria-label={t("shop.close")}>
           <X size={20} />
         </button>
         <div class={s.modalContent}>
@@ -1179,7 +1187,7 @@ function ItemModal({
             </div>
             {item.featured && (
               <div class={s.modalFeaturedBadge}>
-                <Star size={14} /> Featured
+                <Star size={14} /> {t("shop.featured")}
               </div>
             )}
           </div>
@@ -1192,21 +1200,21 @@ function ItemModal({
             <div class={s.modalStats}>
               <div class={s.modalStatItem}>
                 <Users size={16} />
-                <span>{item.purchases.toLocaleString()} purchases</span>
+                <span>{item.purchases.toLocaleString()} {t("shop.purchases")}</span>
               </div>
               <div class={s.modalStatItem}>
                 <Calendar size={16} />
-                <span>Added {formatDate(item.created_at)}</span>
+                <span>{t("shop.added")} {formatDate(item.created_at)}</span>
               </div>
               <div class={s.modalStatItem}>
                 <UserIcon size={16} />
-                <span>Created by {item.creator}</span>
+                <span>{t("shop.createdBy")} {item.creator}</span>
               </div>
             </div>
             <div class={s.modalFooter}>
               {!owned && (
                 <div class={s.modalPrice}>
-                  <span class={s.priceLabel}>Price</span>
+                  <span class={s.priceLabel}>{t("shop.price")}</span>
                   <span class={s.priceValue}>
                     {formatPrice(item.price, item.pricing_type)}
                   </span>
@@ -1220,7 +1228,7 @@ function ItemModal({
                     onClick={() => onUnequip(item)}
                     loading={equipping === item.id}
                   >
-                    <X size={18} /> Unequip
+                    <X size={18} /> {t("shop.unequip")}
                   </ActionButton>
                 ) : (
                   <ActionButton
@@ -1229,7 +1237,7 @@ function ItemModal({
                     onClick={() => onEquip(item)}
                     loading={equipping === item.id}
                   >
-                    <Check size={18} /> Equip
+                    <Check size={18} /> {t("shop.equip")}
                   </ActionButton>
                 )
               ) : (
@@ -1240,10 +1248,10 @@ function ItemModal({
                   loading={purchasing}
                 >
                   {purchasing
-                    ? "Obtaining..."
+                    ? t("shop.obtaining")
                     : item.pricing_type === "free" || item.price === 0
-                      ? "Obtain for Free"
-                      : `Obtain for ${item.price} Bilup Credits`}
+                      ? t("shop.obtainForFree")
+                      : `${t("shop.obtainFor")} ${item.price} ${t("shop.bilupCredits")}`}
                 </ActionButton>
               )}
             </div>

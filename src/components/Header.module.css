@@ -255,6 +255,143 @@
   border-color: var(--text-subtle);
 }
 
+.langWrapper {
+  position: relative;
+}
+
+.langToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 2.5rem;
+  padding: 0 0.625rem;
+  margin: 0 0.25rem;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.langToggle:hover {
+  background-color: var(--surface-2);
+  color: var(--text);
+  border-color: var(--text-subtle);
+}
+
+.langLabel {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.langArrow {
+  transition: transform 0.2s;
+}
+
+.langArrowUp {
+  transform: rotate(180deg);
+}
+
+.langDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 9rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 60;
+}
+
+.langOption {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+
+.langOption:hover {
+  background-color: var(--surface-2);
+  color: var(--text);
+}
+
+.langOptionActive {
+  color: var(--text);
+  font-weight: 600;
+  background-color: var(--surface-1);
+}
+
+.langOptionActive::before {
+  content: "✓";
+  margin-right: 0.5rem;
+  font-weight: 700;
+}
+
+/* Mobile language section */
+.mobileSection {
+  padding: 0.75rem 1rem;
+}
+
+.mobileSectionLabel {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.mobileLangRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mobileLangBtn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.mobileLangBtn:hover {
+  background-color: var(--surface-2);
+  color: var(--text);
+  border-color: var(--text-subtle);
+}
+
+.mobileLangBtnActive {
+  color: var(--text);
+  font-weight: 600;
+  border-color: var(--accent);
+  background-color: var(--surface-2);
+}
+
 .mobileThemeToggle {
   display: flex;
   align-items: center;

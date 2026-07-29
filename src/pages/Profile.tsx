@@ -3,6 +3,7 @@ import { Search, ArrowRight, UserX } from "lucide-preact";
 import { AccountPage } from "../components/AccountPage";
 import { ProfileCard } from "../components/ProfileCard";
 import { useAuth, usePublicProfile, useBenefits } from "../lib/auth";
+import { useI18n } from "../i18n/i18n";
 import s from "./Profile.module.css";
 
 const API = "https://api.accounts.bilup.org";
@@ -26,6 +27,7 @@ function getUsernameFromUrl(): string {
 
 function ProfileLookup() {
   const [input, setInput] = useState("");
+  const { t } = useI18n();
 
   const onSubmit = (e: Event) => {
     e.preventDefault();
@@ -40,25 +42,25 @@ function ProfileLookup() {
         <div class={s.lookupIcon}>
           <Search size={28} />
         </div>
-        <div class={s.lookupTitle}>Look up a Bilup user</div>
+        <div class={s.lookupTitle}>{t("profile.lookupTitle")}</div>
         <p class={s.lookupText}>
-          Enter a username to view their public profile.
+          {t("profile.lookupText")}
         </p>
         <form class={s.lookupForm} onSubmit={onSubmit}>
           <input
             type="text"
             class={s.lookupInput}
-            placeholder="username"
+            placeholder={t("profile.lookupPlaceholder")}
             value={input}
             onInput={(e: any) => setInput(e.target.value)}
             autoFocus
           />
           <button class={s.lookupBtn} type="submit" disabled={!input.trim()}>
-            View <ArrowRight size={14} />
+            {t("profile.lookupView")} <ArrowRight size={14} />
           </button>
         </form>
         <div class={s.lookupHint}>
-          You can also go directly to <code>/profile/username</code>
+          {t("profile.lookupHint")} <code>/profile/username</code>
         </div>
       </div>
     </AccountPage>
@@ -72,6 +74,7 @@ function ProfileView({ username }: { username: string }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const { t } = useI18n();
 
   const isSelf = !!me && me.username?.toLowerCase() === username.toLowerCase();
 
@@ -227,14 +230,14 @@ function ProfileView({ username }: { username: string }) {
           <div class={s.errorIcon}>
             <UserX size={28} />
           </div>
-          <div class={s.errorTitle}>This user has been banned</div>
-          <p class={s.errorText}>This Bilup account is no longer available.</p>
+          <div class={s.errorTitle}>{t("profile.bannedTitle")}</div>
+          <p class={s.errorText}>{t("profile.bannedText")}</p>
           <a
             href="/profile"
             class={s.lookupBtn}
             style={{ display: "inline-flex" }}
           >
-            <Search size={14} /> Look up another
+            <Search size={14} /> {t("profile.lookUpAnother")}
           </a>
         </div>
       </AccountPage>
@@ -244,22 +247,22 @@ function ProfileView({ username }: { username: string }) {
   return (
     <AccountPage>
       {loading ? (
-        <div class={s.spinner} aria-label="Loading" />
+        <div class={s.spinner} aria-label={t("profile.loading")} />
       ) : !profile || error === "not_found" ? (
         <div class={s.errorState}>
           <div class={s.errorIcon}>
             <UserX size={28} />
           </div>
-          <div class={s.errorTitle}>User not found</div>
+          <div class={s.errorTitle}>{t("profile.notFoundTitle")}</div>
           <p class={s.errorText}>
-            We couldn't find a Bilup user named <strong>@{username}</strong>.
+            {t("profile.notFoundText")} <strong>@{username}</strong>.
           </p>
           <a
             href="/profile"
             class={s.lookupBtn}
             style={{ display: "inline-flex" }}
           >
-            <Search size={14} /> Look up another
+            <Search size={14} /> {t("profile.lookUpAnother")}
           </a>
         </div>
       ) : (

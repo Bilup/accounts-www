@@ -21,6 +21,7 @@ import {
 } from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
 import { useConfirm } from "../components/ConfirmDialog";
+import { useI18n } from "../i18n/i18n";
 import s from "./InventoryManager.module.css";
 
 const API_BASE_URL = "https://api.accounts.bilup.org";
@@ -47,10 +48,10 @@ interface TransferRecord {
 
 type TabName = "my-items" | "marketplace" | "create-item";
 
-const TABS: { id: TabName; label: string; icon: typeof Package }[] = [
-  { id: "my-items", label: "My Items", icon: Package },
-  { id: "marketplace", label: "Marketplace", icon: ShoppingBag },
-  { id: "create-item", label: "Create Item", icon: PlusCircle },
+const TABS: { id: TabName; labelKey: string; icon: typeof Package }[] = [
+  { id: "my-items", labelKey: "inventory.myItems", icon: Package },
+  { id: "marketplace", labelKey: "inventory.marketplace", icon: ShoppingBag },
+  { id: "create-item", labelKey: "inventory.createItem", icon: PlusCircle },
 ];
 
 function createSafeId(name: string): string {
@@ -70,6 +71,7 @@ export function InventoryManager() {
   const [confirm, confirmDialog] = useConfirm();
   const currentUser = user?.username || "";
   const [userCurrency, setUserCurrency] = useState(0);
+  const { t } = useI18n();
 
   const [activeTab, setActiveTab] = useState<TabName>("my-items");
   const [viewingItem, setViewingItem] = useState<InventoryItem | null>(null);
@@ -560,7 +562,7 @@ export function InventoryManager() {
             setSingleItemErr("");
           }}
         >
-          <ArrowLeft size={14} /> Back to Inventory
+          <ArrowLeft size={14} /> {t("inventory.backToInventory")}
         </button>
 
         <div class={s.singleItemCard}>
@@ -569,35 +571,35 @@ export function InventoryManager() {
             <button
               class={s.copyBtn}
               onClick={() => copyItemLink(item.name)}
-              title="Copy link to this item"
-              aria-label={`Copy link to ${item.name}`}
+              title={t("inventory.copyLink")}
+              aria-label={`${t("inventory.copyLink")}: ${item.name}`}
             >
               <Link2 size={14} />
             </button>
           </h2>
           <div class={s.singleItemDescription}>
-            {item.description || "No description available"}
+            {item.description || t("inventory.noDescriptionAvailable")}
           </div>
-          <div class={s.singleItemPrice}>{formatPrice(item.price)} credits</div>
+          <div class={s.singleItemPrice}>{formatPrice(item.price)} {t("inventory.credits")}</div>
           <div
             class={`${s.saleStatus} ${item.selling ? s.forSale : s.notForSale}`}
           >
-            {item.selling ? "For Sale" : "Not For Sale"}
+            {item.selling ? t("inventory.forSale") : t("inventory.notForSale")}
           </div>
           <div class={s.singleItemMeta}>
             <div>
-              <strong>Owner:</strong> {item.owner || item.author}
+              <strong>{t("inventory.owner")}</strong> {item.owner || item.author}
             </div>
             <div>
-              <strong>Author:</strong> {item.author}
+              <strong>{t("inventory.author")}</strong> {item.author}
             </div>
             <div>
-              <strong>Created:</strong> {formatDate(item.created)}
+              <strong>{t("inventory.created")}</strong> {formatDate(item.created)}
             </div>
             {item.total_income !== undefined && (
               <div>
-                <strong>Total Income:</strong> {formatPrice(item.total_income)}{" "}
-                credits
+                <strong>{t("inventory.totalIncome")}</strong> {formatPrice(item.total_income)}{" "}
+                {t("inventory.credits")}
               </div>
             )}
           </div>
@@ -610,14 +612,14 @@ export function InventoryManager() {
               >
                 <Coins size={14} />{" "}
                 {busy === "single"
-                  ? "Purchasing…"
-                  : `Buy for ${formatPrice(item.price)} credits`}
+                  ? t("inventory.purchasing")
+                  : t("inventory.buyItem", { price: String(formatPrice(item.price)) })}
               </button>
             )}
-            {isOwnItem && <div class={s.ownItemNotice}>This is your item</div>}
+            {isOwnItem && <div class={s.ownItemNotice}>{t("inventory.thisIsYourItem")}</div>}
             {!item.selling && !isOwnItem && (
               <div class={s.notForSaleNotice}>
-                This item is not currently for sale
+                {t("inventory.notForSaleNotice")}
               </div>
             )}
           </div>
@@ -635,15 +637,15 @@ export function InventoryManager() {
       <AccountPage>
         <EmptyState
           icon={<Package size={24} />}
-          title="Item not found"
-          text={`We couldn't find an item called "${viewNotFound}". It may have been deleted or renamed.`}
+          title={t("inventory.itemNotFound")}
+          text={t("inventory.itemNotFoundText", { name: viewNotFound })}
         >
           <button
             class={s.btnPrimary}
             onClick={() => setViewNotFound(null)}
             disabled={!currentUser}
           >
-            <ArrowLeft size={14} /> Back to inventory
+            <ArrowLeft size={14} /> {t("inventory.backToInventoryBtn")}
           </button>
         </EmptyState>
       </AccountPage>
@@ -655,8 +657,8 @@ export function InventoryManager() {
     return (
       <AuthRequired
         icon={<Package size={28} />}
-        title="Sign in to manage inventory"
-        text="Sign in to create, buy, sell, and manage your items."
+        title={t("inventory.signInToManage")}
+        text={t("inventory.signInText")}
         href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/inventory-manager")}`}
       />
     );
@@ -664,12 +666,12 @@ export function InventoryManager() {
 
   return (
     <AccountPage
-      title="Inventory Manager"
-      subtitle="Create, buy, sell, and manage your items"
+      title={t("inventory.title")}
+      subtitle={t("inventory.subtitle")}
     >
       {confirmDialog}
       <AccountTabs
-        tabs={TABS}
+        tabs={TABS.map((tab) => ({ ...tab, label: t(tab.labelKey) }))}
         active={activeTab}
         onChange={handleTabChange}
         ariaLabel="Inventory sections"
@@ -679,19 +681,19 @@ export function InventoryManager() {
         {activeTab === "my-items" && (
           <AccountSection
             icon={<Package size={18} />}
-            title="Your Items"
+            title={t("inventory.yourItems")}
             subtitle={
               <>
-                {myItems.length} items &bull; {userCurrency} credits
+                {myItems.length} items &bull; {userCurrency} {t("inventory.credits")}
               </>
             }
           >
-            {myItemsLoading && <div class={s.loading}>Loading your items…</div>}
+            {myItemsLoading && <div class={s.loading}>{t("inventory.loadingItems")}</div>}
             {!myItemsLoading && myItems.length === 0 && (
               <EmptyState
                 icon={<Package size={24} />}
-                title="No items yet"
-                text="Create your first item in the Create Item tab."
+                title={t("inventory.noItems")}
+                text={t("inventory.noItemsText")}
               />
             )}
             <div class={s.itemGrid}>
@@ -704,31 +706,31 @@ export function InventoryManager() {
                       <h3 class={s.itemName}>{item.name}</h3>
                       {item.selling ? (
                         <span class={`${s.itemTag} ${s.forSale}`}>
-                          For Sale
+                          {t("inventory.forSale")}
                         </span>
                       ) : (
                         <span class={`${s.itemTag} ${s.notForSale}`}>
-                          Private
+                          {t("inventory.private")}
                         </span>
                       )}
                     </div>
                     <div class={s.itemDescription}>
-                      {item.description || "No description"}
+                      {item.description || t("inventory.noDescription")}
                     </div>
                     <div class={s.itemPrice}>
-                      {formatPrice(item.price)} credits
+                      {formatPrice(item.price)} {t("inventory.credits")}
                     </div>
                     <div class={s.itemInfo}>
                       <div class={s.itemInfoRow}>
-                        <span class={s.itemInfoLabel}>Created:</span>
+                        <span class={s.itemInfoLabel}>{t("inventory.created")}</span>
                         <span class={s.itemInfoValue}>
                           {formatDate(item.created)}
                         </span>
                       </div>
                       <div class={s.itemInfoRow}>
-                        <span class={s.itemInfoLabel}>Income:</span>
+                        <span class={s.itemInfoLabel}>{t("inventory.income")}</span>
                         <span class={s.itemInfoValue}>
-                          {formatPrice(item.total_income)} credits
+                          {formatPrice(item.total_income)} {t("inventory.credits")}
                         </span>
                       </div>
                     </div>
@@ -746,8 +748,8 @@ export function InventoryManager() {
                             }
                           >
                             {expandedHistory[safeId]
-                              ? "Hide Transfer History"
-                              : "View Transfer History"}
+                              ? t("inventory.hideHistory")
+                              : t("inventory.viewHistory")}
                           </button>
                           {expandedHistory[safeId] && (
                             <div class={s.transferHistory}>
@@ -775,14 +777,14 @@ export function InventoryManager() {
                           class={s.btnPrimary}
                           onClick={() => putItemForSale(item.name)}
                         >
-                          <Tag size={14} /> Put For Sale
+                          <Tag size={14} /> {t("inventory.putForSale")}
                         </button>
                       ) : (
                         <button
                           class={s.btnSecondary}
                           onClick={() => stopSelling(item.name)}
                         >
-                          Stop Selling
+                          {t("inventory.stopSelling")}
                         </button>
                       )}
                     </div>
@@ -795,14 +797,14 @@ export function InventoryManager() {
                         class={s.formInput}
                         defaultValue={formatPrice(item.price)}
                         min={0}
-                        placeholder="Price"
+                        placeholder={t("inventory.price")}
                         aria-label={`New price for ${item.name}`}
                       />
                       <button
                         class={s.btnSecondary}
                         onClick={() => updatePrice(item.name, safeId)}
                       >
-                        <Tag size={14} /> Update Price
+                        <Tag size={14} /> {t("inventory.updatePrice")}
                       </button>
                     </div>
                     <div class={s.actionRow}>
@@ -819,7 +821,7 @@ export function InventoryManager() {
                         class={s.btnSecondary}
                         onClick={() => transferItem(item.name, safeId)}
                       >
-                        <Send size={14} /> Transfer
+                        <Send size={14} /> {t("inventory.transfer")}
                       </button>
                     </div>
                     <div class={s.actionRow}>
@@ -827,7 +829,7 @@ export function InventoryManager() {
                         class={s.btnDanger}
                         onClick={() => deleteItem(item.name)}
                       >
-                        <Trash2 size={14} /> Delete Item
+                        <Trash2 size={14} /> {t("inventory.deleteItem")}
                       </button>
                     </div>
                     {msg && (
@@ -845,14 +847,14 @@ export function InventoryManager() {
         {activeTab === "marketplace" && (
           <AccountSection
             icon={<ShoppingBag size={18} />}
-            title="Marketplace"
+            title={t("inventory.marketplace")}
             subtitle={`${marketplaceItems.length} items for sale`}
           >
             <div class={s.searchRow}>
               <input
                 type="text"
                 class={s.searchInput}
-                placeholder="Search items by name, description, or owner…"
+                placeholder={t("inventory.searchItems")}
                 value={marketplaceSearch}
                 onInput={(e) =>
                   setMarketplaceSearch((e.target as HTMLInputElement).value)
@@ -860,13 +862,13 @@ export function InventoryManager() {
               />
             </div>
             {marketplaceLoading && (
-              <div class={s.loading}>Loading marketplace…</div>
+              <div class={s.loading}>{t("inventory.loadingMarketplace")}</div>
             )}
             {!marketplaceLoading && marketplaceItems.length === 0 && (
               <EmptyState
                 icon={<ShoppingBag size={24} />}
-                title="No items for sale"
-                text="No items are currently listed in the marketplace."
+                title={t("inventory.noItemsForSale")}
+                text={t("inventory.noItemsMarketplace")}
               />
             )}
             {!marketplaceLoading &&
@@ -874,8 +876,8 @@ export function InventoryManager() {
               filteredMarketplaceItems.length === 0 && (
                 <EmptyState
                   icon={<Search size={24} />}
-                  title="No results"
-                  text="No items match your search."
+                  title={t("inventory.noResults")}
+                  text={t("inventory.noResultsText")}
                 />
               )}
             <div class={s.itemGrid}>
@@ -900,22 +902,22 @@ export function InventoryManager() {
                       </button>
                     </div>
                     <div class={s.itemDescription}>
-                      {item.description || "No description"}
+                      {item.description || t("inventory.noDescription")}
                     </div>
                     <div class={s.itemPrice}>
-                      {formatPrice(item.price)} credits
+                      {formatPrice(item.price)} {t("inventory.credits")}
                     </div>
                     <div class={s.itemInfo}>
                       <div class={s.itemInfoRow}>
-                        <span class={s.itemInfoLabel}>Owner:</span>
+                        <span class={s.itemInfoLabel}>{t("inventory.owner")}</span>
                         <span class={s.itemInfoValue}>{item.owner || ""}</span>
                       </div>
                       <div class={s.itemInfoRow}>
-                        <span class={s.itemInfoLabel}>Author:</span>
+                        <span class={s.itemInfoLabel}>{t("inventory.author")}</span>
                         <span class={s.itemInfoValue}>{item.author}</span>
                       </div>
                       <div class={s.itemInfoRow}>
-                        <span class={s.itemInfoLabel}>Created:</span>
+                        <span class={s.itemInfoLabel}>{t("inventory.created")}</span>
                         <span class={s.itemInfoValue}>
                           {formatDate(item.created)}
                         </span>
@@ -930,11 +932,11 @@ export function InventoryManager() {
                         >
                           <Coins size={14} />{" "}
                           {busy === `mp-${safeId}`
-                            ? "Purchasing…"
-                            : `Buy for ${formatPrice(item.price)} credits`}
+                            ? t("inventory.purchasing")
+                            : t("inventory.buyItem", { price: String(formatPrice(item.price)) })}
                         </button>
                       ) : (
-                        <div class={s.ownItemNotice}>This is your item</div>
+                        <div class={s.ownItemNotice}>{t("inventory.thisIsYourItem")}</div>
                       )}
                     </div>
                     {msg && (
@@ -952,16 +954,16 @@ export function InventoryManager() {
         {activeTab === "create-item" && (
           <AccountSection
             icon={<PlusCircle size={18} />}
-            title="Create New Item"
-            subtitle="Fill in the details to create a new inventory item"
+            title={t("inventory.createNewItem")}
+            subtitle={t("inventory.createSubtitle")}
           >
             <div class={s.formGroup}>
-              <label for="item-name">Item Name</label>
+              <label for="item-name">{t("inventory.itemName")}</label>
               <input
                 type="text"
                 id="item-name"
                 class={s.formInput}
-                placeholder="Enter a unique name for your item"
+                placeholder={t("inventory.itemNamePlaceholder")}
                 maxlength={50}
                 value={createName}
                 onInput={(e) =>
@@ -969,16 +971,16 @@ export function InventoryManager() {
                 }
               />
               <small class={s.formHint}>
-                Choose a descriptive name (max 50 characters)
+                {t("inventory.itemNameHint")}
               </small>
             </div>
 
             <div class={s.formGroup}>
-              <label for="item-description">Description</label>
+              <label for="item-description">{t("inventory.description")}</label>
               <textarea
                 id="item-description"
                 class={s.formInput}
-                placeholder="Describe your item in detail…"
+                placeholder={t("inventory.descriptionPlaceholder")}
                 maxlength={500}
                 rows={4}
                 value={createDescription}
@@ -987,13 +989,13 @@ export function InventoryManager() {
                 }
               />
               <small class={s.formHint}>
-                Provide a clear description (max 500 characters)
+                {t("inventory.descriptionHint")}
               </small>
             </div>
 
             <div class={s.formRow}>
               <div class={s.formGroup}>
-                <label for="item-price">Price (credits)</label>
+                <label for="item-price">{t("inventory.priceCredits")}</label>
                 <input
                   type="number"
                   id="item-price"
@@ -1006,7 +1008,7 @@ export function InventoryManager() {
                     setCreatePrice((e.target as HTMLInputElement).value)
                   }
                 />
-                <small class={s.formHint}>Set your asking price</small>
+                <small class={s.formHint}>{t("inventory.setYourPrice")}</small>
               </div>
             </div>
 
@@ -1020,15 +1022,15 @@ export function InventoryManager() {
                     setCreateSelling((e.target as HTMLInputElement).checked)
                   }
                 />
-                <label for="item-selling">Put up for sale immediately</label>
+                <label for="item-selling">{t("inventory.putForSaleImmediate")}</label>
               </div>
               <small class={s.formHint}>
-                Enable this to make the item available in the marketplace
+                {t("inventory.putForSaleHint")}
               </small>
             </div>
 
             <div class={s.formGroup}>
-              <label for="item-data">Private Data (JSON)</label>
+              <label for="item-data">{t("inventory.privateData")}</label>
               <textarea
                 id="item-data"
                 class={s.formInput}
@@ -1040,7 +1042,7 @@ export function InventoryManager() {
                 }
               />
               <small class={s.formHint}>
-                Optional: Store private metadata in JSON format
+                {t("inventory.privateDataHint")}
               </small>
             </div>
 
@@ -1051,10 +1053,10 @@ export function InventoryManager() {
                 disabled={createSubmitting}
               >
                 <PlusCircle size={14} />{" "}
-                {createSubmitting ? "Creating…" : "Create Item"}
+                {createSubmitting ? t("inventory.creating") : t("inventory.createItem")}
               </button>
               <button class={s.btnSecondary} onClick={resetCreateForm}>
-                Clear Form
+                {t("inventory.clearForm")}
               </button>
             </div>
 

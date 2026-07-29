@@ -1,3 +1,4 @@
+import { useI18n } from "../../i18n/i18n";
 import { useState, useEffect, useMemo } from "preact/hooks";
 import {
   Users,
@@ -69,11 +70,11 @@ interface GroupPublic {
 
 type HubTab = "my-groups" | "browse" | "top" | "create";
 
-const HUB_TABS: { id: HubTab; label: string; icon: typeof Users }[] = [
-  { id: "my-groups", label: "My Groups", icon: Users },
-  { id: "browse", label: "Browse", icon: Search },
-  { id: "top", label: "Top", icon: Trophy },
-  { id: "create", label: "Create Group", icon: PlusCircle },
+const HUB_TABS: { id: HubTab; labelKey: string; icon: typeof Users }[] = [
+  { id: "my-groups", labelKey: "groups.myGroups", icon: Users },
+  { id: "browse", labelKey: "groups.browse", icon: Search },
+  { id: "top", labelKey: "groups.top", icon: Trophy },
+  { id: "create", labelKey: "groups.createGroup", icon: PlusCircle },
 ];
 
 const JOIN_POLICY_OPTIONS: {
@@ -108,6 +109,7 @@ function authQs(): string {
 }
 
 export function Groups() {
+  const { t } = useI18n();
   const { user, isLoggedIn, reload: reloadUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<HubTab>("my-groups");
@@ -464,8 +466,8 @@ export function Groups() {
     return (
       <AuthRequired
         icon={<Users size={32} />}
-        title="Sign in to use Groups"
-        text="Join communities, manage members, and post announcements."
+        title={t("groups.signInToView")}
+        text={t("groups.signInText")}
         href={`/auth?return_to=${encodeURIComponent(
           window.location.origin +
             window.location.pathname +
@@ -493,27 +495,27 @@ export function Groups() {
       />
 
       <AccountTabs
-        tabs={HUB_TABS}
+        tabs={HUB_TABS.map((tab) => ({ ...tab, label: t(tab.labelKey) }))}
         active={activeTab}
         onChange={setActiveTab}
-        ariaLabel="Groups sections"
+        ariaLabel={t("groups.title")}
       />
 
       <AccountTabPanel>
         {activeTab === "my-groups" && (
           <AccountSection
             icon={<Users size={18} />}
-            title="Your Groups"
-            subtitle={`${myGroups.length} ${plural(myGroups.length, "group")}`}
+            title={t("groups.myGroups")}
+            subtitle={`${myGroups.length} ${plural(myGroups.length, t("groups.member"))}`}
           >
             {myGroupsLoading && (
-              <div class={s.loading}>Loading your groups…</div>
+              <div class={s.loading}>{t("groups.loading")}</div>
             )}
             {!myGroupsLoading && myGroups.length === 0 && (
               <EmptyState
                 icon={<Users size={24} />}
-                title="No groups yet"
-                text="Browse public groups or create your own to get started."
+                title={t("groups.noGroups")}
+                text={t("groups.noGroupsText")}
               />
             )}
             <div class={s.groupGrid}>
@@ -527,7 +529,7 @@ export function Groups() {
         {activeTab === "browse" && (
           <AccountSection
             icon={<Search size={18} />}
-            title="Browse Public Groups"
+            title={t("groups.browse")}
             subtitle={`${browseResults.length} ${plural(
               browseResults.length,
               "result",
@@ -537,8 +539,8 @@ export function Groups() {
               <input
                 type="text"
                 class={s.searchInput}
-                placeholder="Search by name, description, or tag…"
-                aria-label="Search groups"
+                placeholder={t("groups.search")}
+                aria-label={t("groups.search")}
                 value={searchQuery}
                 onInput={(e) =>
                   setSearchQuery((e.target as HTMLInputElement).value)
@@ -549,30 +551,30 @@ export function Groups() {
                 type="submit"
                 disabled={browseLoading}
               >
-                <Search size={14} /> Search
+                <Search size={14} /> {t("groups.search")}
               </button>
             </form>
 
-            {browseLoading && <div class={s.loading}>Searching groups…</div>}
+            {browseLoading && <div class={s.loading}>{t("groups.loading")}</div>}
             {!browseLoading && browseError && (
               <EmptyState
                 icon={<Search size={24} />}
-                title="Couldn't load groups"
+                title={t("groups.couldNotLoad")}
                 text={browseError}
               >
                 <button class={s.btnSecondary} onClick={loadBrowse}>
-                  Retry
+                  {t("groups.retry")}
                 </button>
               </EmptyState>
             )}
             {!browseLoading && !browseError && browseResults.length === 0 && (
               <EmptyState
                 icon={<Search size={24} />}
-                title="No groups found"
+                title={t("groups.noGroupsFound")}
                 text={
                   searchQuery.trim()
-                    ? "Try a different search term."
-                    : "There are no public groups to browse yet."
+                    ? t("groups.tryDifferentSearch")
+                    : t("groups.noBrowseGroups")
                 }
               />
             )}
@@ -582,8 +584,8 @@ export function Groups() {
               filteredBrowse.length === 0 && (
                 <EmptyState
                   icon={<Search size={24} />}
-                  title="No matches"
-                  text="No loaded groups match your filter."
+                  title={t("groups.noMatches")}
+                  text={t("groups.noMatchesFilter")}
                 />
               )}
             <div class={s.groupGrid}>
@@ -597,18 +599,18 @@ export function Groups() {
         {activeTab === "top" && (
           <AccountSection
             icon={<Trophy size={18} />}
-            title="Top Public Groups"
+            title={t("groups.top")}
             subtitle={`${topGroups.length} ${plural(
               topGroups.length,
-              "group",
-            )} ranked by members`}
+              t("groups.member"),
+            )} ${t("groups.rankedByMembers")}`}
           >
-            {topLoading && <div class={s.loading}>Loading top groups…</div>}
+            {topLoading && <div class={s.loading}>{t("groups.loading")}</div>}
             {!topLoading && topGroups.length === 0 && (
               <EmptyState
                 icon={<Trophy size={24} />}
-                title="No top groups yet"
-                text="Public groups will appear here once they have members."
+                title={t("groups.noTopGroups")}
+                text={t("groups.topGroupsDesc")}
               />
             )}
             <div class={s.groupGrid}>
@@ -660,11 +662,11 @@ export function Groups() {
                       </span>
                       {g.public ? (
                         <span class={s.metaChip}>
-                          <Globe size={11} /> Public
+                          <Globe size={11} /> {t("groups.publicLabel")}
                         </span>
                       ) : (
                         <span class={s.metaChip}>
-                          <Lock size={11} /> Private
+                          <Lock size={11} /> {t("groups.privateLabel")}
                         </span>
                       )}
                     </div>

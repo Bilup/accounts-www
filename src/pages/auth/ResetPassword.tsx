@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "preact/hooks";
+import { useI18n } from "../../i18n/i18n";
 import {
   AuthShell,
   AuthMain,
@@ -49,10 +50,11 @@ function flashBtn(
 }
 
 export function ResetPassword() {
+  const { t } = useI18n();
   const [token, setToken] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [btn, setBtn] = useState<BtnState>(defaultBtn("Reset password"));
+  const [btn, setBtn] = useState<BtnState>(defaultBtn(t("auth.resetPassword")));
   const [msg, setMsg] = useState("");
   const [msgVariant, setMsgVariant] = useState<"error" | "success">("error");
   const [noToken, setNoToken] = useState(false);
@@ -72,29 +74,29 @@ export function ResetPassword() {
       e.preventDefault();
       e.stopPropagation();
       if (!token.trim()) {
-        flashBtn(setBtn, "Reset password", errorBtn("Reset code is required"));
+        flashBtn(setBtn, t("auth.resetPassword"), errorBtn(t("auth.resetCodeRequired")));
         setMsgVariant("error");
-        setMsg("Reset code is required");
+        setMsg(t("auth.resetCodeRequired"));
         return;
       }
       if (newPw.length < 8) {
         flashBtn(
           setBtn,
-          "Reset password",
-          errorBtn("Password must be 8+ characters"),
+          t("auth.resetPassword"),
+          errorBtn(t("auth.password8Chars")),
         );
         setMsgVariant("error");
-        setMsg("Password must be at least 8 characters.");
+        setMsg(t("auth.passwordLengthError"));
         return;
       }
       if (newPw !== confirm) {
-        flashBtn(setBtn, "Reset password", errorBtn("Passwords do not match"));
+        flashBtn(setBtn, t("auth.resetPassword"), errorBtn(t("auth.passwordsDoNotMatch")));
         setMsgVariant("error");
-        setMsg("Passwords do not match.");
+        setMsg(t("auth.passwordsDontMatch"));
         return;
       }
       setMsg("");
-      setBtn(loadingBtn("Resetting..."));
+      setBtn(loadingBtn(t("auth.resetting")));
       try {
         const res = await fetch(`${API}/auth/reset_password`, {
           method: "POST",
@@ -109,15 +111,15 @@ export function ResetPassword() {
           setMsgVariant("error");
           flashBtn(
             setBtn,
-            "Reset password",
-            errorBtn(data.error || "Failed to reset password"),
+            t("auth.resetPassword"),
+            errorBtn(data.error || t("auth.failedToReset")),
           );
-          setMsg(data.error || "Failed to reset password");
+          setMsg(data.error || t("auth.failedToReset"));
           return;
         }
-        setBtn(successBtn("Password reset!"));
+        setBtn(successBtn(t("auth.passwordReset")));
         setMsgVariant("success");
-        setMsg(data.message || "Your password has been reset. Please sign in.");
+        setMsg(data.message || t("auth.passwordResetMsg"));
         setTimeout(() => {
           window.location.href = "/auth";
         }, 1500);
@@ -125,10 +127,10 @@ export function ResetPassword() {
         setMsgVariant("error");
         flashBtn(
           setBtn,
-          "Reset password",
-          errorBtn("Network error - try again"),
+          t("auth.resetPassword"),
+          errorBtn(t("auth.networkError")),
         );
-        setMsg("Network error - try again");
+        setMsg(t("auth.networkError"));
       }
     },
     [token, newPw, confirm],
@@ -139,15 +141,12 @@ export function ResetPassword() {
       <AuthShell>
         <AuthMain>
           <AuthLogo />
-          <AuthHeading>Invalid reset link</AuthHeading>
-          <AuthSubheading>
-            This password reset link is invalid or missing a token. Please
-            request a new one from the forgot password page.
-          </AuthSubheading>
+          <AuthHeading>{t("auth.invalidResetLink")}</AuthHeading>
+          <AuthSubheading>{t("auth.invalidResetLinkSub")}</AuthSubheading>
           <AuthTosLinks>
             <p>
               <AuthTosLinkBtn onClick={() => (window.location.href = "/auth")}>
-                Go to sign in
+                {t("auth.goToSignIn")}
               </AuthTosLinkBtn>
             </p>
           </AuthTosLinks>
@@ -160,14 +159,14 @@ export function ResetPassword() {
     <AuthShell>
       <AuthMain>
         <AuthLogo />
-        <AuthHeading>Set a new password</AuthHeading>
-        <AuthSubheading>Enter a new password for your account.</AuthSubheading>
+        <AuthHeading>{t("auth.setNewPassword")}</AuthHeading>
+        <AuthSubheading>{t("auth.setNewPasswordSub")}</AuthSubheading>
         <form onSubmit={handleSubmit} style={{ maxWidth: 480, width: "100%" }}>
           <AuthFormGroup>
             <AuthInput
               type="password"
               name="new-password"
-              placeholder="New password (8+ characters)"
+              placeholder={t("auth.newPasswordPlaceholder")}
               required
               minlength={8}
               value={newPw}
@@ -179,7 +178,7 @@ export function ResetPassword() {
             <AuthInput
               type="password"
               name="confirm-password"
-              placeholder="Confirm new password"
+              placeholder={t("auth.confirmNewPasswordPlaceholder")}
               required
               minlength={8}
               value={confirm}
@@ -210,7 +209,7 @@ export function ResetPassword() {
         <AuthTosLinks>
           <p>
             <AuthTosLinkBtn onClick={() => (window.location.href = "/auth")}>
-              Back to sign in
+              {t("auth.backToSignIn")}
             </AuthTosLinkBtn>
           </p>
         </AuthTosLinks>

@@ -24,6 +24,7 @@ import s from "./ProfileCard.module.css";
 import { bannerUrl as buildBannerUrl } from "../lib/avatar";
 import { plural } from "../lib/format";
 import { clickable } from "../lib/clickable";
+import { useI18n } from "../i18n/i18n";
 import {
   type AuthUser,
   type PublicProfile,
@@ -92,6 +93,7 @@ export function ProfileCard({
   onNoteUpdate,
   onEdit,
 }: ProfileCardProps) {
+  const { t } = useI18n();
   const [editingBio, setEditingBio] = useState(false);
   const [bioDraft, setBioDraft] = useState(user.bio || "");
   const [bioError, setBioError] = useState<string | null>(null);
