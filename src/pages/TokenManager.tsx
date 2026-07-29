@@ -1,4 +1,3 @@
-import { useI18n } from "../i18n/i18n";
 import { useState, useEffect, useRef, useMemo } from "preact/hooks";
 import {
   Key,
@@ -140,7 +139,6 @@ const TABS: { id: TabName; label: string; icon: typeof Key }[] = [
 ];
 
 export function TokenManager() {
-  const { t } = useI18n();
   const { user } = useAuth();
   const currentUser = user?.username || "";
 

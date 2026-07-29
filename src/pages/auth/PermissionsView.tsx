@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import s from "./Auth.module.css";
 import { AuthTosLinks } from "./Shell";
-import { plural } from "../../lib/format";
 import {
   describePerm,
   permIcon,
@@ -41,9 +40,7 @@ export function PermissionsView({
   siteTokens,
   scopeBtn,
   scopeError,
-  deletingTokenId,
   onUseSubToken,
-  onDeleteToken,
   onCreateToken,
   onUseMainToken,
   onSwitchAccount,
@@ -83,27 +80,7 @@ export function PermissionsView({
     });
   };
 
-  const groupedVisible = useMemo(() => {
-    const groups: Record<string, string[]> = {};
-    for (const p of permSchema?.permissions || []) {
-      const cat = p.split(":")[0];
-      (groups[cat] ||= []).push(p);
-    }
-    return groups;
-  }, [permSchema]);
-
-  const requiredGrouped = useMemo(() => {
-    const groups: Record<string, string[]> = {};
-    for (const p of permSchema?.permissions || []) {
-      if (!requiredSet.has(p)) continue;
-      const cat = p.split(":")[0];
-      (groups[cat] ||= []).push(p);
-    }
-    return groups;
-  }, [permSchema, requiredSet]);
-
   const showAllPermsEffective = showAllPerms || !hasRequiredPerms;
-  const displayedGroups = showAllPermsEffective ? groupedVisible : requiredGrouped;
 
   const matchingSubTokens = useMemo(
     () => siteTokens.filter((t) => requiredPerms.every((p) => t.permissions.includes(p))),
@@ -154,7 +131,7 @@ export function PermissionsView({
               onClick={() => onUseSubToken(st)}
             >
               <i class="fas fa-key" /> Use {st.name || "token"} (created{" "}
-              {new Date(st.created).toLocaleDateString()})
+              {new Date(st.created_at).toLocaleDateString()})
             </button>
           ))}
           <button
