@@ -105,7 +105,7 @@ export function Notifications() {
         if (data.error) flash(data.error, "error");
       }
     } catch {
-      flash("Network error loading devices", "error");
+      flash(t("notifications.networkErrorDevices"), "error");
     }
     setEndpointsLoading(false);
   }, []);
@@ -135,7 +135,7 @@ export function Notifications() {
         if (data.error) flash(data.error, "error");
       }
     } catch {
-      flash("Network error loading allowed senders", "error");
+      flash(t("notifications.networkErrorSenders"), "error");
     }
     setAllowedLoading(false);
   }, []);
@@ -155,7 +155,7 @@ export function Notifications() {
         if (data.error) flash(data.error, "error");
       }
     } catch {
-      flash("Network error loading log", "error");
+      flash(t("notifications.networkErrorLog"), "error");
     }
     setLogLoading(false);
   }, []);
@@ -190,10 +190,10 @@ export function Notifications() {
         flash(t("notifications.deviceRemoved"), "success");
         fetchEndpoints();
       } else {
-        flash(data.error || "Failed to remove device", "error");
+        flash(data.error || t("notifications.failedRemoveDevice"), "error");
       }
     } catch {
-      flash("Network error", "error");
+      flash(t("notifications.networkError"), "error");
     }
   }
 
@@ -201,15 +201,15 @@ export function Notifications() {
     const username = newSender.trim().toLowerCase();
     const source = newSource.trim();
     if (!username) {
-      flash("Username is required", "error");
+      flash(t("notifications.usernameRequired"), "error");
       return;
     }
     if (!source) {
-      flash("Source is required", "error");
+      flash(t("notifications.sourceRequired"), "error");
       return;
     }
     if (currentUser && username === currentUser.toLowerCase()) {
-      flash("You cannot add yourself as an allowed sender", "error");
+      flash(t("notifications.cannotAddSelf"), "error");
       return;
     }
     try {
@@ -224,24 +224,24 @@ export function Notifications() {
       );
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        flash(`Allowed ${username} for ${source}`, "success");
+        flash(t("notifications.allowedSenderMsg", { user: username, source }), "success");
         setNewSender("");
         setNewSource("");
         fetchAllowed();
         reload();
       } else {
-        flash(data.error || "Failed to allow sender", "error");
+        flash(data.error || t("notifications.failedAllowSender"), "error");
       }
     } catch {
-      flash("Network error", "error");
+      flash(t("notifications.networkError"), "error");
     }
   }
 
   async function removeSender(username: string, source: string) {
     const ok = await confirm({
-      title: `Revoke ${username}'s permission?`,
-      message: `They will no longer be able to notify you from ${source}.`,
-      confirmLabel: "Revoke",
+      title: t("notifications.revokeTitle", { user: username }),
+      message: t("notifications.revokeMsg", { source }),
+      confirmLabel: t("notifications.revokeBtn"),
       danger: true,
     });
     if (!ok) return;
@@ -253,23 +253,23 @@ export function Notifications() {
       );
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        flash(`Removed ${username} from ${source}`, "success");
+        flash(t("notifications.removedSenderMsg", { user: username, source }), "success");
         fetchAllowed();
         reload();
       } else {
-        flash(data.error || "Failed to remove sender", "error");
+        flash(data.error || t("notifications.failedRemoveSender"), "error");
       }
     } catch {
-      flash("Network error", "error");
+      flash(t("notifications.networkError"), "error");
     }
   }
 
   async function copyText(text: string, label: string) {
     try {
       await navigator.clipboard.writeText(text);
-      flash(`${label} copied`, "success");
+      flash(t("notifications.copiedMsg", { label }), "success");
     } catch {
-      flash("Failed to copy", "error");
+      flash(t("notifications.failedCopy"), "error");
     }
   }
 
@@ -391,9 +391,9 @@ export function Notifications() {
                             <button
                               class={s.copyBtn}
                               onClick={() =>
-                                copyText(ep.device_id, "Device ID")
+                                copyText(ep.device_id, t("notifications.copyDeviceIdLabel"))
                               }
-                              title="Copy device ID"
+                              title={t("notifications.copyDeviceIdTitle")}
                             >
                               <Copy size={12} />
                             </button>
@@ -434,10 +434,7 @@ export function Notifications() {
                     <div>
                       <h2 class={s.sectionTitle}>{t("notifications.allowedSenders")}</h2>
                       <p class={s.sectionSub}>
-                        By default, no one can send you notifications. Allow
-                        specific users per source to receive alerts from them.
-                        Counts show how many notifications each sender has
-                        delivered.
+                        {t("notifications.sendersDesc")}
                       </p>
                     </div>
                     <button
@@ -457,7 +454,7 @@ export function Notifications() {
                           id="allow-username"
                           type="text"
                           class={s.formInput}
-                          placeholder="e.g. mist"
+                          placeholder={t("notifications.usernamePlaceholder")}
                           value={newSender}
                           onInput={(e) =>
                             setNewSender((e.target as HTMLInputElement).value)
@@ -476,7 +473,7 @@ export function Notifications() {
                           id="allow-source"
                           type="text"
                           class={s.formInput}
-                          placeholder="e.g. originChats"
+                          placeholder={t("notifications.sourcePlaceholder")}
                           value={newSource}
                           onInput={(e) =>
                             setNewSource((e.target as HTMLInputElement).value)
@@ -516,7 +513,7 @@ export function Notifications() {
                         <div class={s.sourceGroupHeader}>
                           <span class={s.sourceTag}>{source}</span>
                           <span class={s.sourceCount}>
-                            {senders.length} {plural(senders.length, "sender")}
+                            {senders.length} {plural(senders.length, t("notifications.senderCountLabel"))}
                           </span>
                         </div>
                         {senders.map((snd) => (

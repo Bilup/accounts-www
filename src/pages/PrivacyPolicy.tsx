@@ -14,7 +14,7 @@ export function PrivacyPolicy() {
         </p>
 
         <div class={s.policyContainer}>
-          <div class={s.lastUpdated}>{t("privacy.lastUpdated")} July 16, 2025</div>
+          <div class={s.lastUpdated}>{t("privacy.lastUpdated")} 2025-07-16</div>
 
           <div class={s.policyContent}>
             <p>

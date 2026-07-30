@@ -129,15 +129,15 @@ const PERMISSION_CATEGORY_ICONS: Record<string, string> = {
 };
 
 export const sidebarForView: Record<View, { title: string; sub: string }> = {
-  welcome: { title: "Choose an account", sub: "to continue to Bilup Accounts" },
-  signin: { title: "Sign in", sub: "to continue to Bilup Accounts" },
-  signup: { title: "Create account", sub: "Join Bilup Accounts today" },
-  verify: { title: "Verify email", sub: "Check your inbox" },
-  tos: { title: "Terms of Service", sub: "Review and accept to continue" },
-  permissions: { title: "Account Access", sub: "Choose account to continue" },
-  forgot: { title: "Reset password", sub: "We'll email you a link" },
-  reset: { title: "Set new password", sub: "Enter the code from your email" },
-  confirm: { title: "Choose an account", sub: "to continue to Bilup Accounts" },
+  welcome: { title: "auth.sidebarChooseAccount", sub: "auth.sidebarContinueToBilup" },
+  signin: { title: "auth.sidebarSignIn", sub: "auth.sidebarContinueToBilup" },
+  signup: { title: "auth.sidebarCreateAccount", sub: "auth.sidebarJoinBilup" },
+  verify: { title: "auth.sidebarVerifyEmail", sub: "auth.sidebarCheckInbox" },
+  tos: { title: "auth.sidebarTOS", sub: "auth.sidebarTOSSub" },
+  permissions: { title: "auth.sidebarAccountAccess", sub: "auth.sidebarChooseAccountAccess" },
+  forgot: { title: "auth.sidebarResetPassword", sub: "auth.sidebarResetSub" },
+  reset: { title: "auth.sidebarSetNewPassword", sub: "auth.sidebarSetNewSub" },
+  confirm: { title: "auth.sidebarChooseAccount", sub: "auth.sidebarContinueToBilup" },
 };
 
 export function describePerm(p: string): string {

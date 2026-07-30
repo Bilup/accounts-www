@@ -1,4 +1,3 @@
-import { useI18n } from "../../i18n/i18n";
 import { useState, useEffect, useMemo } from "preact/hooks";
 import {
   Users,
@@ -33,6 +32,7 @@ import {
 } from "../../components/AccountPage";
 import { useAuth, getToken } from "../../lib/auth";
 import { plural } from "../../lib/format";
+import { useI18n } from "../../i18n/i18n";
 import s from "./Groups.module.css";
 
 const API_BASE_URL = "https://api.accounts.bilup.org";
@@ -79,23 +79,23 @@ const HUB_TABS: { id: HubTab; labelKey: string; icon: typeof Users }[] = [
 
 const JOIN_POLICY_OPTIONS: {
   value: JoinPolicy;
-  label: string;
-  description: string;
+  labelKey: string;
+  descKey: string;
 }[] = [
   {
     value: "OPEN",
-    label: "Open",
-    description: "Anyone can join immediately.",
+    labelKey: "groups.policyOpenLabel",
+    descKey: "groups.policyOpenDesc",
   },
   {
     value: "REQUEST",
-    label: "Request",
-    description: "Members must request to join.",
+    labelKey: "groups.policyRequestLabel",
+    descKey: "groups.policyRequestDesc",
   },
   {
     value: "INVITE",
-    label: "Invite Only",
-    description: "Only the owner can add members.",
+    labelKey: "groups.policyInviteLabel",
+    descKey: "groups.policyInviteDesc",
   },
 ];
 
@@ -480,14 +480,14 @@ export function Groups() {
   return (
     <AccountPage layoutClassName={s.wideLayout}>
       <AccountPageHeader
-        title="Groups"
-        subtitle="Join communities, manage members, and post announcements"
+        title={t("groups.titleLabel")}
+        subtitle={t("groups.titleSubLabel")}
         actions={
           user && (
             <div class={s.balance}>
               <Coins size={16} />
               <span>
-                {(user["sys.currency"] ?? 0).toLocaleString()} credits
+                {(user["sys.currency"] ?? 0).toLocaleString()} {t("groups.balanceLabel")}
               </span>
             </div>
           )
@@ -532,7 +532,7 @@ export function Groups() {
             title={t("groups.browse")}
             subtitle={`${browseResults.length} ${plural(
               browseResults.length,
-              "result",
+              t("groups.resultLabel"),
             )}`}
           >
             <form class={s.searchRow} onSubmit={onSearchSubmit}>
@@ -724,11 +724,11 @@ export function Groups() {
 }
 
 const ONBOARDING_STEPS = [
-  { id: 1, label: "Basics" },
-  { id: 2, label: "Create" },
-  { id: 3, label: "Branding" },
-  { id: 4, label: "Joining" },
-  { id: 5, label: "Done" },
+  { id: 1, labelKey: "groups.basicsStepLabel" },
+  { id: 2, labelKey: "groups.createStepLabel" },
+  { id: 3, labelKey: "groups.brandingStepLabel" },
+  { id: 4, labelKey: "groups.joiningStepLabel" },
+  { id: 5, labelKey: "groups.doneStepLabel" },
 ] as const;
 
 function OnboardingWizard({
@@ -809,15 +809,17 @@ function OnboardingWizard({
   onReset: () => void;
   balance: number;
 }) {
+  const gt = useI18n().t;
   const totalSteps = ONBOARDING_STEPS.length;
   const currentStep = ONBOARDING_STEPS.find((st) => st.id === step)!;
+  const currentStepLabel = gt(currentStep.labelKey);
   const progress = ((step - 1) / (totalSteps - 1)) * 100;
 
   return (
     <AccountSection
       icon={<PlusCircle size={18} />}
-      title="Create a new group"
-      subtitle={`Step ${step} of ${totalSteps} - ${currentStep.label}`}
+      title={gt("groups.createGroupTitle")}
+      subtitle={gt("groups.stepLabel", { step, total: totalSteps, label: currentStepLabel })}
     >
       <div class={s.stepper}>
         <div class={s.stepperProgress}>
@@ -839,7 +841,7 @@ function OnboardingWizard({
               <span class={s.stepDotNum}>
                 {step > st.id ? <Check size={11} /> : st.id}
               </span>
-              <span class={s.stepDotLabel}>{st.label}</span>
+              <span class={s.stepDotLabel}>{gt(st.labelKey)}</span>
             </button>
           ))}
         </div>
@@ -848,10 +850,9 @@ function OnboardingWizard({
       {step === 1 && (
         <div class={s.wizardStep}>
           <div class={s.wizardHeader}>
-            <h3 class={s.wizardTitle}>Tell us about your group</h3>
+            <h3 class={s.wizardTitle}>{gt("groups.tellAboutTitle")}</h3>
             <p class={s.wizardLead}>
-              The essentials. You can add a readme, rules, banner, and more from
-              the group page after creation.
+              {gt("groups.tellAboutDesc")}
             </p>
           </div>
 
@@ -1254,7 +1255,7 @@ function OnboardingWizard({
             <div class={s.formGroup}>
               <label>Join policy</label>
               <div class={s.policyGrid}>
-                {JOIN_POLICY_OPTIONS.map((opt) => (
+                  {JOIN_POLICY_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
@@ -1263,8 +1264,8 @@ function OnboardingWizard({
                     }`}
                     onClick={() => setCreatePolicy(opt.value)}
                   >
-                    <div class={s.policyCardName}>{opt.label}</div>
-                    <div class={s.policyCardDesc}>{opt.description}</div>
+                    <div class={s.policyCardName}>{gt(opt.labelKey)}</div>
+                    <div class={s.policyCardDesc}>{gt(opt.descKey)}</div>
                   </button>
                 ))}
               </div>

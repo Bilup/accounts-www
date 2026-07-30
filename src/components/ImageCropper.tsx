@@ -3,6 +3,7 @@ import { X, Check, ZoomIn, ZoomOut, Move, Coins } from "lucide-preact";
 import s from "./ImageCropper.module.css";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useConfirm } from "./ConfirmDialog";
+import { useI18n } from "../i18n/i18n";
 
 export type CropperKind = "pfp" | "banner";
 
@@ -37,6 +38,7 @@ export function ImageCropper({
   onCancel,
   onSave,
 }: ImageCropperProps) {
+  const { t } = useI18n();
   const aspect = ASPECTS[kind];
   const [src, setSrc] = useState<string>("");
   const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -181,9 +183,9 @@ export function ImageCropper({
     if (saving || !img) return;
     if (kind === "banner" && !freeBannerUploads && !confirmPaid) {
       const ok = await confirm({
-        title: `Set banner for ${BANNER_COST} credits?`,
-        message: `${BANNER_COST} credits will be deducted from your balance when you save.`,
-        confirmLabel: `Pay ${BANNER_COST} credits`,
+        title: t("cropper.setBannerCost", { cost: String(BANNER_COST) }),
+        message: t("cropper.bannerDeducted", { cost: String(BANNER_COST) }),
+        confirmLabel: t("cropper.payCredits", { cost: String(BANNER_COST) }),
       });
       if (!ok) return;
       setConfirmPaid(true);
@@ -194,7 +196,7 @@ export function ImageCropper({
       const dataUrl = await renderToDataUrl();
       await onSave(dataUrl);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save image");
+      setError(e instanceof Error ? e.message : t("cropper.failedSave"));
       setConfirmPaid(false);
     } finally {
       setSaving(false);
@@ -211,20 +213,20 @@ export function ImageCropper({
         role="dialog"
         aria-modal="true"
         aria-label={
-          kind === "pfp" ? "Position profile picture" : "Position banner"
+          kind === "pfp" ? t("cropper.positionPfp") : t("cropper.positionBanner")
         }
         onClick={(e) => e.stopPropagation()}
       >
         <div class={s.header}>
           <div class={s.titleGroup}>
             <div class={s.title}>
-              {kind === "pfp" ? "Position profile picture" : "Position banner"}
+              {kind === "pfp" ? t("cropper.positionPfp") : t("cropper.positionBanner")}
             </div>
             <div class={s.subtitle}>
-              <Move size={12} /> Drag to position · scroll to zoom
+              <Move size={12} /> {t("cropper.dragHint")}
             </div>
           </div>
-          <button class={s.iconBtn} onClick={onCancel} aria-label="Close">
+          <button class={s.iconBtn} onClick={onCancel} aria-label={t("cropper.close")}>
             <X size={18} />
           </button>
         </div>
@@ -232,10 +234,11 @@ export function ImageCropper({
         {kind === "banner" && !freeBannerUploads && (
           <div class={s.costNotice}>
             <Coins size={14} />
-            <span>
-              Setting a banner costs <strong>{BANNER_COST} credits</strong>. You
-              will be charged when you save.
-            </span>
+            <span
+              dangerouslySetInnerHTML={{
+                __html: t("cropper.bannerCostNotice", { cost: String(BANNER_COST) }),
+              }}
+            />
           </div>
         )}
 
@@ -278,7 +281,7 @@ export function ImageCropper({
               type="button"
               class={s.zoomBtn}
               onClick={() => zoomBy(0.9)}
-              aria-label="Zoom out"
+              aria-label={t("cropper.zoomOut")}
             >
               <ZoomOut size={16} />
             </button>
@@ -292,13 +295,13 @@ export function ImageCropper({
               onInput={(e: any) =>
                 setScale(clamp(parseFloat(e.target.value), minScale, 5))
               }
-              aria-label="Zoom"
+              aria-label={t("cropper.zoom")}
             />
             <button
               type="button"
               class={s.zoomBtn}
               onClick={() => zoomBy(1.1)}
-              aria-label="Zoom in"
+              aria-label={t("cropper.zoomIn")}
             >
               <ZoomIn size={16} />
             </button>
@@ -313,7 +316,7 @@ export function ImageCropper({
 
           <div class={s.actions}>
             <button class={s.cancelBtn} onClick={onCancel} disabled={saving}>
-              Cancel
+              {t("cropper.cancel")}
             </button>
             <button
               class={s.saveBtn}
@@ -326,7 +329,7 @@ export function ImageCropper({
                 </span>
               )}
               <Check size={14} />
-              {saving ? "Saving…" : "Save"}
+              {saving ? t("cropper.saving") : t("cropper.save")}
             </button>
           </div>
         </div>

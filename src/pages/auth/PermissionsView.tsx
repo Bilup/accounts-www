@@ -121,8 +121,7 @@ export function PermissionsView({
       {hasExistingTokens && !createNewToken && (
         <div class={s.existingTokensBanner}>
           <p>
-            <i class="fas fa-info-circle" /> You have existing tokens that cover
-            the requested permissions.
+            <i class="fas fa-info-circle" /> {t("perms.existingTokensDesc")}
           </p>
           {matchingSubTokens.map((st) => (
             <button
@@ -130,15 +129,14 @@ export function PermissionsView({
               class={s.existingTokenBtn}
               onClick={() => onUseSubToken(st)}
             >
-              <i class="fas fa-key" /> Use {st.name || "token"} (created{" "}
-              {new Date(st.created_at).toLocaleDateString()})
+              <i class="fas fa-key" /> {t("perms.useToken", { name: st.name || t("perms.token"), date: new Date(st.created_at).toLocaleDateString() })}
             </button>
           ))}
           <button
             class={s.newTokenLink}
             onClick={() => setCreateNewToken(true)}
           >
-            <i class="fas fa-plus" /> Create new token instead
+            <i class="fas fa-plus" /> {t("perms.createNewToken")}
           </button>
         </div>
       )}
@@ -266,8 +264,8 @@ export function PermissionsView({
 
       <AuthTosLinks>
         <p>
-          <a href="/terms-of-service?from=auth">Terms of Service</a> &bull;{" "}
-          <a href="/privacy-policy?from=auth">Privacy Policy</a>
+          <a href="/terms-of-service?from=auth">{t("footer.termsOfService")}</a> &bull;{" "}
+          <a href="/privacy-policy?from=auth">{t("footer.privacyPolicy")}</a>
         </p>
       </AuthTosLinks>
     </div>

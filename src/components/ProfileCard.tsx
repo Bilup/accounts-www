@@ -32,6 +32,7 @@ import {
 } from "../lib/auth";
 import { UserAvatar } from "./UserAvatar";
 import { ImageCropper, type CropperKind } from "./ImageCropper";
+import { useI18n } from "../i18n/i18n";
 
 const API = "https://api.accounts.bilup.org";
 
@@ -92,6 +93,7 @@ export function ProfileCard({
   onNoteUpdate,
   onEdit,
 }: ProfileCardProps) {
+  const { t } = useI18n();
   const [editingBio, setEditingBio] = useState(false);
   const [bioDraft, setBioDraft] = useState(user.bio || "");
   const [bioError, setBioError] = useState<string | null>(null);
@@ -161,7 +163,7 @@ export function ProfileCard({
     if (!file) return;
     // Picking a non-image used to fail silently — say so.
     if (!file.type.startsWith("image/")) {
-      setMediaError("That file isn't an image. Pick a PNG, JPG, GIF or WebP.");
+      setMediaError(t("profile.notImage"));
       input.value = "";
       return;
     }
@@ -170,16 +172,12 @@ export function ProfileCard({
       file.type === "image/webp" ||
       file.type === "image/apng";
     if (isAnimated && kind === "pfp" && !benefits?.animated_pfp) {
-      setMediaError(
-        "Animated profile pictures require a subscription — upgrade at ko-fi.com/mistium.",
-      );
+      setMediaError(t("profile.animatedPfpSub"));
       input.value = "";
       return;
     }
     if (isAnimated && kind === "banner" && !benefits?.animated_banner) {
-      setMediaError(
-        "Animated banners require a subscription — upgrade at ko-fi.com/mistium.",
-      );
+      setMediaError(t("profile.animatedBannerSub"));
       input.value = "";
       return;
     }
@@ -191,7 +189,7 @@ export function ProfileCard({
   // credits for a paid banner) instead of silently pretending it saved.
   const uploadImage = async (key: "pfp" | "banner", dataUrl: string) => {
     const token = getToken();
-    if (!token) throw new Error("You must be signed in");
+    if (!token) throw new Error(t("profile.mustBeSignedIn"));
     const res = await fetch(`${API}/me/update`, {
       method: "POST",
       headers: {
@@ -201,7 +199,7 @@ export function ProfileCard({
       body: JSON.stringify({ key, value: dataUrl }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || "Upload failed");
+    if (!res.ok) throw new Error(data?.error || t("profile.uploadFailed"));
     if (onEdit) await onEdit({ [key]: dataUrl });
   };
 
@@ -215,7 +213,7 @@ export function ProfileCard({
     setBioError(null);
     try {
       const token = getToken();
-      if (!token) throw new Error("not authenticated");
+      if (!token) throw new Error(t("profile.notAuthenticated"));
       const res = await fetch(`${API}/users`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -226,7 +224,7 @@ export function ProfileCard({
       if (onEdit) await onEdit({ bio: val });
       setEditingBio(false);
     } catch (e) {
-      setBioError((e as Error).message || "Failed to save");
+      setBioError((e as Error).message || t("profile.failedSave"));
     } finally {
       setBioSaving(false);
     }
@@ -239,14 +237,14 @@ export function ProfileCard({
       return;
     }
     if (val.length > 50) {
-      setPronounsError("Pronouns must be 50 characters or fewer");
+      setPronounsError(t("profile.pronounsMaxLength"));
       return;
     }
     setPronounsSaving(true);
     setPronounsError(null);
     try {
       const token = getToken();
-      if (!token) throw new Error("not authenticated");
+      if (!token) throw new Error(t("profile.notAuthenticated"));
       const res = await fetch(`${API}/me/update`, {
         method: "POST",
         headers: {
@@ -260,7 +258,7 @@ export function ProfileCard({
       if (onEdit) await onEdit({ pronouns: val });
       setEditingPronouns(false);
     } catch (e) {
-      setPronounsError((e as Error).message || "Failed to save");
+      setPronounsError((e as Error).message || t("profile.failedSave"));
     } finally {
       setPronounsSaving(false);
     }
@@ -277,7 +275,7 @@ export function ProfileCard({
     setUsernameError(null);
     try {
       const token = getToken();
-      if (!token) throw new Error("not authenticated");
+      if (!token) throw new Error(t("profile.notAuthenticated"));
       const res = await fetch(`${API}/users`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -288,7 +286,7 @@ export function ProfileCard({
       if (onEdit) await onEdit({ username: val });
       setEditingUsername(false);
     } catch (e) {
-      setUsernameError((e as Error).message || "Failed to save");
+      setUsernameError((e as Error).message || t("profile.failedSave"));
     } finally {
       setUsernameSaving(false);
     }
@@ -321,25 +319,25 @@ export function ProfileCard({
     setSendSuccess(null);
     const trimmed = sendAmount.trim();
     if (!trimmed) {
-      setSendError("Enter an amount");
+      setSendError(t("profile.enterAmount"));
       return;
     }
     const num = Number(trimmed);
     if (!Number.isFinite(num) || num < 0.01) {
-      setSendError("Minimum amount is 0.01");
+      setSendError(t("profile.minAmount"));
       return;
     }
     if (viewerBalance !== null && num > viewerBalance) {
-      setSendError("You don't have enough credits");
+      setSendError(t("profile.notEnoughCredits"));
       return;
     }
     if (sendNote.length > 200) {
-      setSendError("Note must be 200 characters or fewer");
+      setSendError(t("profile.noteMaxLength"));
       return;
     }
     const token = getToken();
     if (!token) {
-      setSendError("You must be signed in to send credits");
+      setSendError(t("profile.mustSignInSend"));
       return;
     }
     // Transfers are irreversible — make the user confirm the amount once it's valid.
@@ -363,19 +361,19 @@ export function ProfileCard({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setSendError(data?.error || "Transfer failed");
+        setSendError(data?.error || t("profile.transferFailed"));
         return;
       }
       const debited = Number(data?.debited ?? num);
       setCurrentBalance((b) => (b === null ? b : Math.max(0, b - debited)));
       setSendSuccess(
-        `Sent ${debited.toLocaleString()} ${plural(debited, "credit")} to @${user.username}`,
+        t("profile.sentCredits", { amount: debited.toLocaleString(), word: plural(debited, "credit"), user: user.username }),
       );
       setSendAmount("");
       setSendNote("");
       onTransferComplete?.(debited);
     } catch {
-      setSendError("Network error");
+      setSendError(t("profile.networkError"));
     } finally {
       setSendSending(false);
       // Consume the confirmation: every send attempt must be confirmed afresh.
@@ -423,18 +421,18 @@ export function ProfileCard({
               class={s.bannerEditOverlay}
               {...clickable(
                 () => bannerInputRef.current?.click(),
-                "Change banner",
+                t("profile.changeBannerLabel"),
               )}
             >
               <ImageIcon size={28} />
               {!benefits?.free_banner_uploads && (
                 <span class={s.bannerEditCost}>
-                  <Coins size={12} /> Cost: 10 credits
+                  <Coins size={12} /> {t("profile.bioCostLabel")}
                 </span>
               )}
               {benefits?.free_banner_uploads && (
                 <span class={s.bannerEditCost}>
-                  <Check size={12} /> Free with your plan
+                  <Check size={12} /> {t("profile.bioFreeLabel")}
                 </span>
               )}
             </div>
@@ -467,7 +465,7 @@ export function ProfileCard({
                 class={s.avatarEditOverlay}
                 {...clickable(
                   () => avatarInputRef.current?.click(),
-                  "Change profile picture",
+                  t("profile.changePfpLabel"),
                 )}
               >
                 <Camera size={22} />
@@ -527,7 +525,7 @@ export function ProfileCard({
                     setUsernameError(null);
                   }
                 }}
-                placeholder="username"
+                placeholder={t("profile.usernamePlaceholder")}
                 maxLength={20}
                 disabled={usernameSaving}
               />
@@ -535,8 +533,8 @@ export function ProfileCard({
                 class={`${s.pronounsIconBtn} ${s.pronounsIconBtnConfirm}`}
                 onClick={saveUsername}
                 disabled={usernameSaving}
-                aria-label="Save username"
-                title="Save"
+                aria-label={t("profile.saveUsernameLabel")}
+                title={t("profile.save")}
               >
                 <Check size={12} />
               </button>
@@ -548,8 +546,8 @@ export function ProfileCard({
                   setUsernameError(null);
                 }}
                 disabled={usernameSaving}
-                aria-label="Cancel"
-                title="Cancel"
+                aria-label={t("profile.cancelLabel")}
+                title={t("profile.cancelLabel")}
               >
                 <X size={12} />
               </button>
@@ -562,8 +560,8 @@ export function ProfileCard({
                   <button
                     class={s.fieldEditBtn}
                     onClick={() => setEditingUsername(true)}
-                    aria-label="Change username"
-                    title="Change username"
+                    aria-label={t("profile.changeUsernameLabel")}
+                    title={t("profile.changeUsernameLabel")}
                   >
                     <Pencil size={11} />
                   </button>
@@ -592,7 +590,7 @@ export function ProfileCard({
                     setPronounsError(null);
                   }
                 }}
-                placeholder="e.g. they/them"
+                placeholder={t("profile.pronounsPlaceholder")}
                 maxLength={50}
                 disabled={pronounsSaving}
               />
@@ -600,8 +598,8 @@ export function ProfileCard({
                 class={`${s.pronounsIconBtn} ${s.pronounsIconBtnConfirm}`}
                 onClick={savePronouns}
                 disabled={pronounsSaving}
-                aria-label="Save pronouns"
-                title="Save"
+                aria-label={t("profile.savePronounsLabel")}
+                title={t("profile.save")}
               >
                 <Check size={12} />
               </button>
@@ -613,8 +611,8 @@ export function ProfileCard({
                   setPronounsError(null);
                 }}
                 disabled={pronounsSaving}
-                aria-label="Cancel"
-                title="Cancel"
+                aria-label={t("profile.cancelLabel")}
+                title={t("profile.cancelLabel")}
               >
                 <X size={12} />
               </button>
@@ -626,8 +624,8 @@ export function ProfileCard({
                 <button
                   class={s.fieldEditBtn}
                   onClick={() => setEditingPronouns(true)}
-                  aria-label="Edit pronouns"
-                  title="Edit pronouns"
+                  aria-label={t("profile.editPronounsLabel")}
+                  title={t("profile.editPronounsLabel")}
                 >
                   <Pencil size={11} />
                 </button>
@@ -639,7 +637,7 @@ export function ProfileCard({
                 class={s.addFieldBtn}
                 onClick={() => setEditingPronouns(true)}
               >
-                <Pencil size={11} /> Add pronouns
+                <Pencil size={11} /> {t("profile.addPronounsLabel")}
               </button>
             )
           )}
@@ -650,7 +648,7 @@ export function ProfileCard({
                 <span class={s.separator}>•</span>
               )}
               <span class={s.metaItem}>
-                <Calendar size={12} /> Joined {joined}
+                <Calendar size={12} /> {t("profile.joinLabel")} {joined}
               </span>
             </>
           )}
@@ -667,13 +665,13 @@ export function ProfileCard({
             <textarea
               class={s.bioTextarea}
               autoFocus
-              aria-label="Bio"
+              aria-label={t("profile.bioLabel")}
               value={bioDraft}
               onInput={(e: any) => setBioDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Escape") setEditingBio(false);
               }}
-              placeholder="Tell people about yourself..."
+              placeholder={t("profile.bioPlaceholder")}
               maxLength={1000}
             />
             {bioError && <div class={s.bioError}>{bioError}</div>}
@@ -683,7 +681,7 @@ export function ProfileCard({
                 onClick={saveBio}
                 disabled={bioSaving}
               >
-                <Check size={14} /> {bioSaving ? "Saving..." : "Save"}
+                <Check size={14} /> {bioSaving ? t("profile.saving") : t("profile.save")}
               </button>
               <button
                 class={s.actionBtn}
@@ -693,13 +691,13 @@ export function ProfileCard({
                 }}
                 disabled={bioSaving}
               >
-                <X size={14} /> Cancel
+                <X size={14} /> {t("profile.cancelLabel")}
               </button>
             </div>
           </div>
         ) : editable && !user.bio ? (
           <button class={s.addBioBtn} onClick={() => setEditingBio(true)}>
-            <Pencil size={13} /> Add a bio
+            <Pencil size={13} /> {t("profile.addBioLabel")}
           </button>
         ) : (
           <div class={s.bioRow}>
@@ -707,15 +705,15 @@ export function ProfileCard({
               {user.bio ? (
                 user.bio
               ) : (
-                <span class={s.bioPlaceholder}>No bio yet.</span>
+                <span class={s.bioPlaceholder}>{t("profile.noBioYetLabel")}</span>
               )}
             </div>
             {editable && (
               <button
                 class={s.bioEditBtn}
                 onClick={() => setEditingBio(true)}
-                aria-label="Edit bio"
-                title="Edit bio"
+                aria-label={t("profile.editBioLabel")}
+                title={t("profile.editBioLabel")}
               >
                 <Pencil size={14} />
               </button>
@@ -730,9 +728,9 @@ export function ProfileCard({
                 <button
                   class={`${s.actionBtn} ${s.actionBtnDanger}`}
                   onClick={() => onFriendAction?.("remove")}
-                  title="Remove friend"
+                  title={t("profile.removeFriendLabel")}
                 >
-                  <UserMinus size={14} /> Friend
+                  <UserMinus size={14} /> {t("profile.friendLabel")}
                 </button>
               ) : friendState === "pending" ? (
                 <>
@@ -740,13 +738,13 @@ export function ProfileCard({
                     class={`${s.actionBtn} ${s.actionBtnSuccess}`}
                     onClick={() => onFriendAction?.("accept")}
                   >
-                    <UserCheck size={14} /> Accept
+                    <UserCheck size={14} /> {t("profile.acceptLabel")}
                   </button>
                   <button
                     class={`${s.actionBtn} ${s.actionBtnDanger}`}
                     onClick={() => onFriendAction?.("reject")}
                   >
-                    <X size={14} /> Reject
+                    <X size={14} /> {t("profile.rejectLabel")}
                   </button>
                 </>
               ) : friendState !== "blocked" ? (
@@ -754,7 +752,7 @@ export function ProfileCard({
                   class={s.actionBtn}
                   onClick={() => onFriendAction?.("add")}
                 >
-                  <UserPlus size={14} /> Add friend
+                  <UserPlus size={14} /> {t("profile.addFriendLabel")}
                 </button>
               ) : null}
               <button
@@ -763,11 +761,11 @@ export function ProfileCard({
               >
                 {isFollowing ? (
                   <>
-                    <UserCheck size={14} /> Following
+                    <UserCheck size={14} /> {t("profile.followingLabel")}
                   </>
                 ) : (
                   <>
-                    <UserPlus size={14} /> Follow
+                    <UserPlus size={14} /> {t("profile.followLabel")}
                   </>
                 )}
               </button>
@@ -776,23 +774,23 @@ export function ProfileCard({
                 onClick={sendOpen ? cancelSend : openSend}
                 aria-expanded={sendOpen}
                 aria-controls="send-credits-panel"
-                title="Send credits"
+                title={t("profile.sendCreditsLabel")}
               >
-                <Coins size={14} /> Send credits
+                <Coins size={14} /> {t("profile.sendCreditsLabel")}
               </button>
               {onBlockToggle && (
                 <button
                   class={`${s.actionBtn} ${isBlocked ? s.actionBtnSuccess : s.actionBtnDanger}`}
                   onClick={onBlockToggle}
-                  title={isBlocked ? "Unblock this user" : "Block this user"}
+                  title={isBlocked ? t("profile.unblockUserLabel") : t("profile.blockUserLabel")}
                 >
                   {isBlocked ? (
                     <>
-                      <ShieldOff size={14} /> Unblock
+                      <ShieldOff size={14} /> {t("profile.unblockLabel")}
                     </>
                   ) : (
                     <>
-                      <Ban size={14} /> Block
+                      <Ban size={14} /> {t("profile.blockLabel")}
                     </>
                   )}
                 </button>
@@ -809,18 +807,18 @@ export function ProfileCard({
               <div class={s.sendPanel} id="send-credits-panel">
                 <div class={s.sendHeader}>
                   <span class={s.sendTitle}>
-                    Send credits to @{user.username}
+                    {t("profile.sendToLabel", { user: user.username })}
                   </span>
                   {currentBalance !== null && (
                     <span class={s.sendBalance}>
-                      <Coins size={12} /> Balance:{" "}
+                      <Coins size={12} /> {t("profile.balanceLabel")}{" "}
                       {currentBalance.toLocaleString()}
                     </span>
                   )}
                 </div>
                 <div class={s.sendField}>
                   <label class={s.sendLabel} for="send-amount">
-                    Amount
+                    {t("profile.amountLabel")}
                   </label>
                   <input
                     id="send-amount"
@@ -831,7 +829,7 @@ export function ProfileCard({
                     step="0.01"
                     max={currentBalance ?? undefined}
                     class={s.sendInput}
-                    placeholder="0.00"
+                    placeholder={t("profile.amountPlaceholder")}
                     value={sendAmount}
                     disabled={sendSending}
                     onInput={(e: any) => {
@@ -847,14 +845,14 @@ export function ProfileCard({
                 </div>
                 <div class={s.sendField}>
                   <label class={s.sendLabel} for="send-note">
-                    Note (optional)
+                    {t("profile.noteLabel")}
                   </label>
                   <input
                     id="send-note"
                     type="text"
                     maxLength={200}
                     class={s.sendInput}
-                    placeholder="Say something nice…"
+                    placeholder={t("profile.notePlaceholder")}
                     value={sendNote}
                     disabled={sendSending}
                     onInput={(e: any) => {
@@ -872,9 +870,7 @@ export function ProfileCard({
                 {sendSuccess && <div class={s.sendSuccess}>{sendSuccess}</div>}
                 {sendConfirming && !sendSending && (
                   <div class={s.sendConfirm}>
-                    Send <strong>{Number(sendAmount).toLocaleString()}</strong>{" "}
-                    credits to <strong>@{user.username}</strong>? This can't be
-                    undone.
+                    {t("profile.sendConfirmLabel", { amount: Number(sendAmount).toLocaleString(), user: user.username })}
                   </div>
                 )}
                 <div class={s.sendActions}>
@@ -885,17 +881,17 @@ export function ProfileCard({
                   >
                     <Send size={14} />{" "}
                     {sendSending
-                      ? "Sending…"
+                      ? t("profile.sending")
                       : sendConfirming
-                        ? "Confirm send"
-                        : "Send"}
+                        ? t("profile.confirmSend")
+                        : t("profile.sendConfirm")}
                   </button>
                   <button
                     class={s.actionBtn}
                     onClick={cancelSend}
                     disabled={sendSending}
                   >
-                    <X size={14} /> Cancel
+                    <X size={14} /> {t("profile.cancelLabel")}
                   </button>
                 </div>
               </div>
@@ -907,8 +903,8 @@ export function ProfileCard({
           <div class={s.noteSection}>
             <div class={s.noteHeader}>
               <StickyNote size={14} />
-              <span class={s.noteTitle}>Profile Note</span>
-              <span class={s.notePrivate}>Only visible to you</span>
+              <span class={s.noteTitle}>{t("profile.noteHeader")}</span>
+              <span class={s.notePrivate}>{t("profile.notePrivate")}</span>
             </div>
             {editingNote ? (
               <div class={s.noteEditWrap}>
@@ -920,7 +916,7 @@ export function ProfileCard({
                   onKeyDown={(e) => {
                     if (e.key === "Escape") setEditingNote(false);
                   }}
-                  placeholder={`Add a note about @${user.username}...`}
+                  placeholder={t("profile.notePlaceholder", { user: user.username })}
                   maxLength={300}
                   disabled={noteSaving}
                 />
@@ -939,14 +935,14 @@ export function ProfileCard({
                     }}
                     disabled={noteSaving}
                   >
-                    <Check size={14} /> {noteSaving ? "Saving..." : "Save"}
+                    <Check size={14} /> {noteSaving ? t("profile.saving") : t("profile.save")}
                   </button>
                   <button
                     class={s.actionBtn}
                     onClick={() => setEditingNote(false)}
                     disabled={noteSaving}
                   >
-                    <X size={14} /> Cancel
+                    <X size={14} /> {t("profile.cancelLabel")}
                   </button>
                 </div>
               </div>
@@ -955,7 +951,7 @@ export function ProfileCard({
                 {viewerNotes?.[user.username] ? (
                   <div class={s.noteText}>{viewerNotes[user.username]}</div>
                 ) : (
-                  <div class={s.notePlaceholder}>No note set</div>
+                  <div class={s.notePlaceholder}>{t("profile.noteNoSet")}</div>
                 )}
                 <button
                   class={s.noteEditBtn}
@@ -964,10 +960,10 @@ export function ProfileCard({
                     setEditingNote(true);
                   }}
                   aria-label={
-                    viewerNotes?.[user.username] ? "Edit note" : "Add note"
+                    viewerNotes?.[user.username] ? t("profile.noteEditLabel") : t("profile.noteAddLabel")
                   }
                   title={
-                    viewerNotes?.[user.username] ? "Edit note" : "Add note"
+                    viewerNotes?.[user.username] ? t("profile.noteEditLabel") : t("profile.noteAddLabel")
                   }
                 >
                   <Pencil size={12} />
@@ -992,8 +988,8 @@ export function ProfileCard({
                       }
                     }}
                     disabled={noteSaving}
-                    aria-label="Delete note"
-                    title="Delete note"
+                    aria-label={t("profile.noteDeleteLabel")}
+                    title={t("profile.noteDeleteLabel")}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -1007,7 +1003,7 @@ export function ProfileCard({
           <div class={s.noteUpsell}>
             <StickyNote size={14} />
             <span class={s.noteUpsellText}>
-              Profile Notes let you privately remember things about other users.
+              {t("profile.noteUpsellText")}
             </span>
             <a
               href="https://ko-fi.com/mistium"
@@ -1015,22 +1011,22 @@ export function ProfileCard({
               rel="noopener noreferrer"
               class={s.noteUpsellLink}
             >
-              Upgrade <ExternalLink size={12} />
+              {t("profile.upgradeLabel")} <ExternalLink size={12} />
             </a>
           </div>
         )}
 
         <div class={s.statsRow}>
-          <Stat icon={Coins} value={credits.toLocaleString()} label="Credits" />
+          <Stat icon={Coins} value={credits.toLocaleString()} label={t("profile.creditsLabel")} />
           <Stat
             icon={Users}
             value={finalFollowerCount.toLocaleString()}
-            label="Followers"
+            label={t("profile.followersLabel")}
           />
           <Stat
             icon={UserPlus}
             value={finalFollowingCount.toLocaleString()}
-            label="Following"
+            label={t("profile.followingState")}
           />
         </div>
       </div>

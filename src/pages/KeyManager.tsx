@@ -23,6 +23,7 @@ import { plural } from "../lib/format";
 import { clickable } from "../lib/clickable";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useConfirm } from "../components/ConfirmDialog";
+import { useI18n } from "../i18n/i18n";
 import s from "./KeyManager.module.css";
 
 const API_BASE_URL = "https://api.accounts.bilup.org";
@@ -45,9 +46,9 @@ interface KeyData {
 
 type TabName = "your-keys" | "create-key";
 
-const TABS: { id: TabName; label: string; icon: typeof Key }[] = [
-  { id: "your-keys", label: "Your Keys", icon: Key },
-  { id: "create-key", label: "Create Key", icon: PlusCircle },
+const TABS: { id: TabName; labelKey: string; icon: typeof Key }[] = [
+  { id: "your-keys", labelKey: "keys.yourKeysLabel", icon: Key },
+  { id: "create-key", labelKey: "keys.createKeyLabel", icon: PlusCircle },
 ];
 
 function normalizeUsers(
@@ -88,6 +89,7 @@ function keyUserSubscriptionText(data: any): string {
 }
 
 export function KeyManager() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const currentUser = user?.username || "";
   const [confirm, confirmDialog] = useConfirm();
@@ -409,8 +411,8 @@ export function KeyManager() {
     return (
       <AuthRequired
         icon={<Key size={28} />}
-        title="Sign in to manage keys"
-        text="Sign in to create and manage API keys for authentication and monetization."
+        title={t("keys.signInManageTitle")}
+        text={t("keys.signInManageText")}
         href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/key-manager")}`}
       />
     );
@@ -418,19 +420,18 @@ export function KeyManager() {
 
   return (
     <AccountPage
-      title="Key Manager"
-      subtitle="Create and manage API keys for authentication and monetization"
+      title={t("keys.title")}
+      subtitle={t("keys.subtitle")}
     >
       {confirmDialog}
       {/* Newly created key reveal */}
       {createdKey && (
         <div class={s.keyReveal}>
           <div class={s.keyRevealHeader}>
-            <Key size={16} /> Key created: {createdKey.name}
+            <Key size={16} /> {t("keys.keyCreated", { name: createdKey.name })}
           </div>
           <p class={s.keyRevealText}>
-            Copy this key now. <strong>It will never be shown again.</strong>{" "}
-            Store it somewhere safe.
+            {t("keys.copyWarningFull")}
           </p>
           <div class={s.keyRevealValue}>
             <code>{createdKey.key}</code>
@@ -438,7 +439,7 @@ export function KeyManager() {
               class={s.copyBtn}
               onClick={() => copyToClipboard(createdKey.key, "__new__")}
             >
-              <Copy size={12} /> Copy
+              <Copy size={12} /> {t("keys.copyKeyLabel")}
             </button>
           </div>
           {keyMessages["__new__"] && (
@@ -456,16 +457,16 @@ export function KeyManager() {
             style={{ marginTop: "0.75rem" }}
             onClick={() => setCreatedKey(null)}
           >
-            Dismiss
+            {t("keys.dismissLabel")}
           </button>
         </div>
       )}
 
       <AccountTabs
-        tabs={TABS}
+        tabs={TABS.map((tab) => ({ ...tab, label: t(tab.labelKey) }))}
         active={activeTab}
         onChange={setActiveTab}
-        ariaLabel="Key sections"
+        ariaLabel={t("keys.sectionsAriaLabel")}
       />
 
       <AccountTabPanel>

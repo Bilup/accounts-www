@@ -3,6 +3,7 @@ import type { LucideProps } from "lucide-preact";
 import type React from "preact/compat";
 import { PageChrome } from "./PageChrome";
 import { useAuth } from "../lib/auth";
+import { useI18n } from "../i18n/i18n";
 import s from "./AccountPage.module.css";
 
 type IconComponent = React.FC<LucideProps>;
@@ -162,7 +163,7 @@ export function AuthRequired({
   title,
   text,
   href,
-  label = "Sign in",
+  label,
 }: {
   icon: ComponentChildren;
   title: string;
@@ -170,13 +171,14 @@ export function AuthRequired({
   href: string;
   label?: string;
 }) {
+  const { t } = useI18n();
   // A stored token that hasn't resolved to a user yet is not "signed out" — show
   // a placeholder instead of flashing the sign-in prompt at every returning user.
   const { loading } = useAuth();
   if (loading) {
     return (
       <AccountPage>
-        <div class={s.loading}>Loading…</div>
+        <div class={s.loading}>{t("accountPage.loading")}</div>
       </AccountPage>
     );
   }
@@ -188,7 +190,7 @@ export function AuthRequired({
         <div class={s.authRequiredTitle}>{title}</div>
         <p class={s.authRequiredText}>{text}</p>
         <a href={href} class={s.btnPrimary}>
-          {label}
+          {label ?? t("accountPage.signInLabel")}
         </a>
       </div>
     </AccountPage>

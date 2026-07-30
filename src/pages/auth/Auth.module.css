@@ -318,6 +318,431 @@
   min-width: 0;
 }
 
+/* ── Grant permissions panel (new PermissionsView) ── */
+
+.permHeader {
+  margin-bottom: 1.25rem;
+}
+
+.permTitle {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.permSub {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
+  line-height: 1.4;
+}
+
+.permUser {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-subtle);
+}
+
+.permUser i {
+  font-size: 0.75rem;
+}
+
+/* Existing tokens banner */
+.existingTokensBanner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--accent-3);
+  border: 1px solid var(--accent-10);
+  margin-bottom: 1rem;
+}
+
+.existingTokensBanner > p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.existingTokensBanner > p i {
+  color: var(--accent);
+  margin-right: 0.3rem;
+}
+
+.existingTokenBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.existingTokenBtn:hover {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.existingTokenBtn i {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.newTokenLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.25rem;
+  background: none;
+  border: none;
+  color: var(--text-subtle);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  cursor: pointer;
+  align-self: center;
+}
+
+.newTokenLink:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Grant panel */
+.permGrant {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Full access toggle */
+.fullAccessToggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  width: 100%;
+}
+
+.fullAccessToggle:hover {
+  background: var(--surface-3);
+}
+
+.fullAccessToggle input[type="checkbox"] {
+  margin-top: 0.1rem;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.fullAccessContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.fullAccessContent strong {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.fullAccessContent p {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Scoped section */
+.scopedSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scopedHeader strong {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.scopedHeader p {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Permission group */
+.permGroup {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.permGroupTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.75rem;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-3);
+}
+
+.permGroupTitle i {
+  font-size: 0.7rem;
+  color: var(--accent);
+}
+
+.permList {
+  display: flex;
+  flex-direction: column;
+  padding: 0.375rem;
+  gap: 0.25rem;
+}
+
+.permItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.375rem;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.permItem i {
+  width: 1rem;
+  text-align: center;
+  color: var(--text-subtle);
+  flex-shrink: 0;
+}
+
+.permItem > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.permRequired {
+  background: rgba(250, 204, 21, 0.06);
+  border: 1px solid rgba(250, 204, 21, 0.2);
+}
+
+.permRequiredBadge {
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+  flex-shrink: 0;
+}
+
+/* Toggle button */
+.permToggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.permToggleBtn:hover {
+  text-decoration: underline;
+}
+
+.permToggleBtn i {
+  font-size: 0.65rem;
+  transition: transform 0.2s;
+}
+
+/* Checkbox item */
+.permCheckItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.12s;
+}
+
+.permCheckItem:hover {
+  background: var(--surface-3);
+}
+
+.permCheckItem input[type="checkbox"] {
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.permCheckItem i {
+  width: 1rem;
+  text-align: center;
+  color: var(--text-subtle);
+  flex-shrink: 0;
+}
+
+.permCheckItem span {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+/* Warning */
+.permWarning {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  background: rgba(250, 204, 21, 0.06);
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.65rem;
+  font-family: var(--font-body);
+  line-height: 1.4;
+}
+
+.permWarning i {
+  margin-right: 0.3rem;
+}
+
+/* Actions */
+.permActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.permBtnPrimary {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--void);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+}
+
+.permBtnPrimary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.permBtnPrimary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.permBtnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.permBtnSecondary {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+.permBtnSecondary:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+/* Token info */
+.permTokenInfo {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.permTokenInfo p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+  line-height: 1.4;
+}
+
+.permTokenInfo p i {
+  color: var(--accent);
+  margin-right: 0.3rem;
+}
+
+.permTokenActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 0.6rem;
+}
+
+.permLink {
+  padding: 0.4rem 0.25rem;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.permLink:hover {
+  text-decoration: underline;
+}
+
 .permViewActions {
   display: flex;
   flex-direction: column;

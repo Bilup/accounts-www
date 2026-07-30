@@ -124,7 +124,7 @@ export function Auth() {
   const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null);
 
   const sidebar = useMemo(() => sidebarForView[view], [view]);
-  const addBtnText = view === "welcome" ? "Use another account" : "Back";
+  const addBtnText = view === "welcome" ? t("auth.useAnotherAccountBtn") : t("auth.back");
   const addBtnIcon = view === "welcome" ? "fa-user-plus" : "fa-arrow-left";
 
   const requestor = useMemo(() => {
@@ -231,14 +231,14 @@ export function Auth() {
             // Surface it in the sign-in button like every other auth error,
             // instead of a native alert the user must dismiss to retry.
             setSiBtn(errorBtn(data.error));
-            setTimeout(() => setSiBtn(defaultBtn("Sign in")), 4000);
+            setTimeout(() => setSiBtn(defaultBtn(t("auth.signInDefaultBtn"))), 4000);
             return;
           }
           handleAccountLogin(data);
         })
         .catch(() => {
-          setSiBtn(errorBtn("Google sign-in failed"));
-          setTimeout(() => setSiBtn(defaultBtn("Sign in")), 4000);
+          setSiBtn(errorBtn(t("auth.googleSignInFailed")));
+          setTimeout(() => setSiBtn(defaultBtn(t("auth.signInDefaultBtn"))), 4000);
         });
     };
   }, []);
@@ -379,7 +379,7 @@ export function Auth() {
     if (prefillUsername) setSiUsername(prefillUsername);
     else setSiUsername(getCookie("username") || "");
     setSiPassword("");
-    setSiBtn(defaultBtn("Sign in"));
+    setSiBtn(defaultBtn(t("auth.signInDefaultBtn")));
   }, []);
 
   const showSignUpForm = useCallback(() => {
@@ -388,7 +388,7 @@ export function Auth() {
     setSuEmail("");
     setSuPassword("");
     setSuConfirm("");
-    setSuBtn(defaultBtn("Create Account"));
+    setSuBtn(defaultBtn(t("auth.createAccountDefaultBtn")));
   }, []);
 
   const showWelcome = useCallback(() => {
@@ -399,7 +399,7 @@ export function Auth() {
     setView("forgot");
     setForgotEmail(getCookie("username") || "");
     setForgotMsg("");
-    setForgotBtn(defaultBtn("Send reset link"));
+    setForgotBtn(defaultBtn(t("auth.sendResetLinkDefaultBtn")));
   }, []);
 
   const showReset = useCallback((prefillToken = "") => {
@@ -408,7 +408,7 @@ export function Auth() {
     setResetNewPw("");
     setResetConfirm("");
     setResetMsg("");
-    setResetBtn(defaultBtn("Reset password"));
+    setResetBtn(defaultBtn(t("auth.resetPasswordDefaultBtn")));
   }, []);
 
   const handleForgotSubmit = useCallback(
@@ -419,8 +419,8 @@ export function Auth() {
       if (!email || !isValidEmail(email)) {
         flashBtn(
           setForgotBtn,
-          "Send reset link",
-          errorBtn("A valid email address is required"),
+          t("auth.sendResetLinkDefaultBtn"),
+          errorBtn(t("auth.emailRequiredError")),
         );
         return;
       }
@@ -436,26 +436,26 @@ export function Auth() {
         if (res.status === 429) {
           flashBtn(
             setForgotBtn,
-            "Send reset link",
+            t("auth.sendResetLinkDefaultBtn"),
             errorBtn(
-              data.error || "Please wait before requesting another reset",
+              data.error || t("auth.waitBeforeReset"),
             ),
           );
           return;
         }
         setForgotBtn(
-          successBtn("If an account exists, an email is on its way"),
+          successBtn(t("auth.resetEmailSent")),
         );
         setForgotMsg(
           data.message ||
-            "If an account with that email exists, a reset link has been sent.",
+            t("auth.resetEmailSentFull"),
         );
       } catch {
         setForgotBtn(
-          successBtn("If an account exists, an email is on its way"),
+          successBtn(t("auth.resetEmailSent")),
         );
         setForgotMsg(
-          "If an account with that email exists, a reset link has been sent.",
+          t("auth.resetEmailSentFull"),
         );
       }
     },
@@ -470,32 +470,32 @@ export function Auth() {
       if (!token) {
         flashBtn(
           setResetBtn,
-          "Reset password",
-          errorBtn("Reset code is required"),
+          t("auth.resetPasswordDefaultBtn"),
+          errorBtn(t("auth.resetCodeRequired")),
         );
-        setResetMsg("Reset code is required");
+        setResetMsg(t("auth.resetCodeRequired"));
         return;
       }
       if (resetNewPw.length < 8) {
         flashBtn(
           setResetBtn,
-          "Reset password",
-          errorBtn("Password must be 8+ characters"),
+          t("auth.resetPasswordDefaultBtn"),
+          errorBtn(t("auth.password8Chars")),
         );
-        setResetMsg("Password must be at least 8 characters.");
+        setResetMsg(t("auth.passwordLengthError"));
         return;
       }
       if (resetNewPw !== resetConfirm) {
         flashBtn(
           setResetBtn,
-          "Reset password",
-          errorBtn("Passwords do not match"),
+          t("auth.resetPasswordDefaultBtn"),
+          errorBtn(t("auth.passwordsDoNotMatch")),
         );
-        setResetMsg("Passwords do not match.");
+        setResetMsg(t("auth.passwordsDontMatch"));
         return;
       }
       setResetMsg("");
-      setResetBtn(loadingBtn("Resetting..."));
+      setResetBtn(loadingBtn(t("auth.resetting")));
       try {
         const res = await fetch(`${API}/auth/reset_password`, {
           method: "POST",
@@ -509,29 +509,29 @@ export function Auth() {
         if (!res.ok) {
           flashBtn(
             setResetBtn,
-            "Reset password",
-            errorBtn(data.error || "Failed to reset password"),
+            t("auth.resetPasswordDefaultBtn"),
+            errorBtn(data.error || t("auth.failedToReset")),
           );
-          setResetMsg(data.error || "Failed to reset password");
+          setResetMsg(data.error || t("auth.failedToReset"));
           return;
         }
-        setResetBtn(successBtn("Password reset!"));
+        setResetBtn(successBtn(t("auth.passwordReset")));
         setResetMsg(
-          data.message || "Your password has been reset. Please sign in.",
+          data.message || t("auth.passwordResetMsg"),
         );
         setTimeout(() => {
           setSiUsername(getCookie("username") || "");
           setSiPassword("");
-          setSiBtn(defaultBtn("Sign in"));
+          setSiBtn(defaultBtn(t("auth.signInDefaultBtn")));
           setView("signin");
         }, 1500);
       } catch {
         flashBtn(
           setResetBtn,
-          "Reset password",
-          errorBtn("Network error - try again"),
+          t("auth.resetPasswordDefaultBtn"),
+          errorBtn(t("auth.networkError")),
         );
-        setResetMsg("Network error - try again");
+        setResetMsg(t("auth.networkError"));
       }
     },
     [resetToken, resetNewPw, resetConfirm],
@@ -752,7 +752,7 @@ export function Auth() {
         }
       } catch {
         if (typeof hcaptcha !== "undefined") hcaptcha.reset();
-        flashBtn(setSuBtn, "Create Account", errorBtn("Error occurred"));
+        flashBtn(setSuBtn, t("auth.createAccountDefaultBtn"), errorBtn(t("auth.errorOccurred")));
       }
     },
     [
@@ -786,10 +786,10 @@ export function Auth() {
         handleAccountLogin(data);
         pendingVerificationRef.current = null;
       } else {
-        setVerifyMsg("Email still not verified. Please check your inbox.");
+        setVerifyMsg(t("auth.emailNotVerified"));
       }
     } catch {
-      setVerifyMsg("Error checking verification.");
+      setVerifyMsg(t("auth.errorCheckVerification"));
     }
   }, [handleAccountLogin]);
 
@@ -803,9 +803,9 @@ export function Auth() {
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setVerifyMsg(data.message || "Verification email sent.");
+      setVerifyMsg(data.message || t("auth.verificationEmailSent"));
     } catch {
-      setVerifyMsg("Failed to resend email.");
+      setVerifyMsg(t("auth.failedResendEmail"));
     }
   }, []);
 
@@ -853,18 +853,18 @@ export function Auth() {
         flashBtn(
           setTosBtn,
           "",
-          errorBtn("Terms not accepted yet – read and click Accept below"),
+          errorBtn(t("auth.notAcceptedYet")),
         );
       }
     } catch {
-      flashBtn(setTosBtn, "", errorBtn("Network error - try again"));
+      flashBtn(setTosBtn, "", errorBtn(t("auth.networkError")));
     }
   }, [handleAccountLogin]);
 
   const handleTosAccept = useCallback(async () => {
     const pending = pendingTosRef.current;
     if (!pending || !tosCheckboxChecked) return;
-    setTosBtn(loadingBtn("Accepting…"));
+    setTosBtn(loadingBtn(t("auth.accepting")));
     try {
       const res = await fetch(
         `${API}/accept_tos?auth=${encodeURIComponent(pending.token)}`,
@@ -872,20 +872,20 @@ export function Auth() {
       );
       if (res.ok) {
         setTosAccepted(true);
-        setTosBtn(successBtn("Accepted!"));
+        setTosBtn(successBtn(t("auth.accepted")));
         setTimeout(() => handleTosContinue(), 800);
       } else {
         flashBtn(
           setTosBtn,
-          "Accept Terms",
-          errorBtn("Failed to accept – try again"),
+          t("auth.acceptTermsDefaultBtn"),
+          errorBtn(t("auth.failedAccept")),
         );
       }
     } catch {
       flashBtn(
         setTosBtn,
-        "Accept Terms",
-        errorBtn("Network error – try again"),
+        t("auth.acceptTermsDefaultBtn"),
+        errorBtn(t("auth.networkError")),
       );
     }
   }, [tosCheckboxChecked, handleTosContinue]);
@@ -947,7 +947,7 @@ export function Auth() {
     async (perms: string[]) => {
       if (!account?.key || perms.length === 0) return;
       setScopeError("");
-      setScopeBtn(loadingBtn("Creating token…"));
+      setScopeBtn(loadingBtn(t("auth.creatingToken")));
       try {
         const res = await fetch(
           `${API}/tokens/create?auth=${encodeURIComponent(account.key)}`,
@@ -955,18 +955,18 @@ export function Auth() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              name: requestor || "Third-party app",
+              name: requestor || t("auth.thirdPartyAppName"),
               permissions: perms,
               origin: requestor,
-              description: `Scoped access for ${requestor}`,
+              description: t("auth.scopedAccessDesc", { requestor }),
               websites: [returnToRef.current],
             }),
           },
         );
         const data = await res.json();
         if (!res.ok) {
-          setScopeBtn(errorBtn(data.error || "Failed to create token"));
-          setTimeout(() => setScopeBtn(defaultBtn("Allow")), 3000);
+          setScopeBtn(errorBtn(data.error || t("tokens.failedCreate")));
+          setTimeout(() => setScopeBtn(defaultBtn(t("auth.allowDefaultBtn"))), 3000);
           return;
         }
         saveAccountToStorage(account);
@@ -976,8 +976,8 @@ export function Auth() {
           id: data.id,
         });
       } catch (e: any) {
-        setScopeBtn(errorBtn(e?.message || "Network error"));
-        setTimeout(() => setScopeBtn(defaultBtn("Allow")), 3000);
+        setScopeBtn(errorBtn(e?.message || t("notifications.networkError")));
+        setTimeout(() => setScopeBtn(defaultBtn(t("auth.allowDefaultBtn"))), 3000);
       }
     },
     [account, requestor, deliverAuthToken],
@@ -1069,8 +1069,8 @@ export function Auth() {
   return (
     <AuthShell>
       <AuthSidebar
-        title={sidebar.title}
-        subtitle={sidebar.sub}
+        title={t(sidebar.title)}
+        subtitle={t(sidebar.sub)}
         footer={
           <AuthSidebarAction
             onClick={
@@ -1087,9 +1087,9 @@ export function Auth() {
               class={`fas ${view === "permissions" ? "fa-user-plus" : addBtnIcon}`}
             />
             {view === "permissions"
-              ? "Use another account"
+              ? t("auth.useAnotherAccountBtn")
               : view === "forgot" || view === "reset"
-                ? "Back to sign in"
+                ? t("auth.backToSignInBtn")
                 : addBtnText}
           </AuthSidebarAction>
         }
@@ -1103,7 +1103,7 @@ export function Auth() {
             />
             <div class={s.accountItemInfo}>
               <h3>{account.username}</h3>
-              <p>Bilup Account</p>
+              <p>{t("auth.bilupAccount")}</p>
             </div>
           </button>
         ) : savedAccounts.length === 0 ? (
@@ -1111,8 +1111,8 @@ export function Auth() {
             <div class={s.noAccountsIcon}>
               <i class="fas fa-user-circle" />
             </div>
-            <p class={s.noAccountsTitle}>No saved accounts</p>
-            <p class={s.noAccountsSub}>Sign in to save your account</p>
+            <p class={s.noAccountsTitle}>{t("auth.noSavedAccounts")}</p>
+            <p class={s.noAccountsSub}>{t("auth.signInToSave")}</p>
           </div>
         ) : (
           savedAccounts.map((a) => (
@@ -1330,7 +1330,7 @@ export function Auth() {
           <AuthTosLinks>
             <p>
               <AuthTosLinkBtn onClick={showForgot}>
-                Forgot password?
+                {t("auth.forgotPassword")}
               </AuthTosLinkBtn>
             </p>
             <p>
@@ -1582,16 +1582,16 @@ export function Auth() {
       ) : view === "reset" ? (
         <AuthMain>
           <AuthLogo />
-          <AuthHeading>Set a new password</AuthHeading>
+          <AuthHeading>{t("auth.setNewPassword")}</AuthHeading>
           <AuthSubheading>
-            Enter the reset code from your email and choose a new password.
+            {t("auth.resetSub")}
           </AuthSubheading>
           <form onSubmit={handleResetSubmit} class={s.signinForm}>
             <AuthFormGroup>
               <AuthInput
                 type="text"
                 name="reset-token"
-                placeholder="Reset code"
+                placeholder={t("auth.resetCode")}
                 required
                 value={resetToken}
                 onInput={(e: any) => setResetToken(e.target.value)}
@@ -1602,7 +1602,7 @@ export function Auth() {
               <AuthInput
                 type="password"
                 name="new-password"
-                placeholder="New password (8+ characters)"
+                placeholder={t("auth.newPasswordPlaceholder")}
                 required
                 minlength={8}
                 value={resetNewPw}
@@ -1614,7 +1614,7 @@ export function Auth() {
               <AuthInput
                 type="password"
                 name="confirm-password"
-                placeholder="Confirm new password"
+                placeholder={t("auth.confirmNewPasswordPlaceholder")}
                 required
                 minlength={8}
                 value={resetConfirm}
@@ -1641,12 +1641,12 @@ export function Auth() {
           <AuthTosLinks>
             <p>
               <AuthTosLinkBtn onClick={showForgot}>
-                Didn't get the email? Try again
+                {t("auth.didntGetEmail")}
               </AuthTosLinkBtn>
             </p>
             <p>
               <AuthTosLinkBtn onClick={() => showSignInForm()}>
-                Back to sign in
+                {t("auth.backToSignIn")}
               </AuthTosLinkBtn>
             </p>
           </AuthTosLinks>

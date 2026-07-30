@@ -25,6 +25,7 @@ import { plural } from "../lib/format";
 import { clickable } from "../lib/clickable";
 import { useConfirm } from "../components/ConfirmDialog";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useI18n } from "../i18n/i18n";
 import s from "./TokenManager.module.css";
 
 const API_BASE_URL = "https://api.accounts.bilup.org";
@@ -133,12 +134,13 @@ function statusOf(token: SubToken): { label: string; cls: string } {
 
 type TabName = "your-tokens" | "create-token";
 
-const TABS: { id: TabName; label: string; icon: typeof Key }[] = [
-  { id: "your-tokens", label: "Your Tokens", icon: Key },
-  { id: "create-token", label: "Create Token", icon: PlusCircle },
+const TABS: { id: TabName; labelKey: string; icon: typeof Key }[] = [
+  { id: "your-tokens", labelKey: "tokens.yourTokens", icon: Key },
+  { id: "create-token", labelKey: "tokens.createToken", icon: PlusCircle },
 ];
 
 export function TokenManager() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const currentUser = user?.username || "";
 
@@ -535,8 +537,8 @@ export function TokenManager() {
     return (
       <AuthRequired
         icon={<Key size={28} />}
-        title="Sign in to manage sub-tokens"
-        text="Sign in to create and manage permission-scoped sub-tokens for the apps you use."
+        title={t("tokens.signInManageTitle")}
+        text={t("tokens.signInManageText")}
         href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/tokens")}`}
       />
     );
@@ -544,8 +546,8 @@ export function TokenManager() {
 
   return (
     <AccountPage
-      title="Token Manager"
-      subtitle="Create and manage permission-scoped sub-tokens for the apps you use"
+      title={t("tokens.title")}
+      subtitle={t("tokens.subtitle")}
     >
       {confirmDialog}
       {/* Newly created token reveal */}
@@ -591,6 +593,7 @@ export function TokenManager() {
       <AccountTabs
         tabs={TABS.map((tab) => ({
           ...tab,
+          label: t(tab.labelKey),
           badge:
             tab.id === "your-tokens" && tokens.length > 0
               ? tokens.length
@@ -598,15 +601,15 @@ export function TokenManager() {
         }))}
         active={activeTab}
         onChange={setActiveTab}
-        ariaLabel="Token sections"
+        ariaLabel={t("tokens.sectionsAriaLabel")}
       />
 
       <AccountTabPanel>
         {activeTab === "your-tokens" && (
           <AccountSection
             icon={<Key size={18} />}
-            title="Your Sub-Tokens"
-            subtitle={`${tokens.length}/25 created`}
+            title={t("tokens.yourTokensLabel")}
+            subtitle={t("tokens.createdCount", { n: tokens.length })}
           >
             {tokensLoading && <div class={s.loading}>Loading your tokens…</div>}
             {!tokensLoading && tokensError && (
@@ -672,8 +675,8 @@ export function TokenManager() {
         {activeTab === "create-token" && (
           <AccountSection
             icon={<PlusCircle size={18} />}
-            title="Create New Sub-Token"
-            subtitle="Set up a new permission-scoped token"
+            title={t("tokens.createNewLabel")}
+            subtitle={t("tokens.createSubLabel")}
           >
             <div class={s.formGroup}>
               <label for="new-token-name">
