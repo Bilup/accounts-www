@@ -82,7 +82,7 @@ export function Header() {
               aria-expanded={langOpen}
             >
               <Globe size={16} />
-              <span class={s.langLabel}>{lang === "en" ? "EN" : "中文"}</span>
+              <span class={s.langLabel}>{lang === "en" ? "EN" : "简体中文"}</span>
               <ChevronDown size={12} class={`${s.langArrow} ${langOpen ? s.langArrowUp : ""}`} />
             </button>
             {langOpen && (
@@ -95,11 +95,11 @@ export function Header() {
                   English
                 </button>
                 <button
-                  class={`${s.langOption} ${lang === "zh" ? s.langOptionActive : ""}`}
+                  class={`${s.langOption} ${lang === "zh-cn" ? s.langOptionActive : ""}`}
                   role="menuitem"
-                  onClick={() => { setLang("zh"); setLangOpen(false); }}
+                  onClick={() => { setLang("zh-cn"); setLangOpen(false); }}
                 >
-                  中文
+                  简体中文
                 </button>
               </div>
             )}
@@ -170,10 +170,10 @@ export function Header() {
                 English
               </button>
               <button
-                class={`${s.mobileLangBtn} ${lang === "zh" ? s.mobileLangBtnActive : ""}`}
-                onClick={() => { setLang("zh"); setMenuOpen(false); }}
+                class={`${s.mobileLangBtn} ${lang === "zh-cn" ? s.mobileLangBtnActive : ""}`}
+                onClick={() => { setLang("zh-cn"); setMenuOpen(false); }}
               >
-                中文
+                简体中文
               </button>
             </div>
           </div>

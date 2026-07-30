@@ -2,7 +2,7 @@ import { createContext } from "preact";
 import { useContext, useState, useEffect, useCallback } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 
-export type Lang = "en" | "zh";
+export type Lang = "en" | "zh-cn";
 
 // ── Translation dictionary type ──
 
@@ -1600,7 +1600,7 @@ tr("profile.noteDeleteLabel", "Delete note", "删除备注");
 tr("accountPage.signInLabel", "Sign in", "登录");
 
 // ── Compile into final dictionaries ──
-const DICTS: Record<Lang, Record<string, Record<string, string>>> = { en, zh };
+const DICTS: Record<Lang, Record<string, Record<string, string>>> = { en, "zh-cn": zh };
 
 // ── Context & Provider ──
 
@@ -1620,7 +1620,7 @@ function getInitialLang(): Lang {
   if (typeof window === "undefined") return "en";
   try {
     const saved = localStorage.getItem("bilup-lang");
-    if (saved === "zh" || saved === "en") return saved;
+    if (saved === "zh-cn" || saved === "en") return saved;
   } catch {
     /* ignore */
   }
@@ -1636,7 +1636,7 @@ export function I18nProvider({ children }: { children: ComponentChildren }) {
     } catch {
       /* ignore */
     }
-    document.documentElement.setAttribute("lang", lang === "zh" ? "zh-CN" : "en");
+    document.documentElement.setAttribute("lang", lang === "zh-cn" ? "zh-CN" : "en");
   }, [lang]);
 
   const setLang = useCallback((l: Lang) => {
