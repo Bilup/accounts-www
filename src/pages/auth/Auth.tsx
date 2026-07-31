@@ -63,6 +63,7 @@ export function Auth() {
   const { t } = useI18n();
   const [view, setView] = useState<View>("welcome");
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
+  const [gateErrorId, setGateErrorId] = useState<string>("");
 
   const [siUsername, setSiUsername] = useState("");
   const [siPassword, setSiPassword] = useState("");
@@ -140,6 +141,8 @@ export function Auth() {
       params.get("return_to") ?? savedReturnTo ?? "https://accounts.bilup.org/me";
     const systemParam = params.get("system");
     if (systemParam?.trim()) systemNameRef.current = systemParam.trim();
+    const errorParam = params.get("error");
+    if (errorParam) setGateErrorId(decodeURIComponent(errorParam));
     sessionStorage.removeItem("rotur_return_to");
 
     const requiresParam = params.get("requires");
@@ -1258,6 +1261,12 @@ export function Auth() {
             <h1>{t("auth.welcome")}</h1>
             <p>{t("auth.welcomeSub")}</p>
           </div>
+          {gateErrorId && (
+            <div class={s.gateErrorBanner}>
+              <i class="fas fa-exclamation-triangle" />
+              <span>{gateErrorId}</span>
+            </div>
+          )}
           <div class={s.welcomeButtons}>
             <button
               class={s.btnWelcomePrimary}

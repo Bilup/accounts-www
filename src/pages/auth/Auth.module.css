@@ -181,6 +181,31 @@
   line-height: 1.6;
 }
 
+.gateErrorBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 380px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.625rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.gateErrorBanner i {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.gateErrorBanner span {
+  flex: 1;
+}
+
 .welcomeButtons {
   display: flex;
   flex-direction: column;
