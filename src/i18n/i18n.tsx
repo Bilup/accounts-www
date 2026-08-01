@@ -1599,6 +1599,24 @@ tr("profile.noteDeleteLabel", "Delete note", "删除备注");
 // ──────────────────────────────────────────────────
 tr("accountPage.signInLabel", "Sign in", "登录");
 
+// ──────────────────────────────────────────────────
+//  Consent (OAuth authorize page)
+// ──────────────────────────────────────────────────
+tr("consent.title", "Authorize access", "授权访问");
+tr("consent.thirdPartyApp", "A third-party application", "一个第三方应用");
+tr("consent.wouldLikeAccess", "would like to access your Bilup Accounts.", "想要访问您的 Bilup 帐号。");
+tr("consent.loading", "Loading consent details...", "正在加载授权详情...");
+tr("consent.missingConsentId", "Missing consent_id in URL", "URL 中缺少 consent_id");
+tr("consent.failedLoad", "Failed to load consent information", "无法加载授权信息");
+tr("consent.backToAccount", "Back to account", "返回帐号");
+tr("consent.requestedPermissions", "Requested permissions", "请求的权限");
+tr("consent.trustWarning", "Only authorize if you trust this application.", "仅在您信任此应用时才授权。");
+tr("consent.revokeInfo", "You can revoke access at any time from your account settings.", "您可以随时在帐号设置中撤销访问权限。");
+tr("consent.deny", "Deny", "拒绝");
+tr("consent.authorize", "Authorize", "授权");
+tr("consent.noRedirect", "No redirect URL returned", "未返回重定向地址");
+tr("consent.networkError", "Network error. Please try again.", "网络错误，请重试。");
+
 // ── Compile into final dictionaries ──
 const DICTS: Record<Lang, Record<string, Record<string, string>>> = { en, "zh-cn": zh };
 

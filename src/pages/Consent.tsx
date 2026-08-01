@@ -1,5 +1,6 @@
 import { useState, useEffect } from "preact/hooks";
 import s from "./Consent.module.css";
+import { useI18n } from "../i18n/i18n";
 
 const API = "https://api.accounts.bilup.org";
 
@@ -11,17 +12,27 @@ interface ConsentInfo {
 }
 
 export function Consent() {
+  const { t } = useI18n();
   const [consentId, setConsentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [info, setInfo] = useState<ConsentInfo | null>(null);
+  // `error` holds a raw backend error message; `errorKey` holds a translation
+  // key for known client-side errors. We translate the key at render time so
+  // the message reacts to language changes without re-fetching.
   const [error, setError] = useState<string>("");
+  const [errorKey, setErrorKey] = useState<string>("");
+
+  const showError = (key: string) => {
+    setError("");
+    setErrorKey(key);
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const id = params.get("consent_id");
     if (!id) {
-      setError("Missing consent_id in URL");
+      showError("consent.missingConsentId");
       setLoading(false);
       return;
     }
@@ -34,12 +45,13 @@ export function Consent() {
       .then((data: ConsentInfo) => {
         if (data.error) {
           setError(data.error);
+          setErrorKey("");
         } else {
           setInfo(data);
         }
       })
       .catch(() => {
-        setError("Failed to load consent information");
+        showError("consent.failedLoad");
       })
       .finally(() => {
         setLoading(false);
@@ -50,6 +62,7 @@ export function Consent() {
     if (!consentId || submitting) return;
     setSubmitting(true);
     setError("");
+    setErrorKey("");
 
     fetch(`${API}/oauth/consent`, {
       method: "POST",
@@ -68,41 +81,45 @@ export function Consent() {
         } else if (data.redirect) {
           location.href = data.redirect;
         } else {
-          setError("No redirect URL returned");
+          showError("consent.noRedirect");
           setSubmitting(false);
         }
       })
       .catch(() => {
-        setError("Network error. Please try again.");
+        showError("consent.networkError");
         setSubmitting(false);
       });
   };
+
+  const errorMessage = error || (errorKey ? t(errorKey) : "");
 
   return (
     <div class={s.page}>
       <div class={s.card}>
         <div class={s.logo}>
-          <img src="/icon.svg" alt="Bilup Accounts" draggable={false} />
+          <img src="/logo.png" alt="Bilup Accounts" draggable={false} />
         </div>
 
-        <h1 class={s.title}>Authorize access</h1>
+        <h1 class={s.title}>{t("consent.title")}</h1>
         <p class={s.subtitle}>
-          <span class={s.clientName}>{info?.client_name || "A third-party application"}</span>{" "}
-          would like to access your Bilup Accounts.
+          <span class={s.clientName}>
+            {info?.client_name || t("consent.thirdPartyApp")}
+          </span>{" "}
+          {t("consent.wouldLikeAccess")}
         </p>
 
         {loading && (
           <div class={s.loading}>
             <div class={s.spinner} />
-            <span>Loading consent details...</span>
+            <span>{t("consent.loading")}</span>
           </div>
         )}
 
-        {!loading && error && !info && (
+        {!loading && errorMessage && !info && (
           <div class={s.section}>
             <div class={s.alert}>
               <i class="fas fa-exclamation-circle" />
-              <div>{error}</div>
+              <div>{errorMessage}</div>
             </div>
             <div class={s.buttonRow}>
               <button
@@ -111,7 +128,7 @@ export function Consent() {
                 onClick={() => (location.href = "/me")}
               >
                 <i class="fas fa-arrow-left" />
-                Back to account
+                {t("consent.backToAccount")}
               </button>
             </div>
           </div>
@@ -119,18 +136,18 @@ export function Consent() {
 
         {!loading && info && (
           <>
-            {error && (
+            {errorMessage && (
               <div class={s.section}>
                 <div class={s.alert}>
                   <i class="fas fa-exclamation-circle" />
-                  <div>{error}</div>
+                  <div>{errorMessage}</div>
                 </div>
               </div>
             )}
 
             {info.scope_description || info.scopes ? (
               <div class={s.section}>
-                <h2 class={s.sectionTitle}>Requested permissions</h2>
+                <h2 class={s.sectionTitle}>{t("consent.requestedPermissions")}</h2>
                 {info.scopes && info.scopes.length > 0 ? (
                   <ul class={s.scopes}>
                     {info.scopes.map((scope, idx) => (
@@ -155,9 +172,9 @@ export function Consent() {
               <div class={s.info}>
                 <i class="fas fa-lock" />
                 <div>
-                  <strong>Only authorize if you trust this application.</strong>
+                  <strong>{t("consent.trustWarning")}</strong>
                   <br />
-                  You can revoke access at any time from your account settings.
+                  {t("consent.revokeInfo")}
                 </div>
               </div>
             </div>
@@ -170,7 +187,7 @@ export function Consent() {
                 disabled={submitting}
               >
                 <i class="fas fa-xmark" />
-                {submitting ? "..." : "Deny"}
+                {submitting ? "..." : t("consent.deny")}
               </button>
               <button
                 type="button"
@@ -179,7 +196,7 @@ export function Consent() {
                 disabled={submitting}
               >
                 <i class="fas fa-check" />
-                {submitting ? "..." : "Authorize"}
+                {submitting ? "..." : t("consent.authorize")}
               </button>
             </div>
           </>
@@ -192,7 +209,7 @@ export function Consent() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Terms of Service
+              {t("footer.termsOfService")}
             </a>{" "}
             •{" "}
             <a
@@ -200,7 +217,7 @@ export function Consent() {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Privacy Policy
+              {t("footer.privacyPolicy")}
             </a>
           </p>
         </div>
