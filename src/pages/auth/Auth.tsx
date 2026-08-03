@@ -26,7 +26,13 @@ import { TosContent } from "../../components/TosContent";
 import { PermissionsView } from "./PermissionsView";
 import { useI18n } from "../../i18n/i18n";
 
-declare const hcaptcha: any;
+declare const turnstile: any;
+
+// Cloudflare Turnstile site key.
+// `1x00000000000000000000AA` is the official test key (always passes).
+// Replace it with your real site key from the Cloudflare dashboard (Turnstile)
+// once you have one.
+const CAPTCHA_SITE_KEY = "1x00000000000000000000AA";
 
 import {
   API,
@@ -675,10 +681,12 @@ export function Auth() {
     async (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      const htoken =
-        typeof hcaptcha !== "undefined" ? hcaptcha.getResponse() : "";
+      const captchaToken =
+        typeof turnstile !== "undefined" && captchaWidgetIdRef.current !== null
+          ? turnstile.getResponse(captchaWidgetIdRef.current)
+          : "";
 
-      if (!htoken) {
+      if (!captchaToken) {
         flashBtn(setSuBtn, t("auth.createAccount"), errorBtn(t("auth.completeCaptcha")));
         return;
       }
@@ -688,7 +696,8 @@ export function Auth() {
           t("auth.createAccount"),
           errorBtn(t("auth.passwordsDoNotMatch")),
         );
-        if (typeof hcaptcha !== "undefined") hcaptcha.reset();
+        if (typeof turnstile !== "undefined")
+          turnstile.reset(captchaWidgetIdRef.current);
         return;
       }
       if (suPassword.length < 8) {
@@ -697,7 +706,8 @@ export function Auth() {
           t("auth.createAccount"),
           errorBtn(t("auth.password8Chars")),
         );
-        if (typeof hcaptcha !== "undefined") hcaptcha.reset();
+        if (typeof turnstile !== "undefined")
+          turnstile.reset(captchaWidgetIdRef.current);
         return;
       }
 
@@ -712,13 +722,14 @@ export function Auth() {
             email: suEmail,
             password: suPassword,
             system: systemNameRef.current,
-            captcha: htoken,
+            captcha: captchaToken,
           }),
         });
         const result = await res.json();
 
         if (result.error) {
-          if (typeof hcaptcha !== "undefined") hcaptcha.reset();
+          if (typeof turnstile !== "undefined")
+            turnstile.reset(captchaWidgetIdRef.current);
           flashBtn(setSuBtn, t("auth.createAccount"), errorBtn(result.error));
         } else {
           setCookie("username", suUsername, 7);
@@ -754,7 +765,8 @@ export function Auth() {
           }
         }
       } catch {
-        if (typeof hcaptcha !== "undefined") hcaptcha.reset();
+        if (typeof turnstile !== "undefined")
+          turnstile.reset(captchaWidgetIdRef.current);
         flashBtn(setSuBtn, t("auth.createAccountDefaultBtn"), errorBtn(t("auth.errorOccurred")));
       }
     },
@@ -1021,10 +1033,10 @@ export function Auth() {
     if (view !== "signup") {
       if (
         captchaWidgetIdRef.current !== null &&
-        typeof hcaptcha !== "undefined"
+        typeof turnstile !== "undefined"
       ) {
         try {
-          hcaptcha.reset(captchaWidgetIdRef.current);
+          turnstile.reset(captchaWidgetIdRef.current);
         } catch {}
       }
       return;
@@ -1036,19 +1048,19 @@ export function Auth() {
       if (cancelled) return;
       const el = captchaRef.current;
       if (!el) return;
-      if (typeof hcaptcha === "undefined") {
+      if (typeof turnstile === "undefined") {
         setTimeout(tryRender, 100);
         return;
       }
       if (captchaWidgetIdRef.current !== null) {
         try {
-          hcaptcha.remove(captchaWidgetIdRef.current);
+          turnstile.remove(captchaWidgetIdRef.current);
         } catch {}
         captchaWidgetIdRef.current = null;
       }
       try {
-        captchaWidgetIdRef.current = hcaptcha.render(el, {
-          sitekey: "6532c9dc-2f18-4352-8a6a-6c08b6c2a6c4",
+        captchaWidgetIdRef.current = turnstile.render(el, {
+          sitekey: CAPTCHA_SITE_KEY,
         });
       } catch {}
     };
@@ -1059,10 +1071,10 @@ export function Auth() {
       cancelled = true;
       if (
         captchaWidgetIdRef.current !== null &&
-        typeof hcaptcha !== "undefined"
+        typeof turnstile !== "undefined"
       ) {
         try {
-          hcaptcha.remove(captchaWidgetIdRef.current);
+          turnstile.remove(captchaWidgetIdRef.current);
         } catch {}
         captchaWidgetIdRef.current = null;
       }
