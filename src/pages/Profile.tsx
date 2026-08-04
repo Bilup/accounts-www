@@ -132,16 +132,18 @@ function ProfileView({ username }: { username: string }) {
         const data = await res.json().catch(() => ({}));
         setActionError(
           data?.error ||
-            `Couldn't ${wasFollowing ? "unfollow" : "follow"} @${username}.`,
+            (wasFollowing
+              ? t("profile.couldntUnfollow", { username })
+              : t("profile.couldntFollow", { username })),
         );
       }
     } catch {
       setIsFollowing(wasFollowing);
-      setActionError("Network error — please try again.");
+      setActionError(t("profile.networkErrorRetry"));
     } finally {
       setActionBusy(false);
     }
-  }, [token, username, isSelf, isFollowing, actionBusy]);
+  }, [token, username, isSelf, isFollowing, actionBusy, t]);
 
   const onFriendAction = useCallback(
     async (action: "add" | "remove" | "accept" | "reject") => {
@@ -156,17 +158,23 @@ function ProfileView({ username }: { username: string }) {
         );
         const data = await res.json().catch(() => ({}));
         if (!res.ok || data?.error) {
-          setActionError(data?.error || `Couldn't ${action} @${username}.`);
+          setActionError(
+            data?.error ||
+              t("profile.friendActionFailed", {
+                action: t(`profile.verb${action[0].toUpperCase()}${action.slice(1)}`),
+                username,
+              }),
+          );
           return;
         }
         await reload();
       } catch {
-        setActionError("Network error — please try again.");
+        setActionError(t("profile.networkErrorRetry"));
       } finally {
         setActionBusy(false);
       }
     },
-    [token, username, reload, actionBusy],
+    [token, username, reload, actionBusy, t],
   );
 
   const onBlockToggle = useCallback(async () => {
@@ -186,15 +194,17 @@ function ProfileView({ username }: { username: string }) {
         const data = await res.json().catch(() => ({}));
         setActionError(
           data?.error ||
-            `Couldn't ${wasBlocked ? "unblock" : "block"} @${username}.`,
+            (wasBlocked
+              ? t("profile.couldntUnblock", { username })
+              : t("profile.couldntBlock", { username })),
         );
       }
     } catch {
-      setActionError("Network error — please try again.");
+      setActionError(t("profile.networkErrorRetry"));
     } finally {
       setActionBusy(false);
     }
-  }, [token, username, isSelf, isBlocked, reload, actionBusy]);
+  }, [token, username, isSelf, isBlocked, reload, actionBusy, t]);
 
   const onNoteUpdate = useCallback(
     async (noteUsername: string, note: string) => {
@@ -212,15 +222,15 @@ function ProfileView({ username }: { username: string }) {
             );
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setActionError(data?.error || "Couldn't save your note.");
+          setActionError(data?.error || t("profile.noteSaveFailed"));
           return;
         }
         await reload();
       } catch {
-        setActionError("Network error — your note was not saved.");
+        setActionError(t("profile.noteNetworkError"));
       }
     },
-    [token, reload],
+    [token, reload, t],
   );
 
   if (profile?.["sys.banned"]) {

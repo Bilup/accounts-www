@@ -21,7 +21,6 @@ import {
   EmptyState,
 } from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
-import { plural } from "../lib/format";
 import { clickable } from "../lib/clickable";
 import { useConfirm } from "../components/ConfirmDialog";
 import { useFocusTrap } from "../hooks/useFocusTrap";
@@ -70,24 +69,24 @@ function matchesOther(p: string): boolean {
 }
 
 const PERM_CATEGORIES: { label: string; match: (p: string) => boolean }[] = [
-  { label: "Account", match: (p) => p.startsWith("account:") },
-  { label: "Credits", match: (p) => p.startsWith("credits:") },
-  { label: "Friends", match: (p) => p.startsWith("friends:") },
-  { label: "Posts", match: (p) => p.startsWith("posts:") },
-  { label: "Following", match: (p) => p.startsWith("following:") },
-  { label: "Files", match: (p) => p.startsWith("files:") },
-  { label: "Keys", match: (p) => p.startsWith("keys:") },
-  { label: "Groups", match: (p) => p.startsWith("groups:") },
-  { label: "Notifications", match: (p) => p.startsWith("notifications:") },
-  { label: "Gifts", match: (p) => p.startsWith("gifts:") },
-  { label: "Items", match: (p) => p.startsWith("items:") },
-  { label: "Other", match: matchesOther },
+  { label: "tokens.catAccount", match: (p) => p.startsWith("account:") },
+  { label: "tokens.catCredits", match: (p) => p.startsWith("credits:") },
+  { label: "tokens.catFriends", match: (p) => p.startsWith("friends:") },
+  { label: "tokens.catPosts", match: (p) => p.startsWith("posts:") },
+  { label: "tokens.catFollowing", match: (p) => p.startsWith("following:") },
+  { label: "tokens.catFiles", match: (p) => p.startsWith("files:") },
+  { label: "tokens.catKeys", match: (p) => p.startsWith("keys:") },
+  { label: "tokens.catGroups", match: (p) => p.startsWith("groups:") },
+  { label: "tokens.catNotifications", match: (p) => p.startsWith("notifications:") },
+  { label: "tokens.catGifts", match: (p) => p.startsWith("gifts:") },
+  { label: "tokens.catItems", match: (p) => p.startsWith("items:") },
+  { label: "tokens.catOther", match: matchesOther },
 ];
 
 function categorizePermissions(perms: string[]) {
   const groups: Record<string, string[]> = {};
   for (const p of perms) {
-    const cat = PERM_CATEGORIES.find((c) => c.match(p))?.label || "Other";
+    const cat = PERM_CATEGORIES.find((c) => c.match(p))?.label || "tokens.catOther";
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(p);
   }
@@ -114,8 +113,8 @@ function clearGroup(set: Set<string>, perms: string[]): Set<string> {
   return next;
 }
 
-function formatDate(ts?: number | null): string {
-  if (!ts) return "Never";
+function formatDate(ts?: number | null, neverLabel = "Never"): string {
+  if (!ts) return neverLabel;
   return new Date(ts).toLocaleString(undefined, {
     year: "numeric",
     month: "short",
@@ -125,11 +124,14 @@ function formatDate(ts?: number | null): string {
   });
 }
 
-function statusOf(token: SubToken): { label: string; cls: string } {
-  if (token.revoked) return { label: "Revoked", cls: "tagRevoked" };
+function statusOf(
+  token: SubToken,
+  t: (key: string) => string,
+): { label: string; cls: string } {
+  if (token.revoked) return { label: t("tokens.statusRevoked"), cls: "tagRevoked" };
   if (token.expires_at && token.expires_at < Date.now())
-    return { label: "Expired", cls: "tagExpired" };
-  return { label: "Active", cls: "tagActive" };
+    return { label: t("tokens.statusExpired"), cls: "tagExpired" };
+  return { label: t("tokens.statusActive"), cls: "tagActive" };
 }
 
 type TabName = "your-tokens" | "create-token";
@@ -249,12 +251,10 @@ export function TokenManager() {
         setTokens(data);
       } else {
         // Never let a failed load masquerade as "you have no tokens".
-        setTokensError(
-          data?.error || "Something went wrong loading your tokens.",
-        );
+        setTokensError(data?.error || t("tokens.loadError"));
       }
     } catch {
-      setTokensError("Network error — check your connection and try again.");
+      setTokensError(t("tokens.networkError"));
     }
     setTokensLoading(false);
   }
@@ -278,17 +278,17 @@ export function TokenManager() {
   async function createNewToken() {
     const name = createName.trim();
     if (!name) {
-      setCreateMessage("Token name is required");
+      setCreateMessage(t("tokens.nameRequired"));
       setCreateMessageType("error");
       return;
     }
     if (name.length > 50) {
-      setCreateMessage("Name must be 50 characters or fewer");
+      setCreateMessage(t("tokens.nameTooLong"));
       setCreateMessageType("error");
       return;
     }
     if (createPerms.size === 0) {
-      setCreateMessage("At least one permission is required");
+      setCreateMessage(t("tokens.permRequired"));
       setCreateMessageType("error");
       return;
     }
@@ -296,18 +296,18 @@ export function TokenManager() {
       ? Math.floor(parseInt(createExpiresHrs))
       : 0;
     if (createExpiresHrs && (isNaN(expiresHrs) || expiresHrs < 0)) {
-      setCreateMessage("Expiry must be a non-negative number of hours");
+      setCreateMessage(t("tokens.expiryNonNegative"));
       setCreateMessageType("error");
       return;
     }
     if (expiresHrs > 8760) {
-      setCreateMessage("Maximum expiry is 1 year (8760 hours)");
+      setCreateMessage(t("tokens.expiryMax"));
       setCreateMessageType("error");
       return;
     }
 
     setCreateSubmitting(true);
-    setCreateMessage("Creating token…");
+    setCreateMessage(t("tokens.creating"));
     setCreateMessageType("success");
 
     const body: any = {
@@ -345,11 +345,11 @@ export function TokenManager() {
         setCreatePermSearch("");
         fetchUserTokens();
       } else {
-        setCreateMessage(data.error || "Failed to create token");
+        setCreateMessage(data.error || t("tokens.createFailed"));
         setCreateMessageType("error");
       }
     } catch {
-      setCreateMessage("Network error occurred");
+      setCreateMessage(t("tokens.networkError"));
       setCreateMessageType("error");
     }
     setCreateSubmitting(false);
@@ -361,7 +361,7 @@ export function TokenManager() {
     const input = nameInputRefs.current[tokenId];
     const name = (input?.value || "").trim();
     if (!name) {
-      setTokenMsg(tokenId, "Name cannot be empty", "error");
+      setTokenMsg(tokenId, t("tokens.nameEmpty"), "error");
       return;
     }
     try {
@@ -375,13 +375,13 @@ export function TokenManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setTokenMsg(tokenId, "Name updated", "success");
+        setTokenMsg(tokenId, t("tokens.nameUpdated"), "success");
         fetchUserTokens();
       } else {
-        setTokenMsg(tokenId, data.error || "Failed to rename", "error");
+        setTokenMsg(tokenId, data.error || t("tokens.renameFailed"), "error");
       }
     } catch {
-      setTokenMsg(tokenId, "Network error", "error");
+      setTokenMsg(tokenId, t("tokens.networkErrorShort"), "error");
     }
   }
 
@@ -399,23 +399,23 @@ export function TokenManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setTokenMsg(tokenId, "Description updated", "success");
+        setTokenMsg(tokenId, t("tokens.descUpdated"), "success");
         fetchUserTokens();
       } else {
         setTokenMsg(
           tokenId,
-          data.error || "Failed to update description",
+          data.error || t("tokens.descUpdateFailed"),
           "error",
         );
       }
     } catch {
-      setTokenMsg(tokenId, "Network error", "error");
+      setTokenMsg(tokenId, t("tokens.networkErrorShort"), "error");
     }
   }
 
   async function saveEditedPerms(tokenId: string, perms: Set<string>) {
     if (perms.size === 0) {
-      setTokenMsg(tokenId, "At least one permission is required", "error");
+      setTokenMsg(tokenId, t("tokens.permRequired"), "error");
       return;
     }
     try {
@@ -429,26 +429,26 @@ export function TokenManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setTokenMsg(tokenId, "Permissions updated", "success");
+        setTokenMsg(tokenId, t("tokens.permsUpdated"), "success");
         setEditingPerms((prev) => ({ ...prev, [tokenId]: null }));
         fetchUserTokens();
       } else {
         setTokenMsg(
           tokenId,
-          data.error || "Failed to update permissions",
+          data.error || t("tokens.permsUpdateFailed"),
           "error",
         );
       }
     } catch {
-      setTokenMsg(tokenId, "Network error", "error");
+      setTokenMsg(tokenId, t("tokens.networkErrorShort"), "error");
     }
   }
 
   async function revokeToken(tokenId: string) {
     const ok = await confirm({
-      title: "Revoke this token?",
-      message: "It will become immediately unusable.",
-      confirmLabel: "Revoke token",
+      title: t("tokens.revokeConfirm"),
+      message: t("tokens.revokeMsg"),
+      confirmLabel: t("tokens.revokeToken"),
       danger: true,
     });
     if (!ok) return;
@@ -461,21 +461,21 @@ export function TokenManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setTokenMsg(tokenId, "Token revoked", "success");
+        setTokenMsg(tokenId, t("tokens.revoked"), "success");
         fetchUserTokens();
       } else {
-        setTokenMsg(tokenId, data.error || "Failed to revoke", "error");
+        setTokenMsg(tokenId, data.error || t("tokens.revokeFailed"), "error");
       }
     } catch {
-      setTokenMsg(tokenId, "Network error", "error");
+      setTokenMsg(tokenId, t("tokens.networkErrorShort"), "error");
     }
   }
 
   async function deleteToken(tokenId: string) {
     const ok = await confirm({
-      title: "Delete this token permanently?",
-      message: "This cannot be undone.",
-      confirmLabel: "Delete token",
+      title: t("tokens.deleteConfirm"),
+      message: t("tokens.deleteMsg"),
+      confirmLabel: t("tokens.deleteToken"),
       danger: true,
     });
     if (!ok) return;
@@ -491,17 +491,17 @@ export function TokenManager() {
         setSelectedToken(null);
         fetchUserTokens();
       } else {
-        setTokenMsg(tokenId, data.error || "Failed to delete", "error");
+        setTokenMsg(tokenId, data.error || t("tokens.deleteFailed"), "error");
       }
     } catch {
-      setTokenMsg(tokenId, "Network error", "error");
+      setTokenMsg(tokenId, t("tokens.networkErrorShort"), "error");
     }
   }
 
   async function copyToClipboard(text: string, key: string) {
     try {
       await navigator.clipboard.writeText(text);
-      setTokenMsg(key, "Copied!", "success");
+      setTokenMsg(key, t("tokens.tokenCopied"), "success");
       setTimeout(
         () =>
           setTokenMessages((prev) => {
@@ -512,7 +512,7 @@ export function TokenManager() {
         2000,
       );
     } catch {
-      setTokenMsg(key, "Failed to copy", "error");
+      setTokenMsg(key, t("tokens.copyFailed"), "error");
     }
   }
 
@@ -554,12 +554,12 @@ export function TokenManager() {
       {createdToken && (
         <div class={s.tokenReveal}>
           <div class={s.tokenRevealHeader}>
-            <Shield size={16} /> Token created: {createdToken.name}
+            <Shield size={16} /> {t("tokens.tokenCreated")} {createdToken.name}
           </div>
           <p class={s.tokenRevealText}>
-            Copy this token now. <strong>It will never be shown again.</strong>{" "}
-            Store it somewhere safe, you'll need to provide it to the app that
-            requested it.
+            {t("tokens.copyTokenPart1")}{" "}
+            <strong>{t("tokens.neverShownAgain")}</strong>{" "}
+            {t("tokens.copyTokenPart2")}
           </p>
           <div class={s.tokenRevealValue}>
             <code>{createdToken.token}</code>
@@ -567,7 +567,7 @@ export function TokenManager() {
               class={s.copyBtn}
               onClick={() => copyToClipboard(createdToken.token, "__new__")}
             >
-              <Copy size={12} /> Copy
+              <Copy size={12} /> {t("tokens.copy")}
             </button>
           </div>
           {tokenMessages["__new__"] && (
@@ -585,7 +585,7 @@ export function TokenManager() {
             style={{ marginTop: "0.75rem" }}
             onClick={() => setCreatedToken(null)}
           >
-            Dismiss
+            {t("tokens.dismiss")}
           </button>
         </div>
       )}
@@ -611,28 +611,28 @@ export function TokenManager() {
             title={t("tokens.yourTokensLabel")}
             subtitle={t("tokens.createdCount", { n: tokens.length })}
           >
-            {tokensLoading && <div class={s.loading}>Loading your tokens…</div>}
+            {tokensLoading && <div class={s.loading}>{t("tokens.loading")}</div>}
             {!tokensLoading && tokensError && (
               <EmptyState
                 icon={<Key size={24} />}
-                title="Couldn't load your tokens"
+                title={t("tokens.couldntLoad")}
                 text={tokensError}
               >
                 <button class={s.btnSecondary} onClick={fetchUserTokens}>
-                  <RotateCcw size={14} /> Retry
+                  <RotateCcw size={14} /> {t("tokens.retry")}
                 </button>
               </EmptyState>
             )}
             {!tokensLoading && !tokensError && tokens.length === 0 && (
               <EmptyState
                 icon={<Key size={24} />}
-                title="No sub-tokens yet"
-                text="Create one in the Create Token tab or grant scoped access from the /auth page."
+                title={t("tokens.noTokens")}
+                text={t("tokens.noTokensCreateHint")}
               />
             )}
             <div class={s.tokenGrid}>
               {tokens.map((token) => {
-                const st = statusOf(token);
+                const st = statusOf(token, t);
                 return (
                   <div
                     key={token.id}
@@ -647,20 +647,20 @@ export function TokenManager() {
                     </div>
                     <div class={s.tokenInfo}>
                       <div class={s.tokenInfoRow}>
-                        <span class={s.tokenInfoLabel}>Permissions:</span>
+                        <span class={s.tokenInfoLabel}>{t("tokens.permissionsLabel")}</span>
                         <span class={s.tokenInfoValue}>
                           {token.permissions.length}
                         </span>
                       </div>
                       <div class={s.tokenInfoRow}>
-                        <span class={s.tokenInfoLabel}>Created:</span>
+                        <span class={s.tokenInfoLabel}>{t("tokens.createdLabel")}</span>
                         <span class={s.tokenInfoValue}>
-                          {formatDate(token.created_at)}
+                          {formatDate(token.created_at, t("tokens.never"))}
                         </span>
                       </div>
                       {token.origin && (
                         <div class={s.tokenInfoRow}>
-                          <span class={s.tokenInfoLabel}>Origin:</span>
+                          <span class={s.tokenInfoLabel}>{t("tokens.origin")}:</span>
                           <span class={s.tokenInfoValue}>{token.origin}</span>
                         </div>
                       )}
@@ -680,16 +680,16 @@ export function TokenManager() {
           >
             <div class={s.formGroup}>
               <label for="new-token-name">
-                Token Name{" "}
+                {t("tokens.tokenName")}{" "}
                 <span style={{ color: "var(--text-subtle)" }}>
-                  (1–50 chars)
+                  {t("tokens.nameLengthHint")}
                 </span>
               </label>
               <input
                 type="text"
                 id="new-token-name"
                 class={s.formInput}
-                placeholder='e.g. "My App, read-only"'
+                placeholder={t("tokens.namePlaceholderExample")}
                 value={createName}
                 maxLength={50}
                 onInput={(e: any) => setCreateName(e.target.value)}
@@ -698,7 +698,7 @@ export function TokenManager() {
 
             <div class={s.formRow}>
               <div class={s.formGroup}>
-                <label for="new-token-origin">Origin / App</label>
+                <label for="new-token-origin">{t("tokens.originApp")}</label>
                 <input
                   type="text"
                   id="new-token-origin"
@@ -710,16 +710,16 @@ export function TokenManager() {
               </div>
               <div class={s.formGroup}>
                 <label for="new-token-expires">
-                  Expires in (hours){" "}
+                  {t("tokens.expiresInHours")}{" "}
                   <span style={{ color: "var(--text-subtle)" }}>
-                    (blank = never)
+                    {t("tokens.expiresBlankNever")}
                   </span>
                 </label>
                 <input
                   type="number"
                   id="new-token-expires"
                   class={s.formInput}
-                  placeholder="e.g. 720 for 30 days"
+                  placeholder={t("tokens.expiresPlaceholder")}
                   min={0}
                   max={8760}
                   value={createExpiresHrs}
@@ -730,9 +730,9 @@ export function TokenManager() {
 
             <div class={s.formGroup}>
               <label for="new-token-websites">
-                Websites{" "}
+                {t("tokens.websites")}{" "}
                 <span style={{ color: "var(--text-subtle)" }}>
-                  (comma or space separated)
+                  {t("tokens.websitesHint")}
                 </span>
               </label>
               <input
@@ -746,11 +746,11 @@ export function TokenManager() {
             </div>
 
             <div class={s.formGroup}>
-              <label for="new-token-description">Description</label>
+              <label for="new-token-description">{t("tokens.description")}</label>
               <textarea
                 id="new-token-description"
                 class={s.formInput}
-                placeholder="What is this token for?"
+                placeholder={t("tokens.descriptionPlaceholder")}
                 value={createDescription}
                 onInput={(e: any) => setCreateDescription(e.target.value)}
                 rows={2}
@@ -760,7 +760,7 @@ export function TokenManager() {
             {/* Permission picker */}
             <div class={s.permPicker}>
               <div class={s.permPickerHeader}>
-                <h5 class={s.permPickerTitle}>Permissions</h5>
+                <h5 class={s.permPickerTitle}>{t("tokens.permissions")}</h5>
                 <div class={s.permPickerActions}>
                   {schema?.groups && schema.groups.length > 0 && (
                     <select
@@ -783,7 +783,7 @@ export function TokenManager() {
                       defaultValue=""
                     >
                       <option value="" disabled>
-                        Apply group…
+                        {t("tokens.applyGroup")}
                       </option>
                       {schema.groups.map((g) => (
                         <option key={g.name} value={g.name}>
@@ -796,14 +796,14 @@ export function TokenManager() {
                     class={s.permApplyBtn}
                     onClick={() => setCreatePerms(new Set())}
                   >
-                    Clear all
+                    {t("tokens.clearAll")}
                   </button>
                 </div>
               </div>
               <input
                 type="text"
                 class={s.formInput}
-                placeholder="Search permissions…"
+                placeholder={t("tokens.searchPermissions")}
                 value={createPermSearch}
                 onInput={(e: any) => setCreatePermSearch(e.target.value)}
                 style={{ marginBottom: "0.75rem" }}
@@ -816,7 +816,7 @@ export function TokenManager() {
                 return (
                   <div key={cat} class={s.permGroup}>
                     <div class={s.permGroupHeader}>
-                      <span>{cat}</span>
+                      <span>{t(cat)}</span>
                       <div class={s.permGroupActions}>
                         <button
                           class={s.permApplyBtn}
@@ -824,7 +824,7 @@ export function TokenManager() {
                             setCreatePerms(applyGroup(createPerms, visible))
                           }
                         >
-                          All
+                          {t("tokens.all")}
                         </button>
                         <button
                           class={s.permApplyBtn}
@@ -832,7 +832,7 @@ export function TokenManager() {
                             setCreatePerms(clearGroup(createPerms, visible))
                           }
                         >
-                          None
+                          {t("tokens.none")}
                         </button>
                       </div>
                     </div>
@@ -855,7 +855,7 @@ export function TokenManager() {
                             />
                             <span class={s.permItemLabel}>{p}</span>
                             {forbidden && (
-                              <span class={s.permBadge}>forbidden</span>
+                              <span class={s.permBadge}>{t("tokens.forbidden")}</span>
                             )}
                           </label>
                         );
@@ -867,7 +867,7 @@ export function TokenManager() {
               <div class={s.permPickerFooter}>
                 <span>
                   <span class={s.permPickerCount}>{createPerms.size}</span>{" "}
-                  {plural(createPerms.size, "permission")} selected
+                  {t("tokens.permsSelected", { count: createPerms.size })}
                   {createPerms.size === 0 && (
                     <span
                       style={{
@@ -875,7 +875,7 @@ export function TokenManager() {
                         marginLeft: "0.5rem",
                       }}
                     >
-                      - pick at least one
+                      {t("tokens.pickAtLeastOne")}
                     </span>
                   )}
                 </span>
@@ -886,7 +886,7 @@ export function TokenManager() {
                   }}
                 >
                   <code>tokens:manage</code> and <code>account:delete</code>{" "}
-                  cannot be granted
+                  {t("tokens.cannotGranted")}
                 </span>
               </div>
             </div>
@@ -899,7 +899,9 @@ export function TokenManager() {
                 disabled={createSubmitting}
               >
                 <PlusCircle size={14} />{" "}
-                {createSubmitting ? "Creating…" : "Create Sub-Token"}
+                {createSubmitting
+                  ? t("tokens.creating")
+                  : t("tokens.createSubToken")}
               </button>
             </div>
             {createMessage && (
@@ -919,7 +921,7 @@ export function TokenManager() {
         rel="noopener noreferrer"
         class={s.docsLink}
       >
-        <ExternalLink size={14} /> Tokens API docs
+        <ExternalLink size={14} /> {t("tokens.apiDocs")}
       </a>
 
       {selectedToken && (
@@ -1002,9 +1004,10 @@ function TokenDetailModal({
   nameInputRefs: { current: Record<string, HTMLInputElement | null> };
   descInputRefs: { current: Record<string, HTMLInputElement | null> };
 }) {
+  const { t } = useI18n();
   const trapRef = useFocusTrap<HTMLDivElement>(true);
   const tokenId = token.id;
-  const st = statusOf(token);
+  const st = statusOf(token, t);
   const editSet = editing ?? new Set(token.permissions);
   const editQuery = editSearch.toLowerCase();
   const editFiltered = editQuery
@@ -1022,15 +1025,17 @@ function TokenDetailModal({
         class={s.modalContainer}
         role="dialog"
         aria-modal="true"
-        aria-label={`Token: ${token.name}`}
+        aria-label={t("tokens.tokenAriaLabel", { name: token.name })}
         onClick={(e) => e.stopPropagation()}
       >
-        <button class={s.modalClose} onClick={onClose} aria-label="Close">
+        <button class={s.modalClose} onClick={onClose} aria-label={t("tokens.close")}>
           <X size={20} />
         </button>
         <div class={s.modalContent}>
           <div class={s.modalHeader}>
-            <span class={s.modalType}>{st.label} Sub-Token</span>
+            <span class={s.modalType}>
+              {t(st.label)} {t("tokens.subToken")}
+            </span>
             <h2 class={s.modalName}>{token.name}</h2>
           </div>
 
@@ -1050,21 +1055,29 @@ function TokenDetailModal({
                 class={s.copyBtn}
                 onClick={() => onCopy(tokenId, tokenId)}
               >
-                <Copy size={12} /> Copy
+                <Copy size={12} /> {t("tokens.copy")}
               </button>
             </div>
             <div class={s.modalStatItem}>
               <Shield size={16} />
-              <span>{token.permissions.length} permissions</span>
+              <span>
+                {t("tokens.permissionsCount", { count: token.permissions.length })}
+              </span>
             </div>
             <div class={s.modalStatItem}>
               <Clock size={16} />
-              <span>Created {formatDate(token.created_at)}</span>
+              <span>
+                {t("tokens.createdAt")}{" "}
+                {formatDate(token.created_at, t("tokens.never"))}
+              </span>
             </div>
             {token.last_used_at && (
               <div class={s.modalStatItem}>
                 <Clock size={16} />
-                <span>Last used {formatDate(token.last_used_at)}</span>
+                <span>
+                  {t("tokens.lastUsed")}{" "}
+                  {formatDate(token.last_used_at, t("tokens.never"))}
+                </span>
               </div>
             )}
             {token.expires_at && (
@@ -1072,8 +1085,8 @@ function TokenDetailModal({
                 <Clock size={16} />
                 <span>
                   {token.expires_at < Date.now()
-                    ? `Expired ${formatDate(token.expires_at)}`
-                    : `Expires ${formatDate(token.expires_at)}`}
+                    ? `${t("tokens.expiredAt")} ${formatDate(token.expires_at, t("tokens.never"))}`
+                    : `${t("tokens.expiresAt")} ${formatDate(token.expires_at, t("tokens.never"))}`}
                 </span>
               </div>
             )}
@@ -1099,7 +1112,7 @@ function TokenDetailModal({
 
           {/* Current Permissions */}
           <div class={s.modalSection}>
-            <h4>Current Permissions</h4>
+            <h4>{t("tokens.currentPermissions")}</h4>
             {token.permissions.length === 0 ? (
               <div
                 style={{
@@ -1107,13 +1120,13 @@ function TokenDetailModal({
                   fontSize: "0.8rem",
                 }}
               >
-                No permissions.
+                {t("tokens.noPerms")}
               </div>
             ) : (
               <div>
                 {Object.entries(createdPerms).map(([cat, perms]) => (
                   <div key={cat} style={{ marginBottom: "0.5rem" }}>
-                    <div class={s.permGroupLabel}>{cat}</div>
+                    <div class={s.permGroupLabel}>{t(cat)}</div>
                     <div class={s.permChips}>
                       {perms.map((p) => (
                         <span key={p} class={s.permChip}>
@@ -1130,16 +1143,16 @@ function TokenDetailModal({
           {/* Edit Permissions */}
           {!token.revoked && (
             <div class={s.modalSection}>
-              <h4>Edit Permissions</h4>
+              <h4>{t("tokens.editPermissions")}</h4>
               {editing === null || editing === undefined ? (
                 <button class={s.btnSecondary} onClick={onStartEditPerms}>
-                  <Shield size={14} /> Modify Permissions
+                  <Shield size={14} /> {t("tokens.modifyPermissions")}
                 </button>
               ) : (
                 <div class={s.permPicker}>
                   <div class={s.permPickerHeader}>
                     <h5 class={s.permPickerTitle}>
-                      Pick the permissions for this token
+                      {t("tokens.pickPermsForToken")}
                     </h5>
                     <div class={s.permPickerActions}>
                       {schema?.groups && schema.groups.length > 0 && (
@@ -1164,7 +1177,7 @@ function TokenDetailModal({
                           defaultValue=""
                         >
                           <option value="" disabled>
-                            Apply group…
+                            {t("tokens.applyGroup")}
                           </option>
                           {schema.groups.map((g) => (
                             <option key={g.name} value={g.name}>
@@ -1177,14 +1190,14 @@ function TokenDetailModal({
                         class={s.permApplyBtn}
                         onClick={() => onSetEditingPerms(new Set())}
                       >
-                        Clear all
+                        {t("tokens.clearAll")}
                       </button>
                     </div>
                   </div>
                   <input
                     type="text"
                     class={s.formInput}
-                    placeholder="Search permissions…"
+                    placeholder={t("tokens.searchPermissions")}
                     value={editSearch}
                     onInput={(e: any) => onSetEditSearch(e.target.value)}
                     style={{ marginBottom: "0.75rem" }}
@@ -1192,7 +1205,7 @@ function TokenDetailModal({
                   {Object.entries(editGroups).map(([cat, perms]) => (
                     <div key={cat} class={s.permGroup}>
                       <div class={s.permGroupHeader}>
-                        <span>{cat}</span>
+                        <span>{t(cat)}</span>
                         <div class={s.permGroupActions}>
                           <button
                             class={s.permApplyBtn}
@@ -1200,7 +1213,7 @@ function TokenDetailModal({
                               onSetEditingPerms(applyGroup(editSet, perms))
                             }
                           >
-                            All
+                            {t("tokens.all")}
                           </button>
                           <button
                             class={s.permApplyBtn}
@@ -1208,7 +1221,7 @@ function TokenDetailModal({
                               onSetEditingPerms(clearGroup(editSet, perms))
                             }
                           >
-                            None
+                            {t("tokens.none")}
                           </button>
                         </div>
                       </div>
@@ -1232,7 +1245,7 @@ function TokenDetailModal({
                               />
                               <span class={s.permItemLabel}>{p}</span>
                               {forbidden && (
-                                <span class={s.permBadge}>forbidden</span>
+                                <span class={s.permBadge}>{t("tokens.forbidden")}</span>
                               )}
                             </label>
                           );
@@ -1243,20 +1256,20 @@ function TokenDetailModal({
                   <div class={s.permPickerFooter}>
                     <span>
                       <span class={s.permPickerCount}>{editSet.size}</span>{" "}
-                      {plural(editSet.size, "permission")} selected
+                      {t("tokens.permsSelected", { count: editSet.size })}
                     </span>
                     <div style={{ display: "flex", gap: "0.4rem" }}>
                       <button
                         class={s.btnSecondary}
                         onClick={onCancelEditPerms}
                       >
-                        Cancel
+                        {t("tokens.cancel")}
                       </button>
                       <button
                         class={s.btnPrimary}
                         onClick={() => onSavePerms(editSet)}
                       >
-                        Save Permissions
+                        {t("tokens.savePermsBtn")}
                       </button>
                     </div>
                   </div>
@@ -1267,17 +1280,17 @@ function TokenDetailModal({
 
           {/* Edit Name / Description */}
           <div class={s.modalSection}>
-            <h4>Token Settings</h4>
+            <h4>{t("tokens.settingsLabel")}</h4>
             <div class={s.modalEditGrid}>
               <div class={s.detailItem}>
-                <h4>Name</h4>
+                <h4>{t("tokens.name")}</h4>
                 <input
                   ref={(el) => {
                     nameInputRefs.current[tokenId] = el;
                   }}
                   type="text"
                   class={s.formInput}
-                  placeholder="Set token name"
+                  placeholder={t("tokens.setNamePlaceholder")}
                   defaultValue={token.name}
                   maxLength={50}
                 />
@@ -1286,18 +1299,18 @@ function TokenDetailModal({
                   onClick={() => onRename(tokenId)}
                   style={{ marginTop: "0.5rem" }}
                 >
-                  Update
+                  {t("tokens.update")}
                 </button>
               </div>
 
               <div class={s.detailItem}>
-                <h4>Description</h4>
+                <h4>{t("tokens.description")}</h4>
                 <textarea
                   ref={(el) => {
                     descInputRefs.current[tokenId] = el as any;
                   }}
                   class={s.formInput}
-                  placeholder="What is this token for?"
+                  placeholder={t("tokens.descriptionPlaceholder")}
                   defaultValue={token.description || ""}
                   rows={2}
                 />
@@ -1306,7 +1319,7 @@ function TokenDetailModal({
                   onClick={() => onUpdateDescription(tokenId)}
                   style={{ marginTop: "0.5rem" }}
                 >
-                  Update
+                  {t("tokens.update")}
                 </button>
               </div>
             </div>
@@ -1316,11 +1329,11 @@ function TokenDetailModal({
           <div class={s.modalFooter}>
             {!token.revoked && (
               <button class={s.btnSecondary} onClick={onRevoke}>
-                <RotateCcw size={14} /> Revoke
+                <RotateCcw size={14} /> {t("tokens.revoke")}
               </button>
             )}
             <button class={s.btnDanger} onClick={onDelete}>
-              <Trash2 size={14} /> Delete
+              <Trash2 size={14} /> {t("tokens.delete")}
             </button>
           </div>
         </div>

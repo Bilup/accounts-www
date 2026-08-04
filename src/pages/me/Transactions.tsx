@@ -26,7 +26,7 @@ import {
 } from "../../components/AccountPage";
 import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, type Transaction, captureTokenFromUrl } from "../../lib/auth";
-import { plural } from "../../lib/format";
+import { useI18n } from "../../i18n/i18n";
 import {
   TRANSACTION_META,
   describeTransaction,
@@ -120,7 +120,7 @@ const RANGE_LABELS: Record<RangeKey, string> = {
   "30d": "30d",
   "90d": "90d",
   "1y": "1y",
-  all: "All",
+  all: "transactions.allTime",
 };
 
 const RANGE_MS: Record<RangeKey, number | null> = {
@@ -132,15 +132,15 @@ const RANGE_MS: Record<RangeKey, number | null> = {
 };
 
 const TYPE_FILTERS: { key: TypeFilter; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "income", label: "Income" },
-  { key: "expense", label: "Expense" },
-  { key: "tax", label: "Daily" },
-  { key: "transfer", label: "Transfers" },
-  { key: "cosmetic", label: "Cosmetics" },
-  { key: "key", label: "Keys" },
-  { key: "gift", label: "Gifts" },
-  { key: "group", label: "Groups" },
+  { key: "all", label: "transactions.allTypes" },
+  { key: "income", label: "transactions.filterIncome" },
+  { key: "expense", label: "transactions.filterExpense" },
+  { key: "tax", label: "transactions.filterDaily" },
+  { key: "transfer", label: "transactions.filterTransfers" },
+  { key: "cosmetic", label: "transactions.filterCosmetics" },
+  { key: "key", label: "transactions.filterKeys" },
+  { key: "gift", label: "transactions.filterGifts" },
+  { key: "group", label: "transactions.filterGroups" },
 ];
 
 const PAGE_SIZE = 50;
@@ -180,6 +180,7 @@ function userFilterMatches(typeFilter: TypeFilter, txType: string): boolean {
 
 export function Transactions() {
   const { user, token, reload } = useAuth();
+  const { t } = useI18n();
   const [range, setRange] = useState<RangeKey>("30d");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [query, setQuery] = useState("");
@@ -438,8 +439,8 @@ export function Transactions() {
     return (
       <AuthRequired
         icon={<Receipt size={28} />}
-        title="Sign in to view transactions"
-        text="Sign in to see your full transaction history and analytics."
+        title={t("transactions.signInTitle")}
+        text={t("transactions.signInText")}
         href={`/auth?return_to=${encodeURIComponent(window.location.origin + "/me/transactions")}`}
       />
     );
@@ -448,7 +449,7 @@ export function Transactions() {
   return (
     <AccountPage layoutClassName={s.wideLayout}>
       <a href="/me" class={s.backLink}>
-        <ArrowLeft size={14} /> Back to account
+        <ArrowLeft size={14} /> {t("transactions.backToAccount")}
       </a>
 
       <div class={s.controls}>
@@ -461,19 +462,19 @@ export function Transactions() {
                   class={`${s.rangeBtn} ${range === r ? s.active : ""}`}
                   onClick={() => setRange(r)}
                 >
-                  {RANGE_LABELS[r]}
+                  {t(RANGE_LABELS[r])}
                 </button>
               ))}
             </div>
           ) : (
-            <span class={s.rangeEmpty}>No transactions yet</span>
+            <span class={s.rangeEmpty}>{t("transactions.rangeEmpty")}</span>
           )}
           <div class={s.searchWrap}>
             <Search size={14} class={s.searchIcon} />
             <input
               class={s.searchInput}
-              placeholder="Search transactions..."
-              aria-label="Search transactions"
+              placeholder={t("transactions.searchPlaceholder")}
+              aria-label={t("transactions.searchAria")}
               value={query}
               onInput={(e: any) => setQuery(e.target.value)}
             />
@@ -481,7 +482,7 @@ export function Transactions() {
               <button
                 class={s.searchClear}
                 onClick={() => setQuery("")}
-                aria-label="Clear"
+                aria-label={t("transactions.clearAria")}
               >
                 <X size={12} />
               </button>
@@ -495,7 +496,7 @@ export function Transactions() {
               class={`${s.typeBtn} ${typeFilter === f.key ? s.active : ""}`}
               onClick={() => setTypeFilter(f.key)}
             >
-              {f.label}
+              {t(f.label)}
             </button>
           ))}
         </div>
@@ -503,7 +504,7 @@ export function Transactions() {
 
       <div class={s.summaryGrid}>
         <div class={s.summaryCard}>
-          <div class={s.summaryLabel}>Balance</div>
+          <div class={s.summaryLabel}>{t("transactions.balanceLabel")}</div>
           <div class={s.summaryValue}>
             {balance.toLocaleString(undefined, {
               maximumFractionDigits: 2,
@@ -511,7 +512,7 @@ export function Transactions() {
           </div>
         </div>
         <div class={s.summaryCard}>
-          <div class={s.summaryLabel}>Income</div>
+          <div class={s.summaryLabel}>{t("transactions.incomeLabel")}</div>
           <div class={`${s.summaryValue} ${s.income}`}>
             +
             {stats.totalIncome.toLocaleString(undefined, {
@@ -520,7 +521,7 @@ export function Transactions() {
           </div>
         </div>
         <div class={s.summaryCard}>
-          <div class={s.summaryLabel}>Spent</div>
+          <div class={s.summaryLabel}>{t("transactions.spentLabel")}</div>
           <div class={`${s.summaryValue} ${s.expense}`}>
             -
             {stats.totalExpense.toLocaleString(undefined, {
@@ -529,7 +530,7 @@ export function Transactions() {
           </div>
         </div>
         <div class={s.summaryCard}>
-          <div class={s.summaryLabel}>Net</div>
+          <div class={s.summaryLabel}>{t("transactions.netLabel")}</div>
           <div
             class={`${s.summaryValue} ${stats.net >= 0 ? s.income : s.expense}`}
           >
@@ -543,15 +544,17 @@ export function Transactions() {
 
       <AccountSection
         icon={<TrendingUp size={18} />}
-        title="Credit Flow"
-        subtitle={`Income vs expense (${stats.chartLabel})`}
+        title={t("transactions.creditFlowTitle")}
+        subtitle={t("transactions.creditFlowSub", { label: stats.chartLabel })}
         actions={
           <div class={s.chartLegend}>
             <span class={s.chartLegendItem}>
-              <span class={`${s.chartLegendDot} ${s.income}`} /> Income
+              <span class={`${s.chartLegendDot} ${s.income}`} />{" "}
+              {t("transactions.incomeLegend")}
             </span>
             <span class={s.chartLegendItem}>
-              <span class={`${s.chartLegendDot} ${s.expense}`} /> Expense
+              <span class={`${s.chartLegendDot} ${s.expense}`} />{" "}
+              {t("transactions.expenseLegend")}
             </span>
           </div>
         }
@@ -559,7 +562,7 @@ export function Transactions() {
         {stats.daily.length === 0 ? (
           <EmptyState
             icon={<Receipt size={24} />}
-            title="No data for this range"
+            title={t("transactions.chartNoData")}
           />
         ) : (
           <div class={s.chartWrap}>
@@ -605,11 +608,11 @@ export function Transactions() {
       <div class={s.twoCol}>
         <AccountSection
           icon={<Tag size={18} />}
-          title="By Type"
-          subtitle="Activity breakdown"
+          title={t("transactions.byTypeTitle")}
+          subtitle={t("transactions.byTypeSub")}
         >
           {typeBreakdown.length === 0 ? (
-            <EmptyState icon={<Tag size={24} />} title="No activity" />
+            <EmptyState icon={<Tag size={24} />} title={t("transactions.noActivity")} />
           ) : (
             <div class={s.breakdownList}>
               {typeBreakdown.map((b) => {
@@ -627,7 +630,7 @@ export function Transactions() {
                         {b.meta?.label || b.type}
                       </div>
                       <div class={s.breakdownMeta}>
-                        {b.count} {plural(b.count, "transaction")}
+                        {t("transactions.txCount", { count: b.count })}
                       </div>
                     </div>
                     <div class={s.breakdownValues}>
@@ -657,11 +660,11 @@ export function Transactions() {
 
         <AccountSection
           icon={<Users size={18} />}
-          title="Top Counterparties"
-          subtitle="Most active users"
+          title={t("transactions.topCounterpartiesTitle")}
+          subtitle={t("transactions.topCounterpartiesSub")}
         >
           {topUsers.length === 0 ? (
-            <EmptyState icon={<Users size={24} />} title="No counterparties" />
+            <EmptyState icon={<Users size={24} />} title={t("transactions.noCounterparties")} />
           ) : (
             <div class={s.userList}>
               {topUsers.map((u) => (
@@ -670,7 +673,7 @@ export function Transactions() {
                   <div class={s.userInfo}>
                     <div class={s.userName}>@{u.name}</div>
                     <div class={s.userMeta}>
-                      {u.count} {plural(u.count, "transaction")}
+                      {t("transactions.txCount", { count: u.count })}
                     </div>
                   </div>
                   <div class={s.userValues}>
@@ -700,7 +703,7 @@ export function Transactions() {
 
       <AccountSection
         icon={<Receipt size={18} />}
-        title="All Transactions"
+        title={t("transactions.allTransactionsTitle")}
         actions={
           totalPages > 1 && (
             <div class={s.pager}>
@@ -708,7 +711,7 @@ export function Transactions() {
                 class={s.pagerBtn}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={safePage === 0}
-                aria-label="Previous page"
+                aria-label={t("transactions.previousPageAria")}
               >
                 <ChevronLeft size={14} />
               </button>
@@ -719,7 +722,7 @@ export function Transactions() {
                 class={s.pagerBtn}
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={safePage >= totalPages - 1}
-                aria-label="Next page"
+                aria-label={t("transactions.nextPageAria")}
               >
                 <ChevronRight size={14} />
               </button>
@@ -730,8 +733,8 @@ export function Transactions() {
         {sortedRows.length === 0 ? (
           <EmptyState
             icon={<Receipt size={24} />}
-            title="No matching transactions"
-            text="Try adjusting the time range, type filter, or search query."
+            title={t("transactions.noMatching")}
+            text={t("transactions.noMatchingText")}
           />
         ) : (
           <div class={s.txList}>
@@ -747,7 +750,7 @@ export function Transactions() {
               const sameDay = startOfDay(tx.time) === startOfDay(oldest.time);
               const isOpen = expanded.has(tx.time);
               const title = grouped
-                ? `${row.txs.length} daily credits`
+                ? t("transactions.dailyCreditsGroup", { n: row.txs.length })
                 : describeTransaction(tx);
               const dateLabel = grouped
                 ? sameDay
@@ -850,7 +853,7 @@ export function Transactions() {
                                       @{counterparty}
                                     </a>
                                   ) : (
-                                    <span>system</span>
+                                    <span>{t("transactions.system")}</span>
                                   )}
                                   {" · "}
                                   {formatDateTime(sub.time)}

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "preact/hooks";
 import { createPortal } from "preact/compat";
 import { X } from "lucide-preact";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useI18n } from "../i18n/i18n";
 import s from "./ConfirmDialog.module.css";
 
 export interface ConfirmInput {
@@ -27,8 +28,8 @@ export interface ConfirmOptions {
 function ConfirmDialog({
   title,
   message,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   danger,
   input,
   onConfirm,
@@ -37,9 +38,12 @@ function ConfirmDialog({
   onConfirm: (value: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useI18n();
   const trapRef = useFocusTrap<HTMLDivElement>(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
+  const defaultConfirm = confirmLabel ?? t("confirmDialog.confirm");
+  const defaultCancel = cancelLabel ?? t("confirmDialog.cancel");
 
   const ready =
     !input ||
@@ -104,10 +108,10 @@ function ConfirmDialog({
             onClick={submit}
             disabled={!ready}
           >
-            {confirmLabel}
+            {defaultConfirm}
           </button>
           <button class={s.cancel} onClick={onCancel}>
-            {cancelLabel}
+            {defaultCancel}
           </button>
         </div>
       </div>

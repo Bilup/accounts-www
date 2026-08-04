@@ -25,14 +25,9 @@ import { UserAvatar } from "../../components/UserAvatar";
 import { TosContent } from "../../components/TosContent";
 import { PermissionsView } from "./PermissionsView";
 import { useI18n } from "../../i18n/i18n";
+import { CAPTCHA_SITE_KEY } from "../../lib/captcha";
 
 declare const turnstile: any;
-
-// Cloudflare Turnstile site key.
-// `1x00000000000000000000AA` is the official test key (always passes).
-// Replace it with your real site key from the Cloudflare dashboard (Turnstile)
-// once you have one.
-const CAPTCHA_SITE_KEY = "0x4AAAAAAEFTUCkh_V_qQQDD";
 
 import {
   API,
@@ -82,6 +77,8 @@ export function Auth() {
   const [suBtn, setSuBtn] = useState<BtnState>(defaultBtn(t("auth.createAccount")));
   const captchaRef = useRef<HTMLDivElement | null>(null);
   const captchaWidgetIdRef = useRef<string | null>(null);
+  const forgotCaptchaRef = useRef<HTMLDivElement | null>(null);
+  const forgotCaptchaWidgetIdRef = useRef<string | null>(null);
 
   const [verifyMsg, setVerifyMsg] = useState("");
 
@@ -433,15 +430,30 @@ export function Auth() {
         );
         return;
       }
+      const captchaToken =
+        typeof turnstile !== "undefined" &&
+        forgotCaptchaWidgetIdRef.current !== null
+          ? turnstile.getResponse(forgotCaptchaWidgetIdRef.current)
+          : "";
+      if (!captchaToken) {
+        flashBtn(
+          setForgotBtn,
+          t("auth.sendResetLinkDefaultBtn"),
+          errorBtn(t("auth.completeCaptcha")),
+        );
+        return;
+      }
       setForgotMsg("");
       setForgotBtn(loadingBtn(t("auth.sending")));
       try {
         const res = await fetch(`${API}/auth/request_reset`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, captcha: captchaToken }),
         });
         const data = await res.json().catch(() => ({}) as any);
+        if (typeof turnstile !== "undefined")
+          turnstile.reset(forgotCaptchaWidgetIdRef.current);
         if (res.status === 429) {
           flashBtn(
             setForgotBtn,
@@ -460,6 +472,8 @@ export function Auth() {
             t("auth.resetEmailSentFull"),
         );
       } catch {
+        if (typeof turnstile !== "undefined")
+          turnstile.reset(forgotCaptchaWidgetIdRef.current);
         setForgotBtn(
           successBtn(t("auth.resetEmailSent")),
         );
@@ -1081,6 +1095,58 @@ export function Auth() {
     };
   }, [view]);
 
+  useEffect(() => {
+    if (view !== "forgot") {
+      if (
+        forgotCaptchaWidgetIdRef.current !== null &&
+        typeof turnstile !== "undefined"
+      ) {
+        try {
+          turnstile.reset(forgotCaptchaWidgetIdRef.current);
+        } catch {}
+      }
+      return;
+    }
+
+    let cancelled = false;
+
+    const tryRender = () => {
+      if (cancelled) return;
+      const el = forgotCaptchaRef.current;
+      if (!el) return;
+      if (typeof turnstile === "undefined") {
+        setTimeout(tryRender, 100);
+        return;
+      }
+      if (forgotCaptchaWidgetIdRef.current !== null) {
+        try {
+          turnstile.remove(forgotCaptchaWidgetIdRef.current);
+        } catch {}
+        forgotCaptchaWidgetIdRef.current = null;
+      }
+      try {
+        forgotCaptchaWidgetIdRef.current = turnstile.render(el, {
+          sitekey: CAPTCHA_SITE_KEY,
+        });
+      } catch {}
+    };
+
+    tryRender();
+
+    return () => {
+      cancelled = true;
+      if (
+        forgotCaptchaWidgetIdRef.current !== null &&
+        typeof turnstile !== "undefined"
+      ) {
+        try {
+          turnstile.remove(forgotCaptchaWidgetIdRef.current);
+        } catch {}
+        forgotCaptchaWidgetIdRef.current = null;
+      }
+    };
+  }, [view]);
+
   return (
     <AuthShell>
       <AuthSidebar
@@ -1558,6 +1624,9 @@ export function Auth() {
                 onInput={(e: any) => setForgotEmail(e.target.value)}
               />
             </AuthFormGroup>
+            <div class={s.formGroup} style={{ marginTop: "0.75rem" }}>
+              <div ref={forgotCaptchaRef} />
+            </div>
             <AuthBtnPrimary
               type="submit"
               disabled={forgotBtn.disabled}

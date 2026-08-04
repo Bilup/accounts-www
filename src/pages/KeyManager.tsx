@@ -19,7 +19,6 @@ import {
   EmptyState,
 } from "../components/AccountPage";
 import { useAuth, getToken } from "../lib/auth";
-import { plural } from "../lib/format";
 import { clickable } from "../lib/clickable";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useConfirm } from "../components/ConfirmDialog";
@@ -78,12 +77,15 @@ function formatMsDate(value: unknown): string {
   return new Date(ms).toLocaleDateString();
 }
 
-function keyUserSubscriptionText(data: any): string {
+function keyUserSubscriptionText(
+  data: any,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
   if (data?.cancel_at) {
-    return `Cancelled - access until ${formatMsDate(data.cancel_at)}`;
+    return t("keys.cancelledUntil", { date: formatMsDate(data.cancel_at) });
   }
   if (data?.next_billing) {
-    return `Next billing ${formatMsDate(data.next_billing)}`;
+    return t("keys.nextBilling", { date: formatMsDate(data.next_billing) });
   }
   return "";
 }
@@ -166,10 +168,10 @@ export function KeyManager() {
         setKeys(mine);
       } else {
         // Never let a failed load masquerade as "you have no keys".
-        setKeysError(data?.error || "Something went wrong loading your keys.");
+        setKeysError(data?.error || t("keys.somethingWrong"));
       }
     } catch {
-      setKeysError("Network error — check your connection and try again.");
+      setKeysError(t("keys.networkError"));
     }
     setKeysLoading(false);
   }
@@ -178,13 +180,13 @@ export function KeyManager() {
     if (createSubmitting) return;
     const name = createName.trim();
     if (!name) {
-      setCreateMessage("Key name is required");
+      setCreateMessage(t("keys.nameRequired"));
       setCreateMessageType("error");
       return;
     }
     const price = createPrice ? Math.floor(parseInt(createPrice)) : 0;
     if (isNaN(price) || price < 0) {
-      setCreateMessage("Price must be a non-negative number");
+      setCreateMessage(t("keys.priceNonNegative"));
       setCreateMessageType("error");
       return;
     }
@@ -193,7 +195,7 @@ export function KeyManager() {
     if (createType === "subscription") {
       const freq = Math.floor(parseInt(billingFrequency)) || 1;
       if (freq <= 0) {
-        setCreateMessage("Frequency must be positive");
+        setCreateMessage(t("keys.frequencyPositive"));
         setCreateMessageType("error");
         return;
       }
@@ -214,11 +216,11 @@ export function KeyManager() {
         setCreateType("regular");
         fetchUserKeys();
       } else {
-        setCreateMessage(data.error || "Failed to create key");
+        setCreateMessage(data.error || t("keys.failedCreate"));
         setCreateMessageType("error");
       }
     } catch {
-      setCreateMessage("Network error occurred");
+      setCreateMessage(t("keys.networkErrorOccurred"));
       setCreateMessageType("error");
     } finally {
       setCreateSubmitting(false);
@@ -229,7 +231,7 @@ export function KeyManager() {
     const input = priceInputRefs.current[keyId];
     const price = parseInt(input?.value || "0");
     if (isNaN(price) || price < 0) {
-      setKeyMsg(keyId, "Invalid price", "error");
+      setKeyMsg(keyId, t("keys.invalidPrice"), "error");
       return;
     }
     try {
@@ -238,13 +240,13 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, `Price updated to ${price}`, "success");
+        setKeyMsg(keyId, t("keys.priceUpdated", { price }), "success");
         fetchUserKeys();
       } else {
-        setKeyMsg(keyId, data.error || "Failed to update price", "error");
+        setKeyMsg(keyId, data.error || t("keys.failedUpdatePrice"), "error");
       }
     } catch {
-      setKeyMsg(keyId, "Network error", "error");
+      setKeyMsg(keyId, t("keys.networkErrorShort"), "error");
     }
   }
 
@@ -257,13 +259,13 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, "Name updated", "success");
+        setKeyMsg(keyId, t("keys.nameUpdated"), "success");
         fetchUserKeys();
       } else {
-        setKeyMsg(keyId, data.error || "Failed to update name", "error");
+        setKeyMsg(keyId, data.error || t("keys.failedUpdateName"), "error");
       }
     } catch {
-      setKeyMsg(keyId, "Network error", "error");
+      setKeyMsg(keyId, t("keys.networkErrorShort"), "error");
     }
   }
 
@@ -271,7 +273,7 @@ export function KeyManager() {
     const input = webhookInputRefs.current[keyId];
     const webhook = (input?.value || "").trim();
     if (webhook && !webhook.match(/^https?:\/\/.+/)) {
-      setKeyMsg(keyId, "URL must start with http:// or https://", "error");
+      setKeyMsg(keyId, t("keys.urlMustStartHttp"), "error");
       return;
     }
     try {
@@ -282,23 +284,23 @@ export function KeyManager() {
       if (res.ok) {
         setKeyMsg(
           keyId,
-          webhook ? "Webhook updated" : "Webhook removed",
+          webhook ? t("keys.webhookUpdated") : t("keys.webhookRemoved"),
           "success",
         );
         fetchUserKeys();
       } else {
-        setKeyMsg(keyId, data.error || "Failed to update webhook", "error");
+        setKeyMsg(keyId, data.error || t("keys.failedUpdateWebhook"), "error");
       }
     } catch {
-      setKeyMsg(keyId, "Network error", "error");
+      setKeyMsg(keyId, t("keys.networkErrorShort"), "error");
     }
   }
 
   async function revokeKey(keyId: string) {
     const ok = await confirm({
-      title: "Revoke this key?",
-      message: "All other users will be removed. This cannot be undone.",
-      confirmLabel: "Revoke key",
+      title: t("keys.revokeTitle"),
+      message: t("keys.revokeMsg"),
+      confirmLabel: t("keys.revokeConfirm"),
       danger: true,
     });
     if (!ok) return;
@@ -308,21 +310,21 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, "Key revoked. Other users removed.", "success");
+        setKeyMsg(keyId, t("keys.revokedMsg"), "success");
         fetchUserKeys();
       } else {
-        setKeyMsg(keyId, data.error || "Failed to revoke key", "error");
+        setKeyMsg(keyId, data.error || t("keys.failedRevoke"), "error");
       }
     } catch {
-      setKeyMsg(keyId, "Network error", "error");
+      setKeyMsg(keyId, t("keys.networkErrorShort"), "error");
     }
   }
 
   async function deleteKey(keyId: string) {
     const ok = await confirm({
-      title: "Delete this key permanently?",
-      message: "This cannot be undone.",
-      confirmLabel: "Delete key",
+      title: t("keys.deleteTitle"),
+      message: t("keys.deleteMsg"),
+      confirmLabel: t("keys.deleteConfirm"),
       danger: true,
     });
     if (!ok) return;
@@ -335,10 +337,10 @@ export function KeyManager() {
         setSelectedKey(null);
         fetchUserKeys();
       } else {
-        setKeyMsg(keyId, data.error || "Failed to delete key", "error");
+        setKeyMsg(keyId, data.error || t("keys.failedDelete"), "error");
       }
     } catch {
-      setKeyMsg(keyId, "Network error", "error");
+      setKeyMsg(keyId, t("keys.networkErrorShort"), "error");
     }
   }
 
@@ -346,7 +348,7 @@ export function KeyManager() {
     const input = addUserInputRefs.current[keyId];
     const username = (input?.value || "").trim().toLowerCase();
     if (!username) {
-      setKeyMsg(keyId, "Enter a username", "error");
+      setKeyMsg(keyId, t("keys.enterUsername"), "error");
       return;
     }
     try {
@@ -355,21 +357,21 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, `Added ${username}`, "success");
+        setKeyMsg(keyId, t("keys.addedUser", { user: username }), "success");
         if (input) input.value = "";
         fetchUserKeys();
       } else {
-        setKeyMsg(keyId, data.error || "Failed to add user", "error");
+        setKeyMsg(keyId, data.error || t("keys.failedAddUser"), "error");
       }
     } catch {
-      setKeyMsg(keyId, "Network error", "error");
+      setKeyMsg(keyId, t("keys.networkErrorShort"), "error");
     }
   }
 
   async function removeUserFromKey(keyId: string, username: string) {
     const ok = await confirm({
-      title: `Remove ${username} from this key?`,
-      confirmLabel: "Remove user",
+      title: t("keys.removeUserTitleModal", { user: username }),
+      confirmLabel: t("keys.removeUserConfirm"),
       danger: true,
     });
     if (!ok) return;
@@ -379,20 +381,20 @@ export function KeyManager() {
       );
       const data = await res.json();
       if (res.ok) {
-        setKeyMsg(keyId, `Removed ${username}`, "success");
+        setKeyMsg(keyId, t("keys.removedUser", { user: username }), "success");
         fetchUserKeys();
       } else {
-        setKeyMsg(keyId, data.error || "Failed to remove user", "error");
+        setKeyMsg(keyId, data.error || t("keys.failedRemoveUser"), "error");
       }
     } catch {
-      setKeyMsg(keyId, "Network error", "error");
+      setKeyMsg(keyId, t("keys.networkErrorShort"), "error");
     }
   }
 
   async function copyToClipboard(text: string, keyId: string) {
     try {
       await navigator.clipboard.writeText(text);
-      setKeyMsg(keyId, "Copied!", "success");
+      setKeyMsg(keyId, t("keys.copied"), "success");
       setTimeout(
         () =>
           setKeyMessages((prev) => {
@@ -403,7 +405,7 @@ export function KeyManager() {
         2000,
       );
     } catch {
-      setKeyMsg(keyId, "Failed to copy", "error");
+      setKeyMsg(keyId, t("keys.failedCopy"), "error");
     }
   }
 
@@ -473,26 +475,26 @@ export function KeyManager() {
         {activeTab === "your-keys" && (
           <AccountSection
             icon={<Key size={18} />}
-            title="Your Keys"
-            subtitle={`${keys.length} created`}
+            title={t("keys.yourKeys")}
+            subtitle={t("keys.createdCount", { n: keys.length })}
           >
-            {keysLoading && <div class={s.loading}>Loading your keys…</div>}
+            {keysLoading && <div class={s.loading}>{t("keys.loadingKeys")}</div>}
             {!keysLoading && keysError && (
               <EmptyState
                 icon={<Key size={24} />}
-                title="Couldn't load your keys"
+                title={t("keys.couldntLoad")}
                 text={keysError}
               >
                 <button class={s.btnSecondary} onClick={fetchUserKeys}>
-                  <RotateCcw size={14} /> Retry
+                  <RotateCcw size={14} /> {t("keys.retry")}
                 </button>
               </EmptyState>
             )}
             {!keysLoading && !keysError && keys.length === 0 && (
               <EmptyState
                 icon={<Key size={24} />}
-                title="No keys yet"
-                text="Create your first key in the Create Key tab."
+                title={t("keys.noKeys")}
+                text={t("keys.noKeysText")}
               />
             )}
             <div class={s.keyGrid}>
@@ -514,18 +516,18 @@ export function KeyManager() {
                       <span
                         class={`${s.keyTag} ${isSubscription ? s.keyTagSubscription : s.keyTagRegular}`}
                       >
-                        {isSubscription ? "Subscription" : "Regular"}
+                        {isSubscription ? t("keys.subscription") : t("keys.regular")}
                       </span>
                     </div>
                     <div class={s.keyInfo}>
                       <div class={s.keyInfoRow}>
-                        <span class={s.keyInfoLabel}>Price:</span>
+                        <span class={s.keyInfoLabel}>{t("keys.priceLabel")}</span>
                         <span class={s.keyInfoValue}>
-                          {key.price || 0} credits
+                          {key.price || 0} {t("keys.creditsUnit")}
                         </span>
                       </div>
                       <div class={s.keyInfoRow}>
-                        <span class={s.keyInfoLabel}>Users:</span>
+                        <span class={s.keyInfoLabel}>{t("keys.usersLabel")}</span>
                         <span class={s.keyInfoValue}>{users.length}</span>
                       </div>
                     </div>
@@ -539,17 +541,17 @@ export function KeyManager() {
         {activeTab === "create-key" && (
           <AccountSection
             icon={<CreditCard size={18} />}
-            title="Create New Key"
-            subtitle="Set up a new API key"
+            title={t("keys.createNewKey")}
+            subtitle={t("keys.createSubtitle")}
           >
             <div class={s.formRow}>
               <div class={s.formGroup}>
-                <label for="new-key-name">Key Name</label>
+                <label for="new-key-name">{t("keys.keyName")}</label>
                 <input
                   type="text"
                   id="new-key-name"
                   class={s.formInput}
-                  placeholder="Enter a descriptive name"
+                  placeholder={t("keys.keyNamePlaceholder")}
                   value={createName}
                   onInput={(e) =>
                     setCreateName((e.target as HTMLInputElement).value)
@@ -557,7 +559,7 @@ export function KeyManager() {
                 />
               </div>
               <div class={s.formGroup}>
-                <label for="new-key-price">Price (credits)</label>
+                <label for="new-key-price">{t("keys.priceCredits")}</label>
                 <input
                   type="number"
                   id="new-key-price"
@@ -573,7 +575,7 @@ export function KeyManager() {
             </div>
 
             <div class={s.formGroup}>
-              <label for="new-key-type">Key Type</label>
+              <label for="new-key-type">{t("keys.keyType")}</label>
               <select
                 id="new-key-type"
                 class={s.formInput}
@@ -582,15 +584,15 @@ export function KeyManager() {
                   setCreateType((e.target as HTMLSelectElement).value as any)
                 }
               >
-                <option value="regular">Regular Key</option>
-                <option value="subscription">Subscription Key</option>
+                <option value="regular">{t("keys.regularKey")}</option>
+                <option value="subscription">{t("keys.subscriptionKey")}</option>
               </select>
             </div>
 
             {createType === "subscription" && (
               <div class={s.formRow}>
                 <div class={s.formGroup}>
-                  <label for="billing-frequency">Bill every</label>
+                  <label for="billing-frequency">{t("keys.billEvery")}</label>
                   <input
                     type="number"
                     id="billing-frequency"
@@ -603,7 +605,7 @@ export function KeyManager() {
                   />
                 </div>
                 <div class={s.formGroup}>
-                  <label for="billing-period">Period</label>
+                  <label for="billing-period">{t("keys.period")}</label>
                   <select
                     id="billing-period"
                     class={s.formInput}
@@ -614,10 +616,10 @@ export function KeyManager() {
                       )
                     }
                   >
-                    <option value="day">Day(s)</option>
-                    <option value="week">Week(s)</option>
-                    <option value="month">Month(s)</option>
-                    <option value="year">Year(s)</option>
+                    <option value="day">{t("keys.day")}</option>
+                    <option value="week">{t("keys.week")}</option>
+                    <option value="month">{t("keys.month")}</option>
+                    <option value="year">{t("keys.year")}</option>
                   </select>
                 </div>
               </div>
@@ -630,7 +632,7 @@ export function KeyManager() {
                 disabled={createSubmitting}
               >
                 <PlusCircle size={14} />{" "}
-                {createSubmitting ? "Creating…" : "Create Key"}
+                {createSubmitting ? t("keys.creating") : t("keys.createKey")}
               </button>
             </div>
 
@@ -704,6 +706,7 @@ function KeyDetailModal({
   webhookInputRefs: { current: Record<string, HTMLInputElement | null> };
   addUserInputRefs: { current: Record<string, HTMLInputElement | null> };
 }) {
+  const { t } = useI18n();
   const trapRef = useFocusTrap<HTMLDivElement>(true);
   const keyId = keyData.key;
   const isSubscription = keyData.type === "subscription";
@@ -719,16 +722,16 @@ function KeyDetailModal({
         class={s.modalContainer}
         role="dialog"
         aria-modal="true"
-        aria-label={`Key: ${keyData.name || keyId}`}
+        aria-label={t("keys.keyAriaLabel", { name: keyData.name || keyId })}
         onClick={(e) => e.stopPropagation()}
       >
-        <button class={s.modalClose} onClick={onClose} aria-label="Close">
+        <button class={s.modalClose} onClick={onClose} aria-label={t("keys.close")}>
           <X size={20} />
         </button>
         <div class={s.modalContent}>
           <div class={s.modalHeader}>
             <span class={s.modalType}>
-              {isSubscription ? "Subscription" : "Regular"}
+              {isSubscription ? t("keys.subscription") : t("keys.regular")}
             </span>
             <h2 class={s.modalName}>
               {keyData.name || `${keyId.substring(0, 8)}…`}
@@ -746,17 +749,19 @@ function KeyDetailModal({
               <Key size={16} />
               <span class={s.keyIdDisplay}>{keyId}</span>
               <button class={s.copyBtn} onClick={() => onCopy(keyId, keyId)}>
-                <Copy size={12} /> Copy
+                <Copy size={12} /> {t("keys.copy")}
               </button>
             </div>
             <div class={s.modalStatItem}>
               <CreditCard size={16} />
-              <span>{keyData.price || 0} credits</span>
+              <span>
+                {keyData.price || 0} {t("keys.creditsUnit")}
+              </span>
             </div>
             <div class={s.modalStatItem}>
               <UserPlus size={16} />
               <span>
-                {users.length} authorized {plural(users.length, "user")}
+                {users.length} {t("keys.authorized")}
               </span>
             </div>
             {isSubscription && sub && (
@@ -767,9 +772,10 @@ function KeyDetailModal({
                     fontWeight: 600,
                   }}
                 >
-                  {sub.active !== false ? "Active" : "Inactive"}
+                  {sub.active !== false ? t("keys.active") : t("keys.inactive")}
                   {" · "}
-                  Every {sub.frequency} {plural(sub.frequency, sub.period)}
+                  {t("keys.every")} {sub.frequency}{" "}
+                  {t(`keys.${sub.period}`)}
                 </span>
               </div>
             )}
@@ -777,14 +783,14 @@ function KeyDetailModal({
 
           <div class={s.modalEditGrid}>
             <div class={s.detailItem}>
-              <h4>Name</h4>
+              <h4>{t("keys.name")}</h4>
               <input
                 ref={(el) => {
                   nameInputRefs.current[keyId] = el;
                 }}
                 type="text"
                 class={s.formInput}
-                placeholder="Set key name"
+                placeholder={t("keys.setNamePlaceholder")}
                 defaultValue={keyData.name || ""}
               />
               <button
@@ -792,12 +798,12 @@ function KeyDetailModal({
                 onClick={() => onUpdateName(keyId)}
                 style={{ marginTop: "0.5rem" }}
               >
-                Update
+                {t("keys.update")}
               </button>
             </div>
 
             <div class={s.detailItem}>
-              <h4>Price</h4>
+              <h4>{t("keys.priceLabel")}</h4>
               <input
                 ref={(el) => {
                   priceInputRefs.current[keyId] = el;
@@ -812,12 +818,12 @@ function KeyDetailModal({
                 onClick={() => onUpdatePrice(keyId)}
                 style={{ marginTop: "0.5rem" }}
               >
-                Update
+                {t("keys.update")}
               </button>
             </div>
 
             <div class={s.detailItem}>
-              <h4>Webhook</h4>
+              <h4>{t("keys.webhook")}</h4>
               <input
                 ref={(el) => {
                   webhookInputRefs.current[keyId] = el;
@@ -832,13 +838,13 @@ function KeyDetailModal({
                 onClick={() => onUpdateWebhook(keyId)}
                 style={{ marginTop: "0.5rem" }}
               >
-                Update
+                {t("keys.update")}
               </button>
             </div>
           </div>
 
           <div class={s.modalSection}>
-            <h4>Authorized Users ({users.length})</h4>
+            <h4>{t("keys.authorizedUsers")} ({users.length})</h4>
             <div class={s.userList}>
               {users.length === 0 ? (
                 <div
@@ -847,16 +853,16 @@ function KeyDetailModal({
                     fontSize: "0.8rem",
                   }}
                 >
-                  No users have access to this key.
+                  {t("keys.noUsers")}
                 </div>
               ) : (
                 users.map((u) => (
                   <div key={u.username} class={s.userItem}>
                     <span class={s.userName}>
                       {u.username}
-                      {isSubscription && keyUserSubscriptionText(u.data) && (
+                      {isSubscription && keyUserSubscriptionText(u.data, t) && (
                         <small class={s.userMeta}>
-                          {keyUserSubscriptionText(u.data)}
+                          {keyUserSubscriptionText(u.data, t)}
                         </small>
                       )}
                     </span>
@@ -866,7 +872,7 @@ function KeyDetailModal({
                         onClick={() =>
                           onRemoveUser(keyId, u.username.toLowerCase())
                         }
-                        title="Remove user"
+                        title={t("keys.removeUser")}
                       >
                         <UserMinus size={14} />
                       </button>
@@ -882,23 +888,23 @@ function KeyDetailModal({
                 }}
                 type="text"
                 class={s.formInput}
-                placeholder="Add username"
+                placeholder={t("keys.addUserPlaceholder")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") onAddUser(keyId);
                 }}
               />
               <button class={s.btnPrimary} onClick={() => onAddUser(keyId)}>
-                <UserPlus size={14} /> Add
+                <UserPlus size={14} /> {t("keys.add")}
               </button>
             </div>
           </div>
 
           <div class={s.modalFooter}>
             <button class={s.btnSecondary} onClick={() => onRevoke(keyId)}>
-              <RotateCcw size={14} /> Revoke Key
+              <RotateCcw size={14} /> {t("keys.revokeKey")}
             </button>
             <button class={s.btnDanger} onClick={() => onDelete(keyId)}>
-              <Trash2 size={14} /> Delete Key
+              <Trash2 size={14} /> {t("keys.deleteKey")}
             </button>
           </div>
         </div>

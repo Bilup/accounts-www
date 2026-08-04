@@ -80,11 +80,11 @@ export function Link() {
           const errMsg =
             data && data.error
               ? data.error
-              : "Link failed (HTTP " + res.status + ").";
+              : t("link.failedHttp", { status: res.status });
           const expired =
             typeof errMsg === "string" &&
             errMsg.toLowerCase().includes("no auth code found");
-          showResult("error", errMsg || "Invalid code or token. Try again.");
+          showResult("error", errMsg || t("link.invalidCodeToken"));
           setSubtitle(t("link.linkFailed"));
           setPhase("input");
           if (expired) {
@@ -92,12 +92,12 @@ export function Link() {
           }
         }
       } catch (err: any) {
-        showResult("error", "Link failed: " + err.message);
+        showResult("error", t("link.failed", { message: err.message }));
         setSubtitle(t("link.linkFailed"));
         setPhase("input");
       }
     },
-    [],
+    [t],
   );
 
   const beginAuth = useCallback(() => {
@@ -289,7 +289,7 @@ export function Link() {
                 class={s.codeInput}
                 maxlength={1}
                 inputmode="latin"
-                aria-label={`Code char ${i + 1}`}
+                aria-label={t("link.codeCharAria", { index: i + 1 })}
                 value={code[i]}
                 onInput={(e: any) => handleInput(i, e.target.value)}
                 onKeyDown={(e: KeyboardEvent) => handleKeyDown(i, e)}

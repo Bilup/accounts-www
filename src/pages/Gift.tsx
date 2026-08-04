@@ -39,12 +39,12 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
           setGift(data.gift);
           setStatus("ready");
         } else {
-          setMessage(data.error || "This gift could not be found.");
+          setMessage(data.error || t("gift.notFound"));
           setStatus(res.status === 410 ? "gone" : "error");
         }
       } catch {
         if (live) {
-          setMessage("Could not reach Bilup Accounts. Try again later.");
+          setMessage(t("gift.networkError"));
           setStatus("error");
         }
       }
@@ -68,15 +68,15 @@ export function Gift({ matches }: { matches?: { code?: string } }) {
         setStatus("claimed");
         reload();
       } else {
-        setMessage(data.error || "Could not claim this gift.");
+        setMessage(data.error || t("gift.claimFailed"));
         if (res.status === 410) setStatus("gone");
       }
     } catch {
-      setMessage("Could not reach Bilup Accounts. Try again later.");
+      setMessage(t("gift.networkError"));
     } finally {
       setClaiming(false);
     }
-  }, [code, reload]);
+  }, [code, reload, t]);
 
   const amount = gift ? Number(gift.amount).toFixed(2) : "";
   const from = gift?.creator_id || "";

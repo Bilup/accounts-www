@@ -1,5 +1,11 @@
 import { useI18n } from "../../i18n/i18n";
-import { useState, useEffect, useMemo, useCallback } from "preact/hooks";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "preact/hooks";
 import {
   Users,
   CreditCard,
@@ -40,6 +46,7 @@ import {
 } from "../../components/AccountPage";
 import { ProfileCard } from "../../components/ProfileCard";
 import { useConfirm } from "../../components/ConfirmDialog";
+import { CAPTCHA_SITE_KEY } from "../../lib/captcha";
 import { UserAvatar } from "../../components/UserAvatar";
 import {
   useAuth,
@@ -57,6 +64,8 @@ import { plural } from "../../lib/format";
 import s from "./Me.module.css";
 
 const API = "https://api.accounts.bilup.org";
+
+declare const turnstile: any;
 
 interface KeyRecord {
   key: string;
@@ -271,7 +280,7 @@ export function Me() {
       if (!res.ok || data?.error) {
         // Keep what they typed so they can correct it, and say what went wrong.
         setFriendError(
-          data?.error || `Couldn't send a request to ${username}.`,
+          data?.error || t("me.friendRequestFailed", { username }),
         );
         return;
       }
@@ -283,11 +292,11 @@ export function Me() {
       );
       await reload();
     } catch {
-      setFriendError("Network error — the request was not sent.");
+      setFriendError(t("me.networkFriendRequestErr"));
     } finally {
       setFriendSending(false);
     }
-  }, [friendInput, token, reload, friendSending]);
+  }, [friendInput, token, reload, friendSending, t]);
 
   const friendAction = useCallback(
     async (action: "accept" | "reject" | "remove", username: string) => {
@@ -334,10 +343,10 @@ export function Me() {
     async (keyId: string) => {
       if (!token) return;
       const ok = await confirm({
-        title: "Cancel this subscription?",
-        message: "You'll keep access until the end of the current billing period.",
-        confirmLabel: "Cancel subscription",
-        cancelLabel: "Keep it",
+        title: t("me.cancelSubTitle"),
+        message: t("me.cancelSubMsg"),
+        confirmLabel: t("me.cancelSub"),
+        cancelLabel: t("me.keepIt"),
         danger: true,
       });
       if (!ok) return;
@@ -350,25 +359,25 @@ export function Me() {
         // A failed cancel leaves the subscription billing — never fail silently.
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setSubError(data?.error || "Failed to cancel subscription");
+          setSubError(data?.error || t("me.failedCancelSub"));
           return;
         }
         await reload();
       } catch {
-        setSubError("Network error — subscription was not cancelled");
+        setSubError(t("me.networkErrorSubCancel"));
       }
     },
-    [token, reload, confirm],
+    [token, reload, confirm, t],
   );
 
   const cancelGroupSubscription = useCallback(
     async (groupTag: string, productId: string) => {
       if (!token) return;
       const ok = await confirm({
-        title: "Cancel this group subscription?",
-        message: "You'll keep access until the end of the current billing period.",
-        confirmLabel: "Cancel subscription",
-        cancelLabel: "Keep it",
+        title: t("me.cancelGroupSub"),
+        message: t("me.cancelSubMsg"),
+        confirmLabel: t("me.cancelSub"),
+        cancelLabel: t("me.keepIt"),
         danger: true,
       });
       if (!ok) return;
@@ -380,7 +389,7 @@ export function Me() {
         );
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setSubError(data?.error || "Failed to cancel subscription");
+          setSubError(data?.error || t("me.failedCancelSub"));
           return;
         }
         const refreshed = await fetch(
@@ -390,10 +399,10 @@ export function Me() {
         if (refreshed.ok && Array.isArray(data)) setGroupSubs(data);
         await reload();
       } catch {
-        setSubError("Network error — subscription was not cancelled");
+        setSubError(t("me.networkErrorSubCancel"));
       }
     },
-    [token, reload, confirm],
+    [token, reload, confirm, t],
   );
 
   const unblockUser = useCallback(
@@ -1272,16 +1281,64 @@ function DeleteAccountSection() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [confirm, confirmDialog] = useConfirm();
+  const captchaRef = useRef<HTMLDivElement | null>(null);
+  const captchaWidgetIdRef = useRef<string | null>(null);
 
   const username = user?.username ?? "";
 
+  useEffect(() => {
+    let cancelled = false;
+    const tryRender = () => {
+      if (cancelled) return;
+      const el = captchaRef.current;
+      if (!el) return;
+      if (typeof turnstile === "undefined") {
+        setTimeout(tryRender, 100);
+        return;
+      }
+      if (captchaWidgetIdRef.current !== null) {
+        try {
+          turnstile.remove(captchaWidgetIdRef.current);
+        } catch {}
+        captchaWidgetIdRef.current = null;
+      }
+      try {
+        captchaWidgetIdRef.current = turnstile.render(el, {
+          sitekey: CAPTCHA_SITE_KEY,
+        });
+      } catch {}
+    };
+    tryRender();
+    return () => {
+      cancelled = true;
+      if (
+        captchaWidgetIdRef.current !== null &&
+        typeof turnstile !== "undefined"
+      ) {
+        try {
+          turnstile.remove(captchaWidgetIdRef.current);
+        } catch {}
+        captchaWidgetIdRef.current = null;
+      }
+    };
+  }, []);
+
   const onDelete = useCallback(async () => {
     if (!token || !username) return;
+    const captchaToken =
+      typeof turnstile !== "undefined" && captchaWidgetIdRef.current !== null
+        ? turnstile.getResponse(captchaWidgetIdRef.current)
+        : "";
+    if (!captchaToken) {
+      setErr(t("me.completeCaptcha"));
+      return;
+    }
     setErr(null);
     const password = await confirm({
       title: t("me.deleteAccountTitle"),
       message: t("me.deleteAccountMsg"),
       confirmLabel: t("me.deleteForever"),
+      cancelLabel: t("me.cancel"),
       danger: true,
       input: {
         type: "password",
@@ -1297,18 +1354,22 @@ function DeleteAccountSection() {
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
+          body: JSON.stringify({ password, captcha: captchaToken }),
         },
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}) as any);
         setErr(data.error || t("me.failedDeleteAccount"));
+        if (typeof turnstile !== "undefined")
+          turnstile.reset(captchaWidgetIdRef.current);
         setBusy(false);
         return;
       }
       logout();
       window.location.href = "/";
     } catch {
+      if (typeof turnstile !== "undefined")
+        turnstile.reset(captchaWidgetIdRef.current);
       setErr(t("me.networkError"));
       setBusy(false);
     }
@@ -1327,6 +1388,14 @@ function DeleteAccountSection() {
           <span>{err}</span>
         </div>
       )}
+      <div
+        ref={captchaRef}
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: "0.5rem",
+        }}
+      />
       <div class={s.changePwActions}>
         <button
           type="button"
@@ -1700,42 +1769,40 @@ const STANDING_INFO: Record<
     description: string;
     allowed: string;
     restricted: string;
+    restrictedShow: boolean;
     color: string;
   }
 > = {
   good: {
-    label: "Good Standing",
-    description:
-      "Your account is in good standing. You have full access to all features.",
-    allowed: "All features",
-    restricted: "None",
+    label: "standing.goodStanding",
+    description: "standing.goodDesc",
+    allowed: "standing.allFeatures",
+    restricted: "standing.none",
+    restrictedShow: false,
     color: "#4ade80",
   },
   warning: {
-    label: "Warning",
-    description:
-      "Your account has been flagged. You can still browse, follow, and buy, but actions that affect other users are limited until your standing recovers automatically.",
-    allowed:
-      "Browsing, following, buying items, claiming daily credits, buying cosmetics, claiming gifts",
-    restricted:
-      "Posting, replying, reposting, selling or transferring items, creating groups, sending friend requests, creating gifts",
+    label: "standing.warning",
+    description: "standing.warningDesc",
+    allowed: "standing.warningAllowed",
+    restricted: "standing.warningRestricted",
+    restrictedShow: true,
     color: "#fbbf24",
   },
   suspended: {
-    label: "Suspended",
-    description:
-      "Your account is suspended. Most actions are unavailable. Standing will automatically improve to warning after 30 days.",
-    allowed: "Browsing, viewing your own profile",
-    restricted:
-      "Posting, replying, following, buying or selling items, friend activity, gifting, cosmetics, groups, daily credits",
+    label: "standing.suspended",
+    description: "standing.suspendedDesc",
+    allowed: "standing.browsing",
+    restricted: "standing.suspendedRestricted",
+    restrictedShow: true,
     color: "#f87171",
   },
   banned: {
-    label: "Banned",
-    description:
-      "Your account has been permanently banned. You cannot sign in or use Bilup Accounts services.",
-    allowed: "Nothing",
-    restricted: "All features",
+    label: "standing.banned",
+    description: "standing.bannedDesc",
+    allowed: "standing.nothing",
+    restricted: "standing.allFeatures",
+    restrictedShow: true,
     color: "#ef4444",
   },
 };
@@ -1787,13 +1854,13 @@ function StandingSection({
           ) : (
             <AlertTriangle size={13} />
           )}
-          {info.label}
+          {t(info.label)}
         </span>
       }
     >
       <div class={s.standingDescription}>
         <Info size={16} />
-        <span>{info.description}</span>
+        <span>{t(info.description)}</span>
       </div>
 
       <div class={s.standingLevels}>
@@ -1819,17 +1886,17 @@ function StandingSection({
                   style={{ backgroundColor: li.color }}
                 />
                 <div class={s.standingLevelBody}>
-                  <div class={s.standingLevelLabel}>{li.label}</div>
+                  <div class={s.standingLevelLabel}>{t(li.label)}</div>
                   <div class={s.standingLevelAllowed}>
                     <span class={s.standingLevelAllowedLabel}>{t("standing.allowed")}</span>{" "}
-                    {li.allowed}
+                    {t(li.allowed)}
                   </div>
-                  {li.restricted !== "None" && (
+                  {li.restrictedShow && (
                     <div class={s.standingLevelRestricted}>
                       <span class={s.standingLevelAllowedLabel}>
                         {t("standing.restricted")}
                       </span>{" "}
-                      {li.restricted}
+                      {t(li.restricted)}
                     </div>
                   )}
                 </div>
@@ -1856,7 +1923,7 @@ function StandingSection({
                   <div class={s.standingHistoryBody}>
                     <div class={s.standingHistoryHeader}>
                       <span style={{ color: li.color, fontWeight: 600 }}>
-                        {li.label}
+                        {t(li.label)}
                       </span>
                       <span class={s.standingHistoryTime}>
                         {new Date(entry.timestamp * 1000).toLocaleString()}

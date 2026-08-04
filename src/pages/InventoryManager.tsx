@@ -240,19 +240,19 @@ export function InventoryManager() {
       );
       const result = await res.json();
       if (res.ok) {
-        setItemMessage(safeId, "Item put up for sale!", "success");
+        setItemMessage(safeId, t("inventory.putForSaleSuccess"), "success");
         loadMyItems();
         loadMarketplace();
         refreshUserCurrency();
       } else {
         setItemMessage(
           safeId,
-          result.error || "Failed to put item for sale",
+          result.error || t("inventory.putForSaleFailed"),
           "error",
         );
       }
     } catch {
-      setItemMessage(safeId, "Network error occurred", "error");
+      setItemMessage(safeId, t("inventory.networkError"), "error");
     }
   }
 
@@ -264,19 +264,19 @@ export function InventoryManager() {
       );
       const result = await res.json();
       if (res.ok) {
-        setItemMessage(safeId, "Item removed from sale!", "success");
+        setItemMessage(safeId, t("inventory.stopSellingSuccess"), "success");
         loadMyItems();
         loadMarketplace();
         refreshUserCurrency();
       } else {
         setItemMessage(
           safeId,
-          result.error || "Failed to stop selling",
+          result.error || t("inventory.stopSellingFailed"),
           "error",
         );
       }
     } catch {
-      setItemMessage(safeId, "Network error occurred", "error");
+      setItemMessage(safeId, t("inventory.networkError"), "error");
     }
   }
 
@@ -291,7 +291,7 @@ export function InventoryManager() {
       if (res.ok) {
         setItemMessage(
           safeId,
-          `Price updated to ${newPrice} credits!`,
+          t("inventory.priceUpdated", { price: newPrice }),
           "success",
         );
         loadMyItems();
@@ -299,12 +299,12 @@ export function InventoryManager() {
       } else {
         setItemMessage(
           safeId,
-          result.error || "Failed to update price",
+          result.error || t("inventory.updatePriceFailed"),
           "error",
         );
       }
     } catch {
-      setItemMessage(safeId, "Network error occurred", "error");
+      setItemMessage(safeId, t("inventory.networkError"), "error");
     }
   }
 
@@ -312,7 +312,7 @@ export function InventoryManager() {
     const input = transferInputRefs.current[safeId];
     const targetUser = (input?.value || "").trim();
     if (!targetUser) {
-      setItemMessage(safeId, "Target username is required", "error");
+      setItemMessage(safeId, t("inventory.usernameRequired"), "error");
       return;
     }
     try {
@@ -321,26 +321,26 @@ export function InventoryManager() {
       );
       const result = await res.json();
       if (res.ok) {
-        setItemMessage(safeId, `Transferred to ${targetUser}!`, "success");
+        setItemMessage(safeId, t("inventory.transferredTo", { user: targetUser }), "success");
         loadMyItems();
         if (input) input.value = "";
       } else {
         setItemMessage(
           safeId,
-          result.error || "Failed to transfer item",
+          result.error || t("inventory.transferFailed"),
           "error",
         );
       }
     } catch {
-      setItemMessage(safeId, "Network error occurred", "error");
+      setItemMessage(safeId, t("inventory.networkError"), "error");
     }
   }
 
   async function deleteItem(itemName: string) {
     const ok = await confirm({
-      title: `Delete "${itemName}"?`,
-      message: "This cannot be undone.",
-      confirmLabel: "Delete item",
+      title: t("inventory.deleteConfirmTitle", { name: itemName }),
+      message: t("inventory.deleteMsg"),
+      confirmLabel: t("inventory.deleteConfirm"),
       danger: true,
     });
     if (!ok) return;
@@ -356,12 +356,12 @@ export function InventoryManager() {
       } else {
         setItemMessage(
           safeId,
-          result.error || "Failed to delete item",
+          result.error || t("inventory.deleteFailed"),
           "error",
         );
       }
     } catch {
-      setItemMessage(safeId, "Network error occurred", "error");
+      setItemMessage(safeId, t("inventory.networkError"), "error");
     }
   }
 
@@ -369,9 +369,9 @@ export function InventoryManager() {
     if (!viewingItem || !currentUser || busy) return;
     const itemName = viewingItem.name;
     const ok = await confirm({
-      title: `Buy "${itemName}"?`,
-      message: `${formatPrice(viewingItem.price)} credits will be deducted from your balance.`,
-      confirmLabel: "Buy item",
+      title: t("inventory.buyItemConfirm", { name: itemName }),
+      message: t("inventory.buyItemMsg"),
+      confirmLabel: t("inventory.buyConfirm"),
     });
     if (!ok) return;
     setBusy("single");
@@ -383,15 +383,15 @@ export function InventoryManager() {
       if (res.ok) {
         await refreshUserCurrency();
         loadSingleItem(itemName);
-        setSingleItemMsg("Item purchased successfully!");
+        setSingleItemMsg(t("inventory.purchaseSuccess"));
         setSingleItemErr("");
         setTimeout(() => setSingleItemMsg(""), 5000);
       } else {
-        setSingleItemErr(result.error || "Failed to purchase item");
+        setSingleItemErr(result.error || t("inventory.purchaseFailed"));
         setSingleItemMsg("");
       }
     } catch {
-      setSingleItemErr("Network error occurred");
+      setSingleItemErr(t("inventory.networkError"));
       setSingleItemMsg("");
     } finally {
       setBusy(null);
@@ -401,7 +401,7 @@ export function InventoryManager() {
   async function createNewItem() {
     if (createSubmitting) return;
     if (!createName.trim()) {
-      setCreateMessage("Item name is required");
+      setCreateMessage(t("inventory.nameRequired"));
       setCreateMessageType("error");
       return;
     }
@@ -411,7 +411,7 @@ export function InventoryManager() {
     try {
       parsedData = JSON.parse(createData.trim() || "{}");
     } catch {
-      setCreateMessage("Item data is not valid JSON");
+      setCreateMessage(t("inventory.invalidJson"));
       setCreateMessageType("error");
       return;
     }
@@ -430,7 +430,7 @@ export function InventoryManager() {
       );
       const result = await res.json();
       if (res.ok) {
-        setCreateMessage(`Item "${createName.trim()}" created successfully!`);
+        setCreateMessage(t("inventory.createSuccess", { name: createName.trim() }));
         setCreateMessageType("success");
         setCreateName("");
         setCreateDescription("");
@@ -442,11 +442,11 @@ export function InventoryManager() {
         refreshUserCurrency();
         setTimeout(() => setCreateMessage(""), 5000);
       } else {
-        setCreateMessage(result.error || "Failed to create item");
+        setCreateMessage(result.error || t("inventory.createFailed"));
         setCreateMessageType("error");
       }
     } catch {
-      setCreateMessage("Network error — the item was not created");
+      setCreateMessage(t("inventory.networkErrorCreate"));
       setCreateMessageType("error");
     } finally {
       setCreateSubmitting(false);
@@ -481,7 +481,7 @@ export function InventoryManager() {
 
     try {
       await navigator.clipboard.writeText(url);
-      report("Link copied!", "success");
+      report(t("inventory.copyLinkDone"), "success");
     } catch {
       // clipboard API is unavailable outside secure contexts — fall back
       const ta = document.createElement("textarea");
@@ -491,7 +491,7 @@ export function InventoryManager() {
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
       report(
-        ok ? "Link copied!" : "Couldn't copy link",
+        ok ? t("inventory.copyLinkDone") : t("inventory.copyLinkFailed"),
         ok ? "success" : "error",
       );
     }
@@ -518,9 +518,9 @@ export function InventoryManager() {
     const key = `mp-${safeId}`;
     if (busy) return;
     const ok = await confirm({
-      title: `Buy "${itemName}"?`,
-      message: "The price will be deducted from your balance.",
-      confirmLabel: "Buy item",
+      title: t("inventory.buyItemConfirm", { name: itemName }),
+      message: t("inventory.buyItemMsg"),
+      confirmLabel: t("inventory.buyConfirm"),
     });
     if (!ok) return;
     setBusy(key);
@@ -530,15 +530,15 @@ export function InventoryManager() {
       );
       const result = await res.json();
       if (res.ok) {
-        setItemMessage(key, "Item purchased successfully!", "success");
+        setItemMessage(key, t("inventory.purchaseSuccess"), "success");
         loadMyItems();
         loadMarketplace();
         refreshUserCurrency();
       } else {
-        setItemMessage(key, result.error || "Failed to purchase item", "error");
+        setItemMessage(key, result.error || t("inventory.purchaseFailed"), "error");
       }
     } catch {
-      setItemMessage(key, "Network error occurred", "error");
+      setItemMessage(key, t("inventory.networkError"), "error");
     } finally {
       setBusy(null);
     }
@@ -674,7 +674,7 @@ export function InventoryManager() {
         tabs={TABS.map((tab) => ({ ...tab, label: t(tab.labelKey) }))}
         active={activeTab}
         onChange={handleTabChange}
-        ariaLabel="Inventory sections"
+        ariaLabel={t("inventory.sectionsAria")}
       />
 
       <AccountTabPanel>
@@ -753,17 +753,23 @@ export function InventoryManager() {
                           </button>
                           {expandedHistory[safeId] && (
                             <div class={s.transferHistory}>
-                              {item.transfer_history.map((t, idx) => (
+                              {item.transfer_history.map((th, idx) => (
                                 <div key={idx} class={s.transferItem}>
-                                  {t.type === "creation"
-                                    ? "Created"
-                                    : t.type === "transfer"
-                                      ? `Transferred from ${t.from || ""} to ${t.to || ""}`
-                                      : t.type === "purchase"
-                                        ? `Purchased by ${t.to || ""} for ${formatPrice(t.price)} credits`
-                                        : "Unknown"}
+                                  {th.type === "creation"
+                                    ? t("inventory.historyCreated")
+                                    : th.type === "transfer"
+                                      ? t("inventory.historyTransferred", {
+                                          from: th.from || "",
+                                          to: th.to || "",
+                                        })
+                                      : th.type === "purchase"
+                                        ? t("inventory.historyPurchased", {
+                                            to: th.to || "",
+                                            price: String(formatPrice(th.price)),
+                                          })
+                                        : t("inventory.historyUnknown")}
                                   {" - "}
-                                  {formatDate(t.timestamp)}
+                                  {formatDate(th.timestamp)}
                                 </div>
                               ))}
                             </div>
@@ -798,7 +804,7 @@ export function InventoryManager() {
                         defaultValue={formatPrice(item.price)}
                         min={0}
                         placeholder={t("inventory.price")}
-                        aria-label={`New price for ${item.name}`}
+                        aria-label={t("inventory.newPriceAria", { name: item.name })}
                       />
                       <button
                         class={s.btnSecondary}
@@ -814,8 +820,8 @@ export function InventoryManager() {
                         }}
                         type="text"
                         class={s.formInput}
-                        placeholder="Username"
-                        aria-label={`Transfer ${item.name} to username`}
+                        placeholder={t("inventory.usernamePlaceholder")}
+                        aria-label={t("inventory.transferAria", { name: item.name })}
                       />
                       <button
                         class={s.btnSecondary}
@@ -848,7 +854,9 @@ export function InventoryManager() {
           <AccountSection
             icon={<ShoppingBag size={18} />}
             title={t("inventory.marketplace")}
-            subtitle={`${marketplaceItems.length} items for sale`}
+            subtitle={t("inventory.itemsForSaleCount", {
+              count: marketplaceItems.length,
+            })}
           >
             <div class={s.searchRow}>
               <input
@@ -895,8 +903,8 @@ export function InventoryManager() {
                       <button
                         class={s.copyBtn}
                         onClick={() => copyItemLink(item.name, `mp-${safeId}`)}
-                        title="Copy link to this item"
-                        aria-label={`Copy link to ${item.name}`}
+                        title={t("inventory.copyLinkTitle")}
+                        aria-label={t("inventory.copyLinkAria", { name: item.name })}
                       >
                         <Link2 size={14} />
                       </button>

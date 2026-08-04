@@ -42,6 +42,7 @@ import {
 import { UserAvatar } from "../../components/UserAvatar";
 import { useAuth, getToken, formatRelativeTime } from "../../lib/auth";
 import { plural } from "../../lib/format";
+import { useI18n } from "../../i18n/i18n";
 import s from "./GroupDetail.module.css";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { useConfirm } from "../../components/ConfirmDialog";
@@ -206,26 +207,26 @@ const ALL_PERMISSIONS = [
 ];
 
 const PERMISSION_LABELS: Record<string, string> = {
-  "groups.manage": "Manage Group",
-  "groups.members.invite": "Invite Members",
-  "groups.members.remove": "Remove Members",
-  "groups.members.ban": "Ban Members",
-  "groups.members.view": "View Members",
-  "groups.roles.manage": "Manage Roles",
-  "groups.roles.assign": "Assign Roles",
-  "groups.announcements.send": "Send Announcements",
-  "groups.events.manage": "Manage Events",
-  "groups.events.publish": "Publish Events",
-  "groups.tips.manage": "Manage Tips",
-  "groups.tips.withdraw": "Withdraw Tips",
-  "groups.tips.deposit": "Deposit Tips",
-  "groups.group.edit": "Edit Group",
+  "groups.manage": "group.perm.groups.manage",
+  "groups.members.invite": "group.perm.groups.members.invite",
+  "groups.members.remove": "group.perm.groups.members.remove",
+  "groups.members.ban": "group.perm.groups.members.ban",
+  "groups.members.view": "group.perm.groups.members.view",
+  "groups.roles.manage": "group.perm.groups.roles.manage",
+  "groups.roles.assign": "group.perm.groups.roles.assign",
+  "groups.announcements.send": "group.perm.groups.announcements.send",
+  "groups.events.manage": "group.perm.groups.events.manage",
+  "groups.events.publish": "group.perm.groups.events.publish",
+  "groups.tips.manage": "group.perm.groups.tips.manage",
+  "groups.tips.withdraw": "group.perm.groups.tips.withdraw",
+  "groups.tips.deposit": "group.perm.groups.tips.deposit",
+  "groups.group.edit": "group.perm.groups.group.edit",
 };
 
 const JOIN_POLICY_OPTIONS: { value: JoinPolicy; label: string }[] = [
-  { value: "OPEN", label: "Open" },
-  { value: "REQUEST", label: "Request" },
-  { value: "INVITE", label: "Invite Only" },
+  { value: "OPEN", label: "group.policyOpen" },
+  { value: "REQUEST", label: "group.policyRequest" },
+  { value: "INVITE", label: "group.policyInvite" },
 ];
 
 function formatDate(epoch: number): string {
@@ -244,6 +245,7 @@ function authQs(): string {
 export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   const tag = props.matches?.grouptag || getTagFromUrl();
   const { user, isLoggedIn, reload: reloadUser } = useAuth();
+  const { t } = useI18n();
 
   const [group, setGroup] = useState<GroupPublic | null>(null);
   const [loading, setLoading] = useState(true);
@@ -305,7 +307,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
         `${API_BASE_URL}/groups/${encodeURIComponent(tag)}?${authQs().slice(1)}`,
       );
       if (res.status === 404) {
-        setError("Group not found");
+        setError(t("group.notFound"));
         setLoading(false);
         return;
       }
@@ -313,10 +315,10 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       if (res.ok) {
         setGroup(data);
       } else {
-        setError(data.error || "Failed to load group");
+        setError(data.error || t("group.failedLoad"));
       }
     } catch {
-      setError("Network error");
+      setError(t("group.networkError"));
     }
     setLoading(false);
   }
@@ -392,11 +394,11 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
         );
         const requestData = await requestRes.json();
         if (requestRes.ok) {
-          setActionMessage({ text: "Join request sent.", type: "success" });
+          setActionMessage({ text: t("group.joinRequestSent"), type: "success" });
           setJoinOpen(false);
         } else {
           setActionMessage({
-            text: requestData.error || "Failed to request access",
+            text: requestData.error || t("group.requestFailed"),
             type: "error",
           });
         }
@@ -408,19 +410,19 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       );
       const data = await res.json();
       if (res.ok) {
-        setActionMessage({ text: "Joined group!", type: "success" });
+        setActionMessage({ text: t("group.joined"), type: "success" });
         setJoinOpen(false);
         if (reloadUser) await reloadUser();
         loadGroup();
         loadMyMembership();
       } else {
         setActionMessage({
-          text: data.error || "Failed to join",
+          text: data.error || t("group.joinFailed"),
           type: "error",
         });
       }
     } catch {
-      setActionMessage({ text: "Network error", type: "error" });
+      setActionMessage({ text: t("group.networkError"), type: "error" });
     } finally {
       setJoining(false);
     }
@@ -428,9 +430,9 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
 
   async function leaveGroup() {
     const ok = await confirm({
-      title: `Leave ${group?.name || tag}?`,
-      message: "You'll lose your roles in this group.",
-      confirmLabel: "Leave group",
+      title: t("group.leaveConfirm", { name: group?.name || tag }),
+      message: t("group.leaveMsg"),
+      confirmLabel: t("group.leaveBtn"),
       danger: true,
     });
     if (!ok) return;
@@ -442,25 +444,25 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       );
       const data = await res.json();
       if (res.ok) {
-        setActionMessage({ text: "Left group.", type: "success" });
+        setActionMessage({ text: t("group.left"), type: "success" });
         loadGroup();
         loadMyMembership();
       } else {
         setActionMessage({
-          text: data.error || "Failed to leave",
+          text: data.error || t("group.leaveFailed"),
           type: "error",
         });
       }
     } catch {
-      setActionMessage({ text: "Network error", type: "error" });
+      setActionMessage({ text: t("group.networkError"), type: "error" });
     }
   }
 
   async function reportGroup() {
     const ok = await confirm({
-      title: "Report this group for review?",
-      message: "A moderator will review this group.",
-      confirmLabel: "Report group",
+      title: t("group.reportConfirm"),
+      message: t("group.reportMsg"),
+      confirmLabel: t("group.reportBtn"),
     });
     if (!ok) return;
     try {
@@ -470,15 +472,15 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       );
       const data = await res.json();
       if (res.ok) {
-        setActionMessage({ text: "Report sent.", type: "success" });
+        setActionMessage({ text: t("group.reportSent"), type: "success" });
       } else {
         setActionMessage({
-          text: data.error || "Failed to report",
+          text: data.error || t("group.reportFailed"),
           type: "error",
         });
       }
     } catch {
-      setActionMessage({ text: "Network error", type: "error" });
+      setActionMessage({ text: t("group.networkError"), type: "error" });
     }
   }
 
@@ -499,12 +501,12 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
         if (reloadUser) await reloadUser();
       } else {
         setActionMessage({
-          text: data.error || "Failed to show on profile",
+          text: data.error || t("group.showFailed"),
           type: "error",
         });
       }
     } catch {
-      setActionMessage({ text: "Network error", type: "error" });
+      setActionMessage({ text: t("group.networkError"), type: "error" });
     }
   }
 
@@ -519,18 +521,18 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       if (res.ok) {
         setRepresenting(false);
         setActionMessage({
-          text: "Stopped representing group.",
+          text: t("group.stoppedRepresenting"),
           type: "success",
         });
         if (reloadUser) await reloadUser();
       } else {
         setActionMessage({
-          text: data.error || "Failed",
+          text: data.error || t("group.representFailed"),
           type: "error",
         });
       }
     } catch {
-      setActionMessage({ text: "Network error", type: "error" });
+      setActionMessage({ text: t("group.networkError"), type: "error" });
     }
   }
 
@@ -538,7 +540,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
     const url = `${location.origin}/groups/${encodeURIComponent(tag)}`;
     try {
       await navigator.clipboard.writeText(url);
-      setActionMessage({ text: "Link copied!", type: "success" });
+      setActionMessage({ text: t("group.linkCopied"), type: "success" });
       setTimeout(() => setActionMessage(null), 2000);
     } catch {
       /* ignore */
@@ -550,7 +552,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
   async function uploadHeaderImage(kind: "icon" | "banner", file?: File) {
     if (!file || !group) return;
     if (file.size > 5 * 1024 * 1024) {
-      setActionMessage({ text: "Image must be under 5MB.", type: "error" });
+      setActionMessage({ text: t("group.imageTooLarge"), type: "error" });
       return;
     }
     setActionMessage(null);
@@ -564,7 +566,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
       const data = await res.json();
       if (res.ok) {
         setActionMessage({
-          text: kind === "icon" ? "Icon updated." : "Banner updated.",
+          text: kind === "icon" ? t("group.iconUpdated") : t("group.bannerUpdated"),
           type: "success",
         });
         await loadGroup();
@@ -572,19 +574,19 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
         setActionMessage({
           text:
             data.error ||
-            `${kind === "icon" ? "Icon" : "Banner"} upload failed`,
+            `${kind === "icon" ? t("group.updateIcon") : t("group.updateBanner")} ${t("group.uploadFailed")}`,
           type: "error",
         });
       }
     } catch {
-      setActionMessage({ text: "Network error", type: "error" });
+      setActionMessage({ text: t("group.networkError"), type: "error" });
     }
   }
 
   if (loading) {
     return (
       <AccountPage layoutClassName={s.wideLayout}>
-        <div class={s.loading}>Loading group…</div>
+        <div class={s.loading}>{t("group.loading")}</div>
       </AccountPage>
     );
   }
@@ -593,28 +595,26 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
     return (
       <AccountPage layoutClassName={s.wideLayout}>
         <a class={s.backBtn} href="/groups">
-          <ArrowLeft size={14} /> Back to Groups
+          <ArrowLeft size={14} /> {t("group.backToGroups")}
         </a>
         <div class={s.notFound}>
           <div class={s.notFoundIcon}>
             <Info size={32} />
           </div>
-          <div class={s.notFoundTitle}>{error || "Group not found"}</div>
-          <div class={s.notFoundText}>
-            The group you are looking for does not exist or is private.
-          </div>
+          <div class={s.notFoundTitle}>{error || t("group.notFoundTitle")}</div>
+          <div class={s.notFoundText}>{t("group.notFoundText")}</div>
         </div>
       </AccountPage>
     );
   }
 
   const tabs: { id: DetailTab; label: string; icon: typeof Users }[] = [
-    { id: "overview", label: "Overview", icon: Info },
-    { id: "announcements", label: "Announcements", icon: Megaphone },
-    { id: "members", label: "Members", icon: Users },
-    { id: "roles", label: "Roles", icon: Shield },
-    { id: "events", label: "Events", icon: Calendar },
-    { id: "tips", label: "Tips", icon: Coins },
+    { id: "overview", label: t("group.tabOverview"), icon: Info },
+    { id: "announcements", label: t("group.tabAnnouncements"), icon: Megaphone },
+    { id: "members", label: t("group.tabMembers"), icon: Users },
+    { id: "roles", label: t("group.tabRoles"), icon: Shield },
+    { id: "events", label: t("group.tabEvents"), icon: Calendar },
+    { id: "tips", label: t("group.tabTips"), icon: Coins },
   ];
   const canAdmin =
     hasPerm("groups.members.invite") ||
@@ -623,7 +623,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
     hasPerm("groups.tips.withdraw") ||
     hasPerm("groups.manage");
   if (canAdmin) {
-    tabs.push({ id: "admin", label: "Admin", icon: Shield });
+    tabs.push({ id: "admin", label: t("group.tabAdmin"), icon: Shield });
   }
   const canEditBrand = hasPerm("groups.group.edit") || hasPerm("groups.manage");
 
@@ -631,7 +631,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
     <AccountPage layoutClassName={s.wideLayout}>
       {confirmDialog}
       <a class={s.backBtn} href="/groups">
-        <ArrowLeft size={14} /> Back to Groups
+        <ArrowLeft size={14} /> {t("group.backToGroups")}
       </a>
 
       <div class={s.headerCard}>
@@ -647,9 +647,9 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
             </div>
           )}
           {canEditBrand && (
-            <label class={s.bannerUpload} title="Update banner">
+            <label class={s.bannerUpload} title={t("group.updateBanner")}>
               <ImagePlus size={14} />
-              <span>Update banner</span>
+              <span>{t("group.updateBanner")}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -673,9 +673,9 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                 </div>
               )}
               {canEditBrand && (
-                <label class={s.iconUpload} title="Update icon">
+                <label class={s.iconUpload} title={t("group.updateIcon")}>
                   <ImagePlus size={14} />
-                  <span>Update icon</span>
+                  <span>{t("group.updateIcon")}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -696,10 +696,10 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
               <div class={s.headerMeta}>
                 <span class={s.metaChip}>
                   {group.public ? <Globe size={11} /> : <Lock size={11} />}{" "}
-                  {group.public ? "Public" : "Private"}
+                  {group.public ? t("group.publicLabel") : t("group.privateLabel")}
                 </span>
                 <span class={s.metaChip}>
-                  <Users size={11} /> {group.member_count} members
+                  <Users size={11} /> {group.member_count} {t("group.members")}
                 </span>
                 <span class={s.metaChip}>
                   <Crown size={11} /> {group.owner_user_id}
@@ -709,14 +709,14 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                 </span>
                 {group.entry_fee > 0 && (
                   <span class={s.metaChip}>
-                    <Coins size={11} /> {group.entry_fee.toLocaleString()} to
-                    join
+                    <Coins size={11} /> {group.entry_fee.toLocaleString()}{" "}
+                    {t("group.toJoin")}
                   </span>
                 )}
                 {group.credits_balance_visible && group.credits_balance > 0 && (
                   <span class={s.metaChip}>
                     <Coins size={11} /> {group.credits_balance.toLocaleString()}{" "}
-                    balance
+                    {t("group.balance")}
                   </span>
                 )}
               </div>
@@ -735,7 +735,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
 
           <div class={s.headerActions}>
             <button class={s.btnSecondary} onClick={copyLink}>
-              <Copy size={13} /> Copy Link
+              <Copy size={13} /> {t("group.copyLink")}
             </button>
 
             {!isLoggedIn && (
@@ -745,7 +745,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                   window.location.origin + window.location.pathname,
                 )}`}
               >
-                <UserPlus size={13} /> Sign in to Join
+                <UserPlus size={13} /> {t("group.signInToJoin")}
               </a>
             )}
 
@@ -757,20 +757,22 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
               >
                 <UserPlus size={13} />{" "}
                 {joining
-                  ? "Joining…"
+                  ? t("group.joining")
                   : group.join_policy === "REQUEST"
-                    ? "Request to Join"
+                    ? t("group.requestToJoin")
                     : group.entry_fee > 0
-                      ? `Join (${group.entry_fee} credits)`
+                      ? t("group.joinCredits", {
+                          price: String(group.entry_fee),
+                        })
                       : group.join_policy === "INVITE"
-                        ? "Join with Invite"
-                        : "Join Group"}
+                        ? t("group.joinWithInvite")
+                        : t("group.joinGroupBtn")}
               </button>
             )}
 
             {isLoggedIn && isMember && !isOwner && (
               <button class={s.btnDanger} onClick={leaveGroup}>
-                <LogOut size={13} /> Leave
+                <LogOut size={13} /> {t("group.leave")}
               </button>
             )}
 
@@ -778,11 +780,11 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
               <>
                 {representing ? (
                   <button class={s.btnSecondary} onClick={disrepresentGroup}>
-                    <BellOff size={13} /> Stop Representing
+                    <BellOff size={13} /> {t("group.stopRepresenting")}
                   </button>
                 ) : (
                   <button class={s.btnPrimary} onClick={representGroup}>
-                    <Sparkles size={13} /> Show on profile
+                    <Sparkles size={13} /> {t("group.showOnProfile")}
                   </button>
                 )}
               </>
@@ -790,7 +792,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
 
             {isLoggedIn && (
               <button class={s.btnSecondary} onClick={reportGroup}>
-                Report
+                {t("group.report")}
               </button>
             )}
           </div>
@@ -801,7 +803,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
         tabs={tabs}
         active={activeTab}
         onChange={setActiveTab}
-        ariaLabel="Group sections"
+        ariaLabel={t("group.sectionsAria")}
       />
 
       <AccountTabPanel>
@@ -814,7 +816,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
             onUpdated={() => {
               loadGroup();
               setActionMessage({
-                text: "Group updated.",
+                text: t("group.groupUpdated"),
                 type: "success",
               });
             }}
@@ -876,7 +878,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
             onSent={() => {
               loadGroup();
               setActionMessage({
-                text: "Tip sent!",
+                text: t("group.tipSent"),
                 type: "success",
               });
             }}
@@ -917,14 +919,14 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
               <div>
                 <h2 id="join-modal-title" class={s.modalTitle}>
                   {group.join_policy === "REQUEST"
-                    ? "Request to join"
-                    : "Join group"}
+                    ? t("group.joinRequestTitle")
+                    : t("group.joinGroupTitle")}
                 </h2>
                 <p class={s.modalSubtitle}>{group.name}</p>
               </div>
               <button
                 class={s.iconButton}
-                aria-label="Close"
+                aria-label={t("group.close")}
                 disabled={joining}
                 onClick={() => setJoinOpen(false)}
               >
@@ -934,7 +936,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
             <div class={s.modalBody}>
               {group.rules && group.rules.trim() && (
                 <div class={s.joinSection}>
-                  <h4 class={s.manageListTitle}>Group rules</h4>
+                  <h4 class={s.manageListTitle}>{t("group.groupRules")}</h4>
                   <div class={s.joinRules}>{group.rules}</div>
                   <label class={s.joinAgree}>
                     <input
@@ -944,7 +946,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                         setRulesAgreed((e.target as HTMLInputElement).checked)
                       }
                     />
-                    <span>I have read and agree to these rules</span>
+                    <span>{t("group.agreeToRules")}</span>
                   </label>
                 </div>
               )}
@@ -953,9 +955,11 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                 <div class={s.joinFee}>
                   <Coins size={14} />
                   <span>
-                    Joining costs{" "}
-                    <strong>{group.entry_fee.toLocaleString()} credits</strong>.
-                    This is deducted immediately.
+                    {t("group.joiningCosts")}{" "}
+                    <strong>
+                      {group.entry_fee.toLocaleString()} {t("keys.creditsUnit")}
+                    </strong>
+                    . {t("group.deductedImmediately")}
                   </span>
                 </div>
               )}
@@ -963,7 +967,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
               {group.join_policy === "REQUEST" && (
                 <div class={s.joinSection}>
                   <label class={s.manageListTitle} for="join-message">
-                    Message for the admins (optional)
+                    {t("group.messageForAdmins")}
                   </label>
                   <textarea
                     id="join-message"
@@ -972,7 +976,7 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                     maxLength={500}
                     value={joinMessage}
                     disabled={joining}
-                    placeholder="Why do you want to join?"
+                    placeholder={t("group.whyDoYouWantToJoin")}
                     onInput={(e) =>
                       setJoinMessage((e.target as HTMLTextAreaElement).value)
                     }
@@ -996,19 +1000,21 @@ export function GroupDetail(props: { matches?: { grouptag?: string } }) {
                   }
                 >
                   {joining
-                    ? "Working…"
+                    ? t("group.working")
                     : group.join_policy === "REQUEST"
-                      ? "Send request"
+                      ? t("group.sendRequest")
                       : group.entry_fee > 0
-                        ? `Join for ${group.entry_fee.toLocaleString()} credits`
-                        : "Join group"}
+                        ? t("group.joinForCredits", {
+                            price: group.entry_fee.toLocaleString(),
+                          })
+                        : t("group.joinGroupTitle")}
                 </button>
                 <button
                   class={s.btnSecondary}
                   onClick={() => setJoinOpen(false)}
                   disabled={joining}
                 >
-                  Cancel
+                  {t("group.cancel")}
                 </button>
               </div>
             </div>
@@ -1044,6 +1050,7 @@ function OverviewTab({
   onUpdated: () => void;
   onMessage: (m: { text: string; type: "success" | "error" } | null) => void;
 }) {
+  const { t } = useI18n();
   const [confirm, confirmDialog] = useConfirm();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(group.name);
@@ -1059,21 +1066,21 @@ function OverviewTab({
   async function save() {
     const nextTag = groupTag.trim();
     if (!name.trim()) {
-      onMessage({ text: "Name is required", type: "error" });
+      onMessage({ text: t("group.nameRequired"), type: "error" });
       return;
     }
     if (!/^[a-zA-Z0-9]+$/.test(nextTag)) {
-      onMessage({ text: "Tag must be alphanumeric only", type: "error" });
+      onMessage({ text: t("group.tagAlphanumeric"), type: "error" });
       return;
     }
     if (nextTag.length > 10) {
-      onMessage({ text: "Tag must be 10 characters or less", type: "error" });
+      onMessage({ text: t("group.tagMaxLength"), type: "error" });
       return;
     }
     const fee = parseFloat(entryFee);
     if (entryFee.trim() && (isNaN(fee) || fee < 0)) {
       onMessage({
-        text: "Entry fee must be a non-negative number",
+        text: t("group.entryFeeNonNegative"),
         type: "error",
       });
       return;
@@ -1107,20 +1114,19 @@ function OverviewTab({
         onUpdated();
         setEditing(false);
       } else {
-        onMessage({ text: data.error || "Failed to update", type: "error" });
+        onMessage({ text: data.error || t("group.failedUpdate"), type: "error" });
       }
     } catch {
-      onMessage({ text: "Network error", type: "error" });
+      onMessage({ text: t("group.networkError"), type: "error" });
     }
     setBusy(false);
   }
 
   async function deleteGroup() {
     const ok = await confirm({
-      title: `Delete "${group.name}"?`,
-      message:
-        "This permanently removes the group and all of its data. This cannot be undone.",
-      confirmLabel: "Delete group",
+      title: t("group.deleteConfirmTitle", { name: group.name }),
+      message: t("group.deleteConfirmMsg"),
+      confirmLabel: t("group.deleteBtn"),
       danger: true,
     });
     if (!ok) return;
@@ -1133,10 +1139,10 @@ function OverviewTab({
       if (res.ok) {
         window.location.href = "/groups";
       } else {
-        onMessage({ text: data.error || "Failed to delete", type: "error" });
+        onMessage({ text: data.error || t("group.failedDelete"), type: "error" });
       }
     } catch {
-      onMessage({ text: "Network error", type: "error" });
+      onMessage({ text: t("group.networkError"), type: "error" });
     }
   }
 
@@ -1146,8 +1152,8 @@ function OverviewTab({
       {isMember && myRoles.length > 0 && (
         <AccountSection
           icon={<KeyRound size={18} />}
-          title="Your Roles"
-          subtitle={`${myRoles.length} ${plural(myRoles.length, "role")}`}
+          title={t("group.yourRoles")}
+          subtitle={`${myRoles.length} ${plural(myRoles.length, t("group.role"))}`}
         >
           <div class={s.rolesList}>
             {myRoles.map((r) => (
@@ -1160,7 +1166,7 @@ function OverviewTab({
                   <div class={s.rolePermissions}>
                     {r.permissions.map((p) => (
                       <span key={p} class={s.permTag}>
-                        {PERMISSION_LABELS[p] || p}
+                        {t(PERMISSION_LABELS[p] || p)}
                       </span>
                     ))}
                   </div>
@@ -1182,20 +1188,20 @@ function OverviewTab({
 
       <AccountSection
         icon={<Info size={18} />}
-        title="About"
-        subtitle="Group information and settings"
+        title={t("group.about")}
+        subtitle={t("group.aboutSub")}
         actions={
           (hasPerm("groups.group.edit") || hasPerm("groups.manage")) &&
           !editing && (
             <>
               {hasPerm("groups.group.edit") && (
                 <button class={s.btnSecondary} onClick={() => setEditing(true)}>
-                  <Edit3 size={13} /> Edit
+                  <Edit3 size={13} /> {t("group.edit")}
                 </button>
               )}
               {hasPerm("groups.manage") && (
                 <button class={s.btnDanger} onClick={deleteGroup}>
-                  <Trash2 size={13} /> Delete
+                  <Trash2 size={13} /> {t("group.delete")}
                 </button>
               )}
             </>
@@ -1206,7 +1212,7 @@ function OverviewTab({
           <div>
             <div class={s.formRow}>
               <div class={s.formGroup}>
-                <label>Name</label>
+                <label>{t("group.nameLabel")}</label>
                 <input
                   type="text"
                   class={s.formInput}
@@ -1216,7 +1222,7 @@ function OverviewTab({
                 />
               </div>
               <div class={s.formGroup}>
-                <label>Tag</label>
+                <label>{t("group.tagLabel")}</label>
                 <input
                   type="text"
                   class={s.formInput}
@@ -1226,13 +1232,11 @@ function OverviewTab({
                     setGroupTag((e.target as HTMLInputElement).value)
                   }
                 />
-                <small class={s.formHint}>
-                  Alphanumeric only. Changing it updates the group URL.
-                </small>
+                <small class={s.formHint}>{t("group.tagHint")}</small>
               </div>
             </div>
             <div class={s.formGroup}>
-              <label>Description</label>
+              <label>{t("group.descriptionLabel")}</label>
               <textarea
                 class={s.formInput}
                 rows={4}
@@ -1243,43 +1247,43 @@ function OverviewTab({
                 }
               />
               <small class={s.formHint}>
-                {description.length} / 500 characters.
+                {t("group.charCount", { count: description.length })}
               </small>
             </div>
             <div class={s.formGroup}>
-              <label>Readme</label>
+              <label>{t("group.readme")}</label>
               <textarea
                 class={s.formInput}
                 rows={6}
                 maxlength={10000}
-                placeholder="Long-form description. Supports markdown."
+                placeholder={t("group.readmePlaceholder")}
                 value={readme}
                 onInput={(e) =>
                   setReadme((e.target as HTMLTextAreaElement).value)
                 }
               />
               <small class={s.formHint}>
-                {readme.length} / 10,000 characters.
+                {t("group.readmeCharCount", { count: readme.length })}
               </small>
             </div>
             <div class={s.formGroup}>
-              <label>Rules</label>
+              <label>{t("group.rulesLabel")}</label>
               <textarea
                 class={s.formInput}
                 rows={4}
                 maxlength={5000}
-                placeholder="Shown before users join."
+                placeholder={t("group.rulesPlaceholder")}
                 value={rules}
                 onInput={(e) =>
                   setRules((e.target as HTMLTextAreaElement).value)
                 }
               />
               <small class={s.formHint}>
-                {rules.length} / 5,000 characters.
+                {t("group.rulesCharCount", { count: rules.length })}
               </small>
             </div>
             <div class={s.formGroup}>
-              <label>Entry Fee (credits)</label>
+              <label>{t("group.entryFeeLabel")}</label>
               <input
                 type="number"
                 class={s.formInput}
@@ -1290,9 +1294,7 @@ function OverviewTab({
                   setEntryFee((e.target as HTMLInputElement).value)
                 }
               />
-              <small class={s.formHint}>
-                Credits required to join. Set to 0 for free entry.
-              </small>
+              <small class={s.formHint}>{t("group.entryFeeHint")}</small>
             </div>
             <div class={s.formGroup}>
               <div class={s.checkboxGroup}>
@@ -1304,11 +1306,11 @@ function OverviewTab({
                     setIsPublic((e.target as HTMLInputElement).checked)
                   }
                 />
-                <label for="overview-public">Public group</label>
+                <label for="overview-public">{t("group.publicGroup")}</label>
               </div>
             </div>
             <div class={s.formGroup}>
-              <label>Join Policy</label>
+              <label>{t("group.joinPolicy")}</label>
               <select
                 class={s.formInput}
                 value={policy}
@@ -1318,14 +1320,15 @@ function OverviewTab({
               >
                 {JOIN_POLICY_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.label}
+                    {t(o.label)}
                   </option>
                 ))}
               </select>
             </div>
             <div class={s.formActions}>
               <button class={s.btnPrimary} onClick={save} disabled={busy}>
-                <Save size={13} /> {busy ? "Saving…" : "Save Changes"}
+                <Save size={13} />{" "}
+                {busy ? t("group.saving") : t("group.saveChanges")}
               </button>
               <button
                 class={s.btnSecondary}
@@ -1341,7 +1344,7 @@ function OverviewTab({
                   setPolicy(group.join_policy);
                 }}
               >
-                <X size={13} /> Cancel
+                <X size={13} /> {t("group.cancel")}
               </button>
             </div>
           </div>
@@ -1349,44 +1352,49 @@ function OverviewTab({
           <div>
             <div class={s.detailGrid}>
               <div class={s.detailItem}>
-                <h4>Description</h4>
+                <h4>{t("group.descriptionLabel")}</h4>
                 <div class={s.detailValue}>
-                  {group.description || "No description provided."}
+                  {group.description || t("group.noDescription")}
                 </div>
               </div>
               <div class={s.detailItem}>
-                <h4>Visibility</h4>
+                <h4>{t("group.visibility")}</h4>
                 <div class={s.detailValue}>
-                  {group.public ? "Public" : "Private"}
+                  {group.public ? t("group.publicLabel") : t("group.privateLabel")}
                 </div>
               </div>
               <div class={s.detailItem}>
-                <h4>Join Policy</h4>
+                <h4>{t("group.joinPolicy")}</h4>
                 <div class={s.detailValue}>
-                  {JOIN_POLICY_OPTIONS.find(
-                    (o) => o.value === group.join_policy,
-                  )?.label || group.join_policy}
+                  {(() => {
+                    const opt = JOIN_POLICY_OPTIONS.find(
+                      (o) => o.value === group.join_policy,
+                    );
+                    return opt ? t(opt.label) : group.join_policy;
+                  })()}
                 </div>
               </div>
               <div class={s.detailItem}>
-                <h4>Entry Fee</h4>
+                <h4>{t("group.entryFeeLabel")}</h4>
                 <div class={s.detailValue}>
                   {group.entry_fee > 0
-                    ? `${group.entry_fee.toLocaleString()} credits`
-                    : "Free"}
+                    ? t("group.entryFeeDisplay", {
+                        fee: group.entry_fee.toLocaleString(),
+                      })
+                    : t("group.free")}
                 </div>
               </div>
               <div class={s.detailItem}>
-                <h4>Owner</h4>
+                <h4>{t("group.owner")}</h4>
                 <div class={s.detailValue}>{group.owner_user_id}</div>
               </div>
               <div class={s.detailItem}>
-                <h4>Members</h4>
+                <h4>{t("group.membersLabel")}</h4>
                 <div class={s.detailValue}>{group.member_count}</div>
               </div>
               {group.credits_balance_visible && (
                 <div class={s.detailItem}>
-                  <h4>Credit Balance</h4>
+                  <h4>{t("group.creditBalance")}</h4>
                   <div class={s.detailValue}>
                     {group.credits_balance.toLocaleString()}
                   </div>
@@ -1397,7 +1405,7 @@ function OverviewTab({
             {group.readme && group.readme.trim() && (
               <div class={s.readmeBlock}>
                 <h3 class={s.readmeTitle}>
-                  <BookOpen size={14} /> Readme
+                  <BookOpen size={14} /> {t("group.readmeTitle")}
                 </h3>
                 <pre class={s.readmeContent}>{group.readme}</pre>
               </div>
@@ -1406,7 +1414,7 @@ function OverviewTab({
             {group.rules && group.rules.trim() && (
               <div class={s.rulesBlock}>
                 <h3 class={s.readmeTitle}>
-                  <ScrollText size={14} /> Group Rules
+                  <ScrollText size={14} /> {t("group.groupRulesTitle")}
                 </h3>
                 <pre class={s.readmeContent}>{group.rules}</pre>
               </div>
@@ -1429,6 +1437,7 @@ function AnnouncementsTab({
   canPost: boolean;
   isMember: boolean;
 }) {
+  const { t } = useI18n();
   const [confirm, confirmDialog] = useConfirm();
   const [items, setItems] = useState<GroupAnnouncement[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1470,12 +1479,12 @@ function AnnouncementsTab({
       } else {
         // A failed load must not render as "no announcements".
         setMsg({
-          text: data?.error || "Couldn't load announcements.",
+          text: data?.error || t("group.couldntLoadAnnouncements"),
           type: "error",
         });
       }
     } catch {
-      setMsg({ text: "Network error loading announcements.", type: "error" });
+      setMsg({ text: t("group.networkErrorAnnouncements"), type: "error" });
     }
     setLoading(false);
   }
@@ -1486,7 +1495,7 @@ function AnnouncementsTab({
 
   async function post() {
     if (!title.trim()) {
-      setMsg({ text: "Title is required", type: "error" });
+      setMsg({ text: t("group.titleRequired"), type: "error" });
       return;
     }
     setBusy(true);
@@ -1502,24 +1511,24 @@ function AnnouncementsTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Announcement posted!", type: "success" });
+        setMsg({ text: t("group.announcementPosted"), type: "success" });
         setTitle("");
         setBody("");
         setPingMembers(false);
         load();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
     setBusy(false);
   }
 
   async function del(id: string) {
     const ok = await confirm({
-      title: "Delete this announcement?",
-      confirmLabel: "Delete",
+      title: t("group.deleteAnnouncement"),
+      confirmLabel: t("group.delete"),
       danger: true,
     });
     if (!ok) return;
@@ -1530,13 +1539,13 @@ function AnnouncementsTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Announcement deleted.", type: "success" });
+        setMsg({ text: t("group.announcementDeleted"), type: "success" });
         load();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
   }
 
@@ -1549,7 +1558,7 @@ function AnnouncementsTab({
       if (res.ok) {
         setMuted((m) => !m);
         setMsg({
-          text: muted ? "Unmuted announcements." : "Muted announcements.",
+          text: muted ? t("group.unmuted") : t("group.mutedMsg"),
           type: "success",
         });
       }
@@ -1564,16 +1573,14 @@ function AnnouncementsTab({
       {isMember && (
         <AccountSection
           icon={muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          title="Notifications"
+          title={t("group.notifications")}
           subtitle={
-            muted
-              ? "You will not receive announcements"
-              : "You receive announcements for this group"
+            muted ? t("group.mutedSub") : t("group.notMutedSub")
           }
           actions={
             <button class={s.btnSecondary} onClick={toggleMute}>
               {muted ? <Volume2 size={13} /> : <VolumeX size={13} />}
-              {muted ? "Unmute" : "Mute"}
+              {muted ? t("group.unmute") : t("group.mute")}
             </button>
           }
         />
@@ -1582,27 +1589,27 @@ function AnnouncementsTab({
       {canPost && (
         <AccountSection
           icon={<Plus size={18} />}
-          title="New Announcement"
-          subtitle="Share an update with all members"
+          title={t("group.newAnnouncement")}
+          subtitle={t("group.newAnnouncementSub")}
         >
           <div class={s.formGroup}>
-            <label>Title</label>
+            <label>{t("group.title")}</label>
             <input
               type="text"
               class={s.formInput}
-              placeholder="Announcement title"
+              placeholder={t("group.announcementTitlePlaceholder")}
               maxlength={100}
               value={title}
               onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
             />
           </div>
           <div class={s.formGroup}>
-            <label>Body</label>
+            <label>{t("group.body")}</label>
             <textarea
               class={s.formInput}
               rows={4}
               maxlength={2000}
-              placeholder="Write your announcement…"
+              placeholder={t("group.announcementBodyPlaceholder")}
               value={body}
               onInput={(e) => setBody((e.target as HTMLTextAreaElement).value)}
             />
@@ -1618,14 +1625,15 @@ function AnnouncementsTab({
                 }
               />
               <label for="ann-ping">
-                <Bell size={12} style={{ verticalAlign: "middle" }} /> Ping
-                members with a notification
+                <Bell size={12} style={{ verticalAlign: "middle" }} />{" "}
+                {t("group.pingMembers")}
               </label>
             </div>
           </div>
           <div class={s.formActions}>
             <button class={s.btnPrimary} onClick={post} disabled={busy}>
-              <Send size={13} /> {busy ? "Posting…" : "Post Announcement"}
+              <Send size={13} />{" "}
+              {busy ? t("group.posting") : t("group.postAnnouncement")}
             </button>
           </div>
           {msg && (
@@ -1638,20 +1646,20 @@ function AnnouncementsTab({
 
       <AccountSection
         icon={<Megaphone size={18} />}
-        title="All Announcements"
-        subtitle={`${items.length} total`}
+        title={t("group.allAnnouncements")}
+        subtitle={t("group.totalCount", { count: items.length })}
       >
-        {loading && <div class={s.loading}>Loading…</div>}
+        {loading && <div class={s.loading}>{t("group.loadingShort")}</div>}
         {!loading && items.length === 0 && (
           <div class={s.empty}>
             <div class={s.emptyIcon}>
               <Megaphone size={24} />
             </div>
-            <div class={s.emptyTitle}>No announcements yet</div>
+            <div class={s.emptyTitle}>{t("group.noAnnouncements")}</div>
             <div class={s.emptyText}>
               {canPost
-                ? "Post the first announcement above."
-                : "Check back later for updates."}
+                ? t("group.postFirstAnnouncement")
+                : t("group.checkBackLater")}
             </div>
           </div>
         )}
@@ -1662,13 +1670,17 @@ function AnnouncementsTab({
                 <h3 class={s.announcementTitle}>{a.title}</h3>
                 {a.ping_members && (
                   <span class={s.pingBadge}>
-                    <Bell size={10} /> Ping
+                    <Bell size={10} /> {t("group.pingBadge")}
                   </span>
                 )}
               </div>
               {a.body && <div class={s.announcementBody}>{a.body}</div>}
               <div class={s.announcementMeta}>
-                <span>by {a.author_username || a.author_user_id || ""}</span>
+                <span>
+                  {t("group.byUser", {
+                    user: a.author_username || a.author_user_id || "",
+                  })}
+                </span>
                 <span>•</span>
                 <span title={formatDateTime(a.created_at)}>
                   {formatRelativeTime(a.created_at * 1000)}
@@ -1677,7 +1689,7 @@ function AnnouncementsTab({
               {canPost && (
                 <div class={s.announcementActions}>
                   <button class={s.btnDanger} onClick={() => del(a.id)}>
-                    <Trash2 size={12} /> Delete
+                    <Trash2 size={12} /> {t("group.delete")}
                   </button>
                 </div>
               )}
@@ -1706,6 +1718,7 @@ function MembersTab({
   isOwner: boolean;
   isMember: boolean;
 }) {
+  const { t } = useI18n();
   const [confirm, confirmDialog] = useConfirm();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [membersPage, setMembersPage] = useState(1);
@@ -1754,10 +1767,10 @@ function MembersTab({
         setMembersPages(data.pages || 1);
       } else {
         // A failed load must not render as "no members".
-        setMembersError(data?.error || "Couldn't load members.");
+        setMembersError(data?.error || t("group.couldntLoadMembers"));
       }
     } catch {
-      setMembersError("Network error — check your connection and try again.");
+      setMembersError(t("group.networkErrorConn"));
     }
     setMembersLoading(false);
   }
@@ -1784,22 +1797,22 @@ function MembersTab({
       );
       if (res.status === 404) {
         setLookupMsg({
-          text: `${targetUser} is not a member of this group.`,
+          text: t("group.notMember", { user: targetUser }),
           type: "error",
         });
       } else if (res.ok) {
         const data = await res.json();
         setTargetRoles(data.roles || []);
         setLookupMsg({
-          text: `Found ${data.roles?.length || 0} role(s).`,
+          text: t("group.foundRoles", { count: data.roles?.length || 0 }),
           type: "success",
         });
       } else {
         const data = await res.json();
-        setLookupMsg({ text: data.error || "Lookup failed", type: "error" });
+        setLookupMsg({ text: data.error || t("group.lookupFailed"), type: "error" });
       }
     } catch {
-      setLookupMsg({ text: "Network error", type: "error" });
+      setLookupMsg({ text: t("group.networkError"), type: "error" });
     }
     setBusy(false);
   }
@@ -1813,9 +1826,9 @@ function MembersTab({
       if (res.ok) {
         return data.roles || [];
       }
-      setRoleModalMsg({ text: data.error || "Lookup failed", type: "error" });
+      setRoleModalMsg({ text: data.error || t("group.lookupFailed"), type: "error" });
     } catch {
-      setRoleModalMsg({ text: "Network error", type: "error" });
+      setRoleModalMsg({ text: t("group.networkError"), type: "error" });
     }
     return null;
   }
@@ -1838,9 +1851,9 @@ function MembersTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setLookupMsg({ text: "Role assigned.", type: "success" });
+        setLookupMsg({ text: t("group.roleAssigned"), type: "success" });
         if (roleModalMember && roleModalMember.user_id === userId) {
-          setRoleModalMsg({ text: "Role assigned.", type: "success" });
+          setRoleModalMsg({ text: t("group.roleAssigned"), type: "success" });
           const roles = await loadRolesFor(userId);
           if (roles) setRoleModalRoles(roles);
         } else {
@@ -1848,19 +1861,19 @@ function MembersTab({
         }
         loadMembers(membersPage);
       } else {
-        setLookupMsg({ text: data.error || "Failed", type: "error" });
-        setRoleModalMsg({ text: data.error || "Failed", type: "error" });
+        setLookupMsg({ text: data.error || t("group.failed"), type: "error" });
+        setRoleModalMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setLookupMsg({ text: "Network error", type: "error" });
-      setRoleModalMsg({ text: "Network error", type: "error" });
+      setLookupMsg({ text: t("group.networkError"), type: "error" });
+      setRoleModalMsg({ text: t("group.networkError"), type: "error" });
     }
   }
 
   async function removeRole(userId: string, roleId: string) {
     const ok = await confirm({
-      title: "Remove this role from the user?",
-      confirmLabel: "Remove role",
+      title: t("group.removeRoleConfirm"),
+      confirmLabel: t("group.removeRoleBtn"),
       danger: true,
     });
     if (!ok) return;
@@ -1871,9 +1884,9 @@ function MembersTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setLookupMsg({ text: "Role removed.", type: "success" });
+        setLookupMsg({ text: t("group.roleRemoved"), type: "success" });
         if (roleModalMember && roleModalMember.user_id === userId) {
-          setRoleModalMsg({ text: "Role removed.", type: "success" });
+          setRoleModalMsg({ text: t("group.roleRemoved"), type: "success" });
           const roles = await loadRolesFor(userId);
           if (roles) setRoleModalRoles(roles);
         } else {
@@ -1881,12 +1894,12 @@ function MembersTab({
         }
         loadMembers(membersPage);
       } else {
-        setLookupMsg({ text: data.error || "Failed", type: "error" });
-        setRoleModalMsg({ text: data.error || "Failed", type: "error" });
+        setLookupMsg({ text: data.error || t("group.failed"), type: "error" });
+        setRoleModalMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setLookupMsg({ text: "Network error", type: "error" });
-      setRoleModalMsg({ text: "Network error", type: "error" });
+      setLookupMsg({ text: t("group.networkError"), type: "error" });
+      setRoleModalMsg({ text: t("group.networkError"), type: "error" });
     }
   }
 
@@ -1910,20 +1923,18 @@ function MembersTab({
       {confirmDialog}
       <AccountSection
         icon={<Users size={18} />}
-        title="Your Membership"
-        subtitle={isMember ? "You are a member" : "You are not a member"}
+        title={t("group.yourMembership")}
+        subtitle={
+          isMember ? t("group.youAreMember") : t("group.youAreNotMember")
+        }
       >
         {!isMember ? (
           <div class={s.empty}>
-            <div class={s.emptyText}>
-              Join this group to see your roles here.
-            </div>
+            <div class={s.emptyText}>{t("group.joinToSeeRoles")}</div>
           </div>
         ) : myRoles.length === 0 ? (
           <div class={s.empty}>
-            <div class={s.emptyText}>
-              You have no roles assigned. Contact an owner.
-            </div>
+            <div class={s.emptyText}>{t("group.noRolesContact")}</div>
           </div>
         ) : (
           <div class={s.rolesList}>
@@ -1942,15 +1953,15 @@ function MembersTab({
       {canViewMembers && (
         <AccountSection
           icon={<Users size={18} />}
-          title="Members"
-          subtitle={`${membersTotal} ${plural(membersTotal, "member")}`}
+          title={t("group.membersTitle")}
+          subtitle={`${membersTotal} ${plural(membersTotal, t("group.member"))}`}
         >
           <div class={s.actionRow}>
             <input
               type="text"
               class={s.formInput}
-              placeholder="Search members…"
-              aria-label="Search members"
+              placeholder={t("group.searchMembersPlaceholder")}
+              aria-label={t("group.searchMembersAria")}
               value={memberSearch}
               onInput={(e) =>
                 setMemberSearch((e.target as HTMLInputElement).value)
@@ -1960,12 +1971,12 @@ function MembersTab({
               }}
             />
             <button class={s.btnSecondary} onClick={searchMembers}>
-              <Search size={13} /> Search
+              <Search size={13} /> {t("group.search")}
             </button>
           </div>
           {membersLoading ? (
             <div class={s.empty}>
-              <div class={s.emptyText}>Loading members…</div>
+              <div class={s.emptyText}>{t("group.loadingMembers")}</div>
             </div>
           ) : membersError ? (
             <div class={s.empty}>
@@ -1976,12 +1987,12 @@ function MembersTab({
                 class={s.btnSecondary}
                 onClick={() => loadMembers(membersPage)}
               >
-                Retry
+                {t("group.retry")}
               </button>
             </div>
           ) : members.length === 0 ? (
             <div class={s.empty}>
-              <div class={s.emptyText}>No members found.</div>
+              <div class={s.emptyText}>{t("group.noMembersFound")}</div>
             </div>
           ) : (
             <>
@@ -2018,7 +2029,7 @@ function MembersTab({
                         class={s.btnSecondary}
                         onClick={() => openRoleModal(m)}
                       >
-                        <Edit3 size={12} /> Edit roles
+                        <Edit3 size={12} /> {t("group.editRoles")}
                       </button>
                     )}
                   </div>
@@ -2031,17 +2042,20 @@ function MembersTab({
                     disabled={membersPage <= 1}
                     onClick={() => setMembersPage((p) => p - 1)}
                   >
-                    Prev
+                    {t("group.prev")}
                   </button>
                   <span class={s.pageIndicator}>
-                    Page {membersPage} of {membersPages}
+                    {t("group.pageOf", {
+                      page: membersPage,
+                      total: membersPages,
+                    })}
                   </span>
                   <button
                     class={s.btnSecondary}
                     disabled={membersPage >= membersPages}
                     onClick={() => setMembersPage((p) => p + 1)}
                   >
-                    Next
+                    {t("group.next")}
                   </button>
                 </div>
               )}
@@ -2053,15 +2067,15 @@ function MembersTab({
       {canAssign && (
         <AccountSection
           icon={<UserPlus size={18} />}
-          title="Manage Member Roles"
-          subtitle="Look up a member by username to assign or remove roles"
+          title={t("group.manageMemberRoles")}
+          subtitle={t("group.manageMemberRolesSub")}
         >
           <div class={s.actionRow}>
             <input
               type="text"
               class={s.formInput}
-              placeholder="Username"
-              aria-label="Username to look up roles for"
+              placeholder={t("group.usernamePlaceholder")}
+              aria-label={t("group.usernameLookupAria")}
               value={targetUser}
               onInput={(e) =>
                 setTargetUser((e.target as HTMLInputElement).value)
@@ -2072,7 +2086,8 @@ function MembersTab({
               onClick={lookup}
               disabled={busy || !targetUser.trim()}
             >
-              <Search size={13} /> {busy ? "Looking up…" : "Lookup"}
+              <Search size={13} />{" "}
+              {busy ? t("group.lookingUp") : t("group.lookup")}
             </button>
           </div>
           {lookupMsg && (
@@ -2083,7 +2098,9 @@ function MembersTab({
 
           {targetUser && targetRoles.length > 0 && (
             <div class={s.manageList}>
-              <h4 class={s.manageListTitle}>Roles for {targetUser}</h4>
+              <h4 class={s.manageListTitle}>
+                {t("group.rolesFor", { user: targetUser })}
+              </h4>
               {targetRoles.map((r) => (
                 <div key={r.id} class={s.manageRow}>
                   <div>
@@ -2097,7 +2114,7 @@ function MembersTab({
                       class={s.btnDanger}
                       onClick={() => removeRole(targetUser, r.id)}
                     >
-                      <UserMinus size={12} /> Remove
+                      <UserMinus size={12} /> {t("group.remove")}
                     </button>
                   )}
                 </div>
@@ -2107,7 +2124,7 @@ function MembersTab({
 
           {targetUser && availableToAssign.length > 0 && (
             <div class={s.manageList}>
-              <h4 class={s.manageListTitle}>Available to assign</h4>
+              <h4 class={s.manageListTitle}>{t("group.availableToAssign")}</h4>
               {availableToAssign.map((r) => (
                 <div key={r.id} class={s.manageRow}>
                   <div>
@@ -2120,7 +2137,7 @@ function MembersTab({
                     class={s.btnSecondary}
                     onClick={() => assignRole(targetUser, r.id)}
                   >
-                    <UserPlus size={12} /> Assign
+                    <UserPlus size={12} /> {t("group.assign")}
                   </button>
                 </div>
               ))}
@@ -2147,13 +2164,13 @@ function MembersTab({
             <div class={s.modalHeader}>
               <div>
                 <h2 id="role-modal-title" class={s.modalTitle}>
-                  Edit Roles
+                  {t("group.editRolesTitle")}
                 </h2>
                 <p class={s.modalSubtitle}>{roleModalMember.username}</p>
               </div>
               <button
                 class={s.iconButton}
-                aria-label="Close"
+                aria-label={t("group.close")}
                 onClick={() => setRoleModalMember(null)}
               >
                 <X size={16} />
@@ -2168,9 +2185,9 @@ function MembersTab({
                 </div>
               )}
               <div class={s.manageList}>
-                <h4 class={s.manageListTitle}>Current roles</h4>
+                <h4 class={s.manageListTitle}>{t("group.currentRoles")}</h4>
                 {roleModalRoles.length === 0 && (
-                  <div class={s.emptyText}>No roles assigned.</div>
+                  <div class={s.emptyText}>{t("group.noRolesAssigned")}</div>
                 )}
                 {roleModalRoles.map((role) => (
                   <div key={role.id} class={s.manageRow}>
@@ -2187,16 +2204,16 @@ function MembersTab({
                           removeRole(roleModalMember.user_id, role.id)
                         }
                       >
-                        <UserMinus size={12} /> Remove
+                        <UserMinus size={12} /> {t("group.remove")}
                       </button>
                     )}
                   </div>
                 ))}
               </div>
               <div class={s.manageList}>
-                <h4 class={s.manageListTitle}>Available roles</h4>
+                <h4 class={s.manageListTitle}>{t("group.availableRoles")}</h4>
                 {modalAvailableToAssign.length === 0 && (
-                  <div class={s.emptyText}>No roles available to assign.</div>
+                  <div class={s.emptyText}>{t("group.noRolesAvailable")}</div>
                 )}
                 {modalAvailableToAssign.map((role) => (
                   <div key={role.id} class={s.manageRow}>
@@ -2212,7 +2229,7 @@ function MembersTab({
                         assignRole(roleModalMember.user_id, role.id)
                       }
                     >
-                      <UserPlus size={12} /> Assign
+                      <UserPlus size={12} /> {t("group.assign")}
                     </button>
                   </div>
                 ))}
@@ -2242,6 +2259,7 @@ function RolesTab({
   isMember: boolean;
   onMembershipChanged: () => void;
 }) {
+  const { t } = useI18n();
   const [msg, setMsg] = useState<{
     text: string;
     type: "success" | "error";
@@ -2291,12 +2309,12 @@ function RolesTab({
         setProducts(Array.isArray(data) ? data : []);
       } else {
         setMsg({
-          text: data?.error || "Couldn't load roles for sale.",
+          text: data?.error || t("group.couldntLoadRoleShop"),
           type: "error",
         });
       }
     } catch {
-      setMsg({ text: "Network error loading roles for sale.", type: "error" });
+      setMsg({ text: t("group.networkErrorRoleShop"), type: "error" });
     }
     setProductsLoading(false);
   }
@@ -2315,7 +2333,7 @@ function RolesTab({
   async function create() {
     if (creatingBusy) return;
     if (!newName.trim()) {
-      setMsg({ text: "Name required", type: "error" });
+      setMsg({ text: t("group.nameRequiredShort"), type: "error" });
       return;
     }
     setMsg(null);
@@ -2350,13 +2368,15 @@ function RolesTab({
             if (!patchRes.ok) {
               const patchData = await patchRes.json();
               setMsg({
-                text: `Role created but benefits failed: ${patchData.error || "unknown"}`,
+                text: t("group.benefitsFailed", {
+                  err: patchData.error || "unknown",
+                }),
                 type: "error",
               });
             }
           }
         }
-        setMsg({ text: "Role created.", type: "success" });
+        setMsg({ text: t("group.roleCreated"), type: "success" });
         setCreating(false);
         setNewName("");
         setNewDesc("");
@@ -2365,10 +2385,10 @@ function RolesTab({
         setNewBenefits("");
         onRolesChanged();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     } finally {
       setCreatingBusy(false);
     }
@@ -2408,22 +2428,22 @@ function RolesTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Role updated.", type: "success" });
+        setMsg({ text: t("group.roleUpdated"), type: "success" });
         setEditingId(null);
         onRolesChanged();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
   }
 
   async function del(role: GroupRole) {
     const ok = await confirm({
-      title: `Delete role "${role.name}"?`,
-      message: "Members with this role will lose it.",
-      confirmLabel: "Delete role",
+      title: t("group.deleteRoleConfirm", { name: role.name }),
+      message: t("group.deleteRoleMsg"),
+      confirmLabel: t("group.deleteRoleBtn"),
       danger: true,
     });
     if (!ok) return;
@@ -2434,13 +2454,13 @@ function RolesTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Role deleted.", type: "success" });
+        setMsg({ text: t("group.roleDeleted"), type: "success" });
         onRolesChanged();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
   }
 
@@ -2448,20 +2468,20 @@ function RolesTab({
     if (creatingBusy) return;
     const price = parseFloat(productPrice);
     if (!productName.trim()) {
-      setMsg({ text: "Product name required", type: "error" });
+      setMsg({ text: t("group.productNameRequired"), type: "error" });
       return;
     }
     if (!productRoleId) {
-      setMsg({ text: "Choose a role to sell", type: "error" });
+      setMsg({ text: t("group.chooseRoleToSell"), type: "error" });
       return;
     }
     if (!price || price <= 0) {
-      setMsg({ text: "Enter a valid price", type: "error" });
+      setMsg({ text: t("group.validPrice"), type: "error" });
       return;
     }
     const frequency = parseInt(productFrequency);
     if (productSubscription && (!frequency || frequency <= 0)) {
-      setMsg({ text: "Enter a valid billing frequency", type: "error" });
+      setMsg({ text: t("group.validFrequency"), type: "error" });
       return;
     }
     setMsg(null);
@@ -2485,7 +2505,7 @@ function RolesTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Role product created.", type: "success" });
+        setMsg({ text: t("group.roleProductCreated"), type: "success" });
         setCreatingProduct(false);
         setProductName("");
         setProductDescription("");
@@ -2496,10 +2516,10 @@ function RolesTab({
         setProductPeriod("month");
         loadProducts();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     } finally {
       setCreatingBusy(false);
     }
@@ -2507,8 +2527,8 @@ function RolesTab({
 
   async function deleteProduct(product: GroupProduct) {
     const ok = await confirm({
-      title: `Delete product "${product.name}"?`,
-      confirmLabel: "Delete product",
+      title: t("group.deleteProductConfirm", { name: product.name }),
+      confirmLabel: t("group.deleteProductBtn"),
       danger: true,
     });
     if (!ok) return;
@@ -2520,22 +2540,26 @@ function RolesTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Role product deleted.", type: "success" });
+        setMsg({ text: t("group.roleProductDeleted"), type: "success" });
         loadProducts();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
   }
 
   async function purchaseProduct(product: GroupProduct) {
     if (buying) return;
     const ok = await confirm({
-      title: `Buy ${product.name}?`,
-      message: `${product.price_credits.toLocaleString()} credits will be deducted from your balance.`,
-      confirmLabel: `Buy for ${product.price_credits.toLocaleString()} credits`,
+      title: t("group.buyProductConfirm", { name: product.name }),
+      message: t("group.buyProductMsg", {
+        price: product.price_credits.toLocaleString(),
+      }),
+      confirmLabel: t("group.buyForCredits", {
+        price: product.price_credits.toLocaleString(),
+      }),
     });
     if (!ok) return;
     setMsg(null);
@@ -2547,15 +2571,15 @@ function RolesTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Role purchased.", type: "success" });
+        setMsg({ text: t("group.rolePurchased"), type: "success" });
         if (reloadUser) await reloadUser();
         onMembershipChanged();
         loadProducts();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     } finally {
       setBuying(null);
     }
@@ -2567,8 +2591,8 @@ function RolesTab({
       {canManage && (
         <AccountSection
           icon={<Plus size={18} />}
-          title="New Role"
-          subtitle="Create a new role for members"
+          title={t("group.newRole")}
+          subtitle={t("group.newRoleSub")}
           actions={
             !creating && (
               <button class={s.btnPrimary} onClick={() => setCreating(true)}>
@@ -2581,7 +2605,7 @@ function RolesTab({
             <>
               <div class={s.formRow}>
                 <div class={s.formGroup}>
-                  <label>Name</label>
+                  <label>{t("group.nameLabel")}</label>
                   <input
                     type="text"
                     class={s.formInput}
@@ -2593,7 +2617,7 @@ function RolesTab({
                   />
                 </div>
                 <div class={s.formGroup}>
-                  <label>Description</label>
+                  <label>{t("group.descriptionLabel")}</label>
                   <input
                     type="text"
                     class={s.formInput}
@@ -2615,7 +2639,7 @@ function RolesTab({
                       setNewAssignOnJoin((e.target as HTMLInputElement).checked)
                     }
                   />
-                  <label for="new-assign-on-join">Assign on join</label>
+                  <label for="new-assign-on-join">{t("group.assignOnJoin")}</label>
                 </div>
               </div>
               <div class={s.formGroup}>
@@ -2630,25 +2654,21 @@ function RolesTab({
                       )
                     }
                   />
-                  <label for="new-self-assign">
-                    Members can self-assign this role
-                  </label>
+                  <label for="new-self-assign">{t("group.selfAssign")}</label>
                 </div>
               </div>
               <div class={s.formGroup}>
-                <label>Benefits</label>
+                <label>{t("group.benefits")}</label>
                 <input
                   type="text"
                   class={s.formInput}
-                  placeholder="custom_color, priority_access"
+                  placeholder={t("group.benefitsPlaceholder")}
                   value={newBenefits}
                   onInput={(e) =>
                     setNewBenefits((e.target as HTMLInputElement).value)
                   }
                 />
-                <small class={s.formHint}>
-                  Comma-separated benefit identifiers.
-                </small>
+                <small class={s.formHint}>{t("group.benefitsHint")}</small>
               </div>
               <div class={s.formActions}>
                 <button
@@ -2656,7 +2676,7 @@ function RolesTab({
                   onClick={create}
                   disabled={creatingBusy}
                 >
-                  <Save size={13} /> Create Role
+                  <Save size={13} /> {t("group.createRole")}
                 </button>
                 <button
                   class={s.btnSecondary}
@@ -2667,7 +2687,7 @@ function RolesTab({
                     setNewBenefits("");
                   }}
                 >
-                  Cancel
+                  {t("group.cancel")}
                 </button>
               </div>
             </>
@@ -2683,8 +2703,8 @@ function RolesTab({
 
       <AccountSection
         icon={<Coins size={18} />}
-        title="Role Shop"
-        subtitle="Buy roles with credits or manage role products"
+        title={t("group.roleShop")}
+        subtitle={t("group.roleShopSub")}
         actions={
           canManage &&
           !creatingProduct && (
@@ -2692,7 +2712,7 @@ function RolesTab({
               class={s.btnPrimary}
               onClick={() => setCreatingProduct(true)}
             >
-              <Plus size={13} /> Sell Role
+              <Plus size={13} /> {t("group.sellRole")}
             </button>
           )
         }
@@ -2701,7 +2721,7 @@ function RolesTab({
           <div class={s.roleCard}>
             <div class={s.formRow}>
               <div class={s.formGroup}>
-                <label>Product name</label>
+                <label>{t("group.productName")}</label>
                 <input
                   class={s.formInput}
                   maxlength={50}
@@ -2712,7 +2732,7 @@ function RolesTab({
                 />
               </div>
               <div class={s.formGroup}>
-                <label>Price</label>
+                <label>{t("group.price")}</label>
                 <input
                   class={s.formInput}
                   type="number"
@@ -2726,7 +2746,7 @@ function RolesTab({
               </div>
             </div>
             <div class={s.formGroup}>
-              <label>Role granted</label>
+              <label>{t("group.roleGranted")}</label>
               <select
                 class={s.formInput}
                 value={productRoleId}
@@ -2734,7 +2754,7 @@ function RolesTab({
                   setProductRoleId((e.target as HTMLSelectElement).value)
                 }
               >
-                <option value="">Choose a role</option>
+                <option value="">{t("group.chooseRole")}</option>
                 {groupRoles
                   .filter((role) => role.name !== "Owner")
                   .map((role) => (
@@ -2756,13 +2776,15 @@ function RolesTab({
                     )
                   }
                 />
-                <label for="product-subscription">Recurring subscription</label>
+                <label for="product-subscription">
+                  {t("group.recurringSubscription")}
+                </label>
               </div>
             </div>
             {productSubscription && (
               <div class={s.formRow}>
                 <div class={s.formGroup}>
-                  <label>Frequency</label>
+                  <label>{t("group.frequency")}</label>
                   <input
                     class={s.formInput}
                     type="number"
@@ -2774,7 +2796,7 @@ function RolesTab({
                   />
                 </div>
                 <div class={s.formGroup}>
-                  <label>Period</label>
+                  <label>{t("group.period")}</label>
                   <select
                     class={s.formInput}
                     value={productPeriod}
@@ -2788,16 +2810,16 @@ function RolesTab({
                       )
                     }
                   >
-                    <option value="day">Day(s)</option>
-                    <option value="week">Week(s)</option>
-                    <option value="month">Month(s)</option>
-                    <option value="year">Year(s)</option>
+                    <option value="day">{t("group.day")}</option>
+                    <option value="week">{t("group.week")}</option>
+                    <option value="month">{t("group.month")}</option>
+                    <option value="year">{t("group.year")}</option>
                   </select>
                 </div>
               </div>
             )}
             <div class={s.formGroup}>
-              <label>Description</label>
+              <label>{t("group.descriptionLabel")}</label>
               <input
                 class={s.formInput}
                 maxlength={200}
@@ -2813,7 +2835,7 @@ function RolesTab({
                 onClick={createProduct}
                 disabled={creatingBusy}
               >
-                <Save size={13} /> Create Product
+                <Save size={13} /> {t("group.createProduct")}
               </button>
               <button
                 class={s.btnSecondary}
@@ -2828,16 +2850,16 @@ function RolesTab({
                   setProductPeriod("month");
                 }}
               >
-                Cancel
+                {t("group.cancel")}
               </button>
             </div>
           </div>
         )}
 
-        {productsLoading && <div class={s.loading}>Loading role shop…</div>}
+        {productsLoading && <div class={s.loading}>{t("group.loadingRoleShop")}</div>}
         {!productsLoading && products.length === 0 && (
           <div class={s.empty}>
-            <div class={s.emptyText}>No purchasable roles yet.</div>
+            <div class={s.emptyText}>{t("group.noPurchasableRoles")}</div>
           </div>
         )}
         <div class={s.rolesList}>
@@ -2847,9 +2869,11 @@ function RolesTab({
                 <div>
                   <div class={s.roleName}>{product.name}</div>
                   <div class={s.roleDescription}>
-                    Grants {product.role_name || product.role_granted_id}
+                    {t("group.grantsRole", {
+                      role: product.role_name || product.role_granted_id,
+                    })}
                     {product.subscription &&
-                      ` · every ${product.frequency || 1} ${product.period || "month"}${(product.frequency || 1) > 1 ? "s" : ""}`}
+                      ` · ${t("group.every")} ${product.frequency || 1} ${t(`group.${product.period || "month"}`)}`}
                   </div>
                 </div>
                 <div class={s.bigBalance}>
@@ -2868,7 +2892,7 @@ function RolesTab({
                     disabled={buying === product.id}
                   >
                     <Coins size={13} />{" "}
-                    {buying === product.id ? "Purchasing…" : "Buy Role"}
+                    {buying === product.id ? t("group.purchasing") : t("group.buyRole")}
                   </button>
                 )}
                 {canManage && (
@@ -2876,7 +2900,7 @@ function RolesTab({
                     class={s.btnDanger}
                     onClick={() => deleteProduct(product)}
                   >
-                    <Trash2 size={12} /> Delete
+                    <Trash2 size={12} /> {t("group.delete")}
                   </button>
                 )}
               </div>
@@ -2887,12 +2911,12 @@ function RolesTab({
 
       <AccountSection
         icon={<Shield size={18} />}
-        title="All Roles"
-        subtitle={`${groupRoles.length} role(s)`}
+        title={t("group.allRoles")}
+        subtitle={t("group.roleCount", { count: groupRoles.length })}
       >
         {groupRoles.length === 0 && (
           <div class={s.empty}>
-            <div class={s.emptyText}>No roles defined yet.</div>
+            <div class={s.emptyText}>{t("group.noRolesDefined")}</div>
           </div>
         )}
         <div class={s.rolesList}>
@@ -2905,7 +2929,7 @@ function RolesTab({
                   <div>
                     <div class={s.formRow}>
                       <div class={s.formGroup}>
-                        <label>Name</label>
+                        <label>{t("group.nameLabel")}</label>
                         <input
                           type="text"
                           class={s.formInput}
@@ -2916,7 +2940,7 @@ function RolesTab({
                         />
                       </div>
                       <div class={s.formGroup}>
-                        <label>Description</label>
+                        <label>{t("group.descriptionLabel")}</label>
                         <input
                           type="text"
                           class={s.formInput}
@@ -2939,7 +2963,7 @@ function RolesTab({
                             )
                           }
                         />
-                        <label for={`edit-join-${r.id}`}>Assign on join</label>
+                        <label for={`edit-join-${r.id}`}>{t("group.assignOnJoin")}</label>
                       </div>
                     </div>
                     <div class={s.formGroup}>
@@ -2954,11 +2978,11 @@ function RolesTab({
                             )
                           }
                         />
-                        <label for={`edit-self-${r.id}`}>Self-assignable</label>
+                        <label for={`edit-self-${r.id}`}>{t("group.selfAssignable")}</label>
                       </div>
                     </div>
                     <div class={s.formGroup}>
-                      <label>Permissions</label>
+                      <label>{t("group.permissions")}</label>
                       <div class={s.permGrid}>
                         {ALL_PERMISSIONS.map((p) => (
                           <label key={p} class={s.permCheck}>
@@ -2969,35 +2993,33 @@ function RolesTab({
                                 setEditPerms(togglePerm(editPerms, p))
                               }
                             />
-                            {PERMISSION_LABELS[p] || p}
+                            {t(PERMISSION_LABELS[p] || p)}
                           </label>
                         ))}
                       </div>
                     </div>
                     <div class={s.formGroup}>
-                      <label>Benefits</label>
+                      <label>{t("group.benefits")}</label>
                       <input
                         type="text"
                         class={s.formInput}
-                        placeholder="custom_color, priority_access"
+                        placeholder={t("group.benefitsPlaceholder")}
                         value={editBenefits}
                         onInput={(e) =>
                           setEditBenefits((e.target as HTMLInputElement).value)
                         }
                       />
-                      <small class={s.formHint}>
-                        Comma-separated benefit identifiers.
-                      </small>
+                      <small class={s.formHint}>{t("group.benefitsHint")}</small>
                     </div>
                     <div class={s.formActions}>
                       <button class={s.btnPrimary} onClick={() => saveEdit(r)}>
-                        <Save size={13} /> Save
+                        <Save size={13} /> {t("group.save")}
                       </button>
                       <button
                         class={s.btnSecondary}
                         onClick={() => setEditingId(null)}
                       >
-                        Cancel
+                        {t("group.cancel")}
                       </button>
                     </div>
                   </div>
@@ -3007,10 +3029,10 @@ function RolesTab({
                       <div class={s.roleName}>{r.name}</div>
                       <div class={s.roleBadges}>
                         {r.assign_on_join && (
-                          <span class={s.miniTag}>on join</span>
+                          <span class={s.miniTag}>{t("group.onJoin")}</span>
                         )}
                         {r.self_assignable && (
-                          <span class={s.miniTag}>self-assign</span>
+                          <span class={s.miniTag}>{t("group.selfAssignable")}</span>
                         )}
                       </div>
                     </div>
@@ -3021,7 +3043,7 @@ function RolesTab({
                       <div class={s.rolePermissions}>
                         {r.permissions.map((p) => (
                           <span key={p} class={s.permTag}>
-                            {PERMISSION_LABELS[p] || p}
+                            {t(PERMISSION_LABELS[p] || p)}
                           </span>
                         ))}
                       </div>
@@ -3041,10 +3063,10 @@ function RolesTab({
                           class={s.btnSecondary}
                           onClick={() => startEdit(r)}
                         >
-                          <Edit3 size={12} /> Edit
+                          <Edit3 size={12} /> {t("group.edit")}
                         </button>
                         <button class={s.btnDanger} onClick={() => del(r)}>
-                          <Trash2 size={12} /> Delete
+                          <Trash2 size={12} /> {t("group.delete")}
                         </button>
                       </div>
                     )}
@@ -3074,6 +3096,7 @@ function EventsTab({
   isMember: boolean;
   isPublic: boolean;
 }) {
+  const { t } = useI18n();
   const [confirm, confirmDialog] = useConfirm();
   const [events, setEvents] = useState<GroupEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -3102,12 +3125,12 @@ function EventsTab({
         setEvents(Array.isArray(data) ? data : []);
       } else {
         setMsg({
-          text: data?.error || "Couldn't load events.",
+          text: data?.error || t("group.couldntLoadEvents"),
           type: "error",
         });
       }
     } catch {
-      setMsg({ text: "Network error loading events.", type: "error" });
+      setMsg({ text: t("group.networkErrorEvents"), type: "error" });
     }
     setLoading(false);
   }
@@ -3118,17 +3141,17 @@ function EventsTab({
 
   async function create() {
     if (!title.trim()) {
-      setMsg({ text: "Title is required", type: "error" });
+      setMsg({ text: t("group.titleRequired"), type: "error" });
       return;
     }
     const start = new Date(startTime);
     if (!startTime || isNaN(start.getTime())) {
-      setMsg({ text: "Valid start time is required", type: "error" });
+      setMsg({ text: t("group.validStartTime"), type: "error" });
       return;
     }
     if (published && !canPublish) {
       setMsg({
-        text: "You don't have permission to publish events",
+        text: t("group.noPublishPerm"),
         type: "error",
       });
       return;
@@ -3150,7 +3173,7 @@ function EventsTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Event created!", type: "success" });
+        setMsg({ text: t("group.eventCreated"), type: "success" });
         setCreating(false);
         setTitle("");
         setDescription("");
@@ -3161,10 +3184,10 @@ function EventsTab({
         setVisibility("MEMBERS");
         load();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
     setBusy(false);
   }
@@ -3172,7 +3195,7 @@ function EventsTab({
   async function updateEvent(event: GroupEvent, publishedValue: boolean) {
     if (publishedValue && !canPublish) {
       setMsg({
-        text: "You don't have permission to publish events",
+        text: t("group.noPublishPerm"),
         type: "error",
       });
       return;
@@ -3190,22 +3213,24 @@ function EventsTab({
       const data = await res.json();
       if (res.ok) {
         setMsg({
-          text: publishedValue ? "Event published." : "Event moved to draft.",
+          text: publishedValue
+            ? t("group.eventPublished")
+            : t("group.eventDraft"),
           type: "success",
         });
         load();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
   }
 
   async function deleteEvent(event: GroupEvent) {
     const ok = await confirm({
-      title: `Delete event "${event.title}"?`,
-      confirmLabel: "Delete event",
+      title: t("group.deleteEventConfirm", { name: event.title }),
+      confirmLabel: t("group.deleteEventBtn"),
       danger: true,
     });
     if (!ok) return;
@@ -3217,13 +3242,13 @@ function EventsTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: "Event deleted.", type: "success" });
+        setMsg({ text: t("group.eventDeleted"), type: "success" });
         load();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
   }
 
@@ -3239,12 +3264,12 @@ function EventsTab({
       {canManage && (
         <AccountSection
           icon={<Plus size={18} />}
-          title="New Event"
-          subtitle="Schedule an event for members"
+          title={t("group.newEvent")}
+          subtitle={t("group.newEventSub")}
           actions={
             !creating && (
               <button class={s.btnPrimary} onClick={() => setCreating(true)}>
-                <Plus size={13} /> New Event
+                <Plus size={13} /> {t("group.newEvent")}
               </button>
             )
           }
@@ -3252,7 +3277,7 @@ function EventsTab({
           {creating && (
             <>
               <div class={s.formGroup}>
-                <label>Title</label>
+                <label>{t("group.title")}</label>
                 <input
                   type="text"
                   class={s.formInput}
@@ -3264,7 +3289,7 @@ function EventsTab({
                 />
               </div>
               <div class={s.formGroup}>
-                <label>Description</label>
+                <label>{t("group.descriptionLabel")}</label>
                 <textarea
                   class={s.formInput}
                   rows={3}
@@ -3278,7 +3303,7 @@ function EventsTab({
               <div class={s.formGroup}>
                 <label>
                   <MapPin size={11} style={{ verticalAlign: "middle" }} />{" "}
-                  Location
+                  {t("group.location")}
                 </label>
                 <input
                   type="text"
@@ -3292,7 +3317,7 @@ function EventsTab({
               </div>
               <div class={s.formRow}>
                 <div class={s.formGroup}>
-                  <label>Start Time</label>
+                  <label>{t("group.startTime")}</label>
                   <input
                     type="datetime-local"
                     class={s.formInput}
@@ -3303,7 +3328,7 @@ function EventsTab({
                   />
                 </div>
                 <div class={s.formGroup}>
-                  <label>Duration (hours)</label>
+                  <label>{t("group.durationHours")}</label>
                   <input
                     type="number"
                     class={s.formInput}
@@ -3318,7 +3343,7 @@ function EventsTab({
               </div>
               <div class={s.formRow}>
                 <div class={s.formGroup}>
-                  <label>Visibility</label>
+                  <label>{t("group.visibility")}</label>
                   <select
                     class={s.formInput}
                     value={visibility}
@@ -3329,12 +3354,12 @@ function EventsTab({
                       )
                     }
                   >
-                    <option value="MEMBERS">Members only</option>
-                    <option value="PUBLIC">Public</option>
+                    <option value="MEMBERS">{t("group.membersOnly")}</option>
+                    <option value="PUBLIC">{t("group.public")}</option>
                   </select>
                 </div>
                 <div class={s.formGroup}>
-                  <label>Status</label>
+                  <label>{t("group.status")}</label>
                   <div class={s.checkboxGroup}>
                     <input
                       type="checkbox"
@@ -3344,19 +3369,20 @@ function EventsTab({
                         setPublished((e.target as HTMLInputElement).checked)
                       }
                     />
-                    <label for="event-pub">Published</label>
+                    <label for="event-pub">{t("group.published")}</label>
                   </div>
                 </div>
               </div>
               <div class={s.formActions}>
                 <button class={s.btnPrimary} onClick={create} disabled={busy}>
-                  <Save size={13} /> {busy ? "Creating…" : "Create Event"}
+                  <Save size={13} />{" "}
+                  {busy ? t("group.creating") : t("group.createEvent")}
                 </button>
                 <button
                   class={s.btnSecondary}
                   onClick={() => setCreating(false)}
                 >
-                  Cancel
+                  {t("group.cancel")}
                 </button>
               </div>
             </>
@@ -3372,20 +3398,20 @@ function EventsTab({
 
       <AccountSection
         icon={<Calendar size={18} />}
-        title="Events"
-        subtitle={`${visible.length} event(s)`}
+        title={t("group.events")}
+        subtitle={t("group.eventCount", { count: visible.length })}
       >
-        {loading && <div class={s.loading}>Loading…</div>}
+        {loading && <div class={s.loading}>{t("group.loadingShort")}</div>}
         {!loading && visible.length === 0 && (
           <div class={s.empty}>
             <div class={s.emptyIcon}>
               <Calendar size={24} />
             </div>
-            <div class={s.emptyTitle}>No events scheduled</div>
+            <div class={s.emptyTitle}>{t("group.noEvents")}</div>
             <div class={s.emptyText}>
               {canManage
-                ? "Create the first event above."
-                : "Check back later."}
+                ? t("group.createFirstEvent")
+                : t("group.checkBackLaterShort")}
             </div>
           </div>
         )}
@@ -3395,9 +3421,13 @@ function EventsTab({
               <div class={s.eventHeader}>
                 <h3 class={s.eventTitle}>{e.title}</h3>
                 <div class={s.eventBadges}>
-                  {!e.published && <span class={s.miniTag}>draft</span>}
+                  {!e.published && (
+                    <span class={s.miniTag}>{t("group.draft")}</span>
+                  )}
                   <span class={s.miniTag}>
-                    {e.visibility === "PUBLIC" ? "public" : "members"}
+                    {e.visibility === "PUBLIC"
+                      ? t("group.public")
+                      : t("group.membersOnly")}
                   </span>
                 </div>
               </div>
@@ -3426,10 +3456,11 @@ function EventsTab({
                     onClick={() => updateEvent(e, !e.published)}
                     disabled={!canPublish && !e.published}
                   >
-                    <Save size={12} /> {e.published ? "Make Draft" : "Publish"}
+                    <Save size={12} />{" "}
+                    {e.published ? t("group.makeDraft") : t("group.publish")}
                   </button>
                   <button class={s.btnDanger} onClick={() => deleteEvent(e)}>
-                    <Trash2 size={12} /> Delete
+                    <Trash2 size={12} /> {t("group.delete")}
                   </button>
                 </div>
               )}
@@ -3553,10 +3584,10 @@ function AdminTab({
         onGroupChanged();
         if (reloadUser) await reloadUser();
       } else {
-        setMsg({ text: data.error || "Action failed", type: "error" });
+        setMsg({ text: data.error || t("group.actionFailed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     } finally {
       setActionBusy(false);
     }
@@ -3565,7 +3596,7 @@ function AdminTab({
   async function invite() {
     if (!inviteUsername.trim()) return;
     await runAction(
-      "Invite sent.",
+      t("group.inviteSent"),
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/invites?username=${encodeURIComponent(inviteUsername.trim())}&${authQs().slice(1)}`,
       { method: "POST" },
     );
@@ -3574,7 +3605,7 @@ function AdminTab({
 
   async function handleRequest(id: string, action: "accept" | "decline") {
     await runAction(
-      action === "accept" ? "Join request accepted." : "Join request declined.",
+      action === "accept" ? t("group.joinReqAccepted") : t("group.joinReqDeclined"),
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/join_requests/${encodeURIComponent(id)}/${action}?${authQs().slice(1)}`,
       { method: "POST" },
     );
@@ -3582,13 +3613,13 @@ function AdminTab({
 
   async function revokeInvite(id: string) {
     const ok = await confirm({
-      title: "Revoke this invite?",
-      confirmLabel: "Revoke invite",
+      title: t("group.revokeInviteConfirm"),
+      confirmLabel: t("group.revokeInviteBtn"),
       danger: true,
     });
     if (!ok) return;
     await runAction(
-      "Invite revoked.",
+      t("group.inviteRevoked"),
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/invites/${encodeURIComponent(id)}?${authQs().slice(1)}`,
       { method: "DELETE" },
     );
@@ -3596,14 +3627,14 @@ function AdminTab({
 
   async function kick(member: GroupMember) {
     const ok = await confirm({
-      title: `Remove ${member.username} from this group?`,
-      message: "They can rejoin unless the group is invite-only.",
-      confirmLabel: "Remove member",
+      title: t("group.removeMemberConfirm", { user: member.username }),
+      message: t("group.removeMemberMsg"),
+      confirmLabel: t("group.removeMemberBtn"),
       danger: true,
     });
     if (!ok) return;
     await runAction(
-      "Member removed.",
+      t("group.memberRemoved"),
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/members/${encodeURIComponent(member.user_id)}?${authQs().slice(1)}`,
       { method: "DELETE" },
     );
@@ -3611,16 +3642,16 @@ function AdminTab({
 
   async function ban(member: GroupMember) {
     const ok = await confirm({
-      title: `Ban ${member.username} from this group?`,
-      message: "They will not be able to rejoin.",
-      confirmLabel: "Ban member",
+      title: t("group.banConfirm", { user: member.username }),
+      message: t("group.banMsg"),
+      confirmLabel: t("group.banBtn"),
       danger: true,
     });
     if (!ok) return;
     const params = new URLSearchParams();
     if (banReason.trim()) params.set("reason", banReason.trim());
     await runAction(
-      "Member banned.",
+      t("group.memberBanned"),
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/members/${encodeURIComponent(member.user_id)}/ban?${params.toString()}&${authQs().slice(1)}`,
       { method: "POST" },
     );
@@ -3628,7 +3659,7 @@ function AdminTab({
 
   async function unban(banItem: GroupBan) {
     await runAction(
-      "Member unbanned.",
+      t("group.memberUnbanned"),
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/members/${encodeURIComponent(banItem.user_id)}/ban?${authQs().slice(1)}`,
       { method: "DELETE" },
     );
@@ -3636,14 +3667,14 @@ function AdminTab({
 
   async function transfer(member: GroupMember) {
     const ok = await confirm({
-      title: `Transfer ownership to ${member.username}?`,
-      message: `You will no longer be the owner of ${group.name}. This cannot be undone.`,
-      confirmLabel: "Transfer ownership",
+      title: t("group.transferOwnerConfirm", { user: member.username }),
+      message: t("group.transferOwnerMsg", { group: group.name }),
+      confirmLabel: t("group.transferOwnerBtn"),
       danger: true,
     });
     if (!ok) return;
     await runAction(
-      "Ownership transferred.",
+      t("group.ownershipTransferred"),
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/transfer/${encodeURIComponent(member.user_id)}?${authQs().slice(1)}`,
       { method: "POST" },
     );
@@ -3652,17 +3683,17 @@ function AdminTab({
   async function withdraw() {
     const amount = parseFloat(withdrawAmount);
     if (!amount || amount <= 0) {
-      setMsg({ text: "Enter a valid withdrawal amount", type: "error" });
+      setMsg({ text: t("group.validWithdrawAmount"), type: "error" });
       return;
     }
     const ok = await confirm({
-      title: `Withdraw ${amount.toLocaleString()} credits?`,
-      message: "This will be taken from the group balance and added to yours.",
-      confirmLabel: "Withdraw",
+      title: t("group.withdrawConfirm", { amount: amount.toLocaleString() }),
+      message: t("group.withdrawMsg"),
+      confirmLabel: t("group.withdrawBtn"),
     });
     if (!ok) return;
     await runAction(
-      "Withdrawal complete.",
+      t("group.withdrawalComplete"),
       `${API_BASE_URL}/groups/${encodeURIComponent(tag)}/tips/withdraw?amount=${encodeURIComponent(String(amount))}&${authQs().slice(1)}`,
       { method: "POST" },
     );
@@ -3686,15 +3717,15 @@ function AdminTab({
         <>
           <AccountSection
             icon={<UserPlus size={18} />}
-            title="Invites"
-            subtitle="Send and revoke pending invitations"
+            title={t("group.invites")}
+            subtitle={t("group.invitesSub")}
           >
             <div class={s.actionRow}>
               <input
                 class={s.formInput}
                 value={inviteUsername}
-                placeholder="Username"
-                aria-label="Username to invite"
+                placeholder={t("group.usernamePlaceholder")}
+                aria-label={t("group.usernameToInvite")}
                 onInput={(e) =>
                   setInviteUsername((e.target as HTMLInputElement).value)
                 }
@@ -3704,19 +3735,19 @@ function AdminTab({
                 onClick={invite}
                 disabled={!inviteUsername.trim()}
               >
-                <UserPlus size={13} /> Invite
+                <UserPlus size={13} /> {t("group.invite")}
               </button>
             </div>
             <div class={s.manageList}>
               {invites.length === 0 && (
-                <div class={s.emptyText}>No pending invites.</div>
+                <div class={s.emptyText}>{t("group.noPendingInvites")}</div>
               )}
               {invites.map((inviteItem) => (
                 <div key={inviteItem.id} class={s.manageRow}>
                   <div>
                     <div class={s.roleName}>{inviteItem.to_username}</div>
                     <div class={s.roleDescription}>
-                      Invited by {inviteItem.from_username}{" "}
+                      {t("group.invitedBy")} {inviteItem.from_username}{" "}
                       {formatRelativeTime(inviteItem.created_at * 1000)}
                     </div>
                   </div>
@@ -3724,7 +3755,7 @@ function AdminTab({
                     class={s.btnDanger}
                     onClick={() => revokeInvite(inviteItem.id)}
                   >
-                    <Trash2 size={12} /> Revoke
+                    <Trash2 size={12} /> {t("group.revoke")}
                   </button>
                 </div>
               ))}
@@ -3733,12 +3764,12 @@ function AdminTab({
 
           <AccountSection
             icon={<LogIn size={18} />}
-            title="Join Requests"
-            subtitle="Approve or decline requested access"
+            title={t("group.joinRequests")}
+            subtitle={t("group.joinRequestsSub")}
           >
             <div class={s.manageList}>
               {requests.length === 0 && (
-                <div class={s.emptyText}>No pending join requests.</div>
+                <div class={s.emptyText}>{t("group.noPendingJoinRequests")}</div>
               )}
               {requests.map((request) => (
                 <div key={request.id} class={s.manageRow}>
@@ -3753,13 +3784,13 @@ function AdminTab({
                       class={s.btnSecondary}
                       onClick={() => handleRequest(request.id, "decline")}
                     >
-                      <X size={12} /> Decline
+                      <X size={12} /> {t("group.decline")}
                     </button>
                     <button
                       class={s.btnPrimary}
                       onClick={() => handleRequest(request.id, "accept")}
                     >
-                      <UserPlus size={12} /> Accept
+                      <UserPlus size={12} /> {t("group.accept")}
                     </button>
                   </div>
                 </div>
@@ -3772,26 +3803,26 @@ function AdminTab({
       {(canRemove || canBan || isOwner) && (
         <AccountSection
           icon={<UserMinus size={18} />}
-          title="Member Actions"
-          subtitle="Remove members, ban accounts, or transfer ownership"
+          title={t("group.memberActions")}
+          subtitle={t("group.memberActionsSub")}
           actions={
             <button
               class={s.btnSecondary}
               onClick={loadAdminData}
               disabled={busy}
             >
-              <Search size={13} /> Refresh
+              <Search size={13} /> {t("group.refresh")}
             </button>
           }
         >
           {canBan && (
             <div class={s.formGroup}>
-              <label>Ban reason</label>
+              <label>{t("group.banReason")}</label>
               <input
                 class={s.formInput}
                 maxlength={200}
                 value={banReason}
-                placeholder="Optional reason used for the next ban"
+                placeholder={t("group.banReasonPlaceholder")}
                 onInput={(e) =>
                   setBanReason((e.target as HTMLInputElement).value)
                 }
@@ -3800,14 +3831,15 @@ function AdminTab({
           )}
           <div class={s.manageList}>
             {manageableMembers.length === 0 && (
-              <div class={s.emptyText}>No manageable members found.</div>
+              <div class={s.emptyText}>{t("group.noManageableMembers")}</div>
             )}
             {manageableMembers.map((member) => (
               <div key={member.id} class={s.manageRow}>
                 <div>
                   <div class={s.roleName}>{member.username}</div>
                   <div class={s.roleDescription}>
-                    Joined {formatRelativeTime(member.joined_at * 1000)}
+                    {t("group.joinedPrefix")}{" "}
+                    {formatRelativeTime(member.joined_at * 1000)}
                   </div>
                 </div>
                 <div class={s.rowActions}>
@@ -3816,17 +3848,17 @@ function AdminTab({
                       class={s.btnSecondary}
                       onClick={() => transfer(member)}
                     >
-                      <Crown size={12} /> Transfer
+                      <Crown size={12} /> {t("group.transfer")}
                     </button>
                   )}
                   {canRemove && (
                     <button class={s.btnDanger} onClick={() => kick(member)}>
-                      <UserMinus size={12} /> Remove
+                      <UserMinus size={12} /> {t("group.remove")}
                     </button>
                   )}
                   {canBan && (
                     <button class={s.btnDanger} onClick={() => ban(member)}>
-                      <Shield size={12} /> Ban
+                      <Shield size={12} /> {t("group.banBtn")}
                     </button>
                   )}
                 </div>
@@ -3839,22 +3871,22 @@ function AdminTab({
       {canBan && (
         <AccountSection
           icon={<Shield size={18} />}
-          title="Bans"
-          subtitle="Review and remove group bans"
+          title={t("group.bans")}
+          subtitle={t("group.bansSub")}
         >
           <div class={s.manageList}>
-            {bans.length === 0 && <div class={s.emptyText}>No bans.</div>}
+            {bans.length === 0 && <div class={s.emptyText}>{t("group.noBans")}</div>}
             {bans.map((banItem) => (
               <div key={banItem.id} class={s.manageRow}>
                 <div>
                   <div class={s.roleName}>{banItem.username}</div>
                   <div class={s.roleDescription}>
-                    By {banItem.banned_by}
+                    {t("group.byPrefix")} {banItem.banned_by}
                     {banItem.reason ? `: ${banItem.reason}` : ""}
                   </div>
                 </div>
                 <button class={s.btnSecondary} onClick={() => unban(banItem)}>
-                  <UserPlus size={12} /> Unban
+                  <UserPlus size={12} /> {t("group.unban")}
                 </button>
               </div>
             ))}
@@ -3865,8 +3897,10 @@ function AdminTab({
       {canWithdraw && (
         <AccountSection
           icon={<Coins size={18} />}
-          title="Tip Jar"
-          subtitle={`Group balance: ${group.credits_balance.toLocaleString()} credits`}
+          title={t("group.tipJar")}
+          subtitle={t("group.tipJarSub", {
+            balance: group.credits_balance.toLocaleString(),
+          })}
         >
           <div class={s.actionRow}>
             <input
@@ -3875,8 +3909,8 @@ function AdminTab({
               step="0.01"
               class={s.formInput}
               value={withdrawAmount}
-              placeholder="Amount to withdraw"
-              aria-label="Amount to withdraw"
+              placeholder={t("group.withdrawalAmount")}
+              aria-label={t("group.withdrawalAmount")}
               onInput={(e) =>
                 setWithdrawAmount((e.target as HTMLInputElement).value)
               }
@@ -3887,12 +3921,13 @@ function AdminTab({
               onClick={withdraw}
               disabled={!withdrawAmount || actionBusy}
             >
-              <Coins size={13} /> {actionBusy ? "Withdrawing…" : "Withdraw"}
+              <Coins size={13} />{" "}
+              {actionBusy ? t("group.withdrawing") : t("group.withdrawBtn")}
             </button>
           </div>
           <div class={s.manageList}>
             {withdrawals.length === 0 && (
-              <div class={s.emptyText}>No recent withdrawals.</div>
+              <div class={s.emptyText}>{t("group.noRecentWithdrawals")}</div>
             )}
             {withdrawals.map((withdrawal) => (
               <div key={withdrawal.id} class={s.manageRow}>
@@ -3931,6 +3966,7 @@ function TipsTab({
   balanceVisible: boolean;
   onSent: () => void;
 }) {
+  const { t } = useI18n();
   const [confirm, confirmDialog] = useConfirm();
   const [tips, setTips] = useState<GroupTip[]>([]);
   const [loading, setLoading] = useState(false);
@@ -3956,12 +3992,12 @@ function TipsTab({
         setTips(Array.isArray(data) ? data : []);
       } else {
         setMsg({
-          text: data?.error || "Couldn't load tips.",
+          text: data?.error || t("group.couldntLoadTips"),
           type: "error",
         });
       }
     } catch {
-      setMsg({ text: "Network error loading tips.", type: "error" });
+      setMsg({ text: t("group.networkErrorTips"), type: "error" });
     }
     setLoading(false);
   }
@@ -3973,13 +4009,13 @@ function TipsTab({
   async function send() {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) {
-      setMsg({ text: "Enter a valid amount", type: "error" });
+      setMsg({ text: t("group.validAmount"), type: "error" });
       return;
     }
     const ok = await confirm({
-      title: `Send ${amt.toLocaleString()} credits to this group?`,
-      message: "This cannot be undone.",
-      confirmLabel: "Send tip",
+      title: t("group.sendTipConfirm", { amount: amt.toLocaleString() }),
+      message: t("group.deleteMsg"),
+      confirmLabel: t("group.sendTipBtn"),
     });
     if (!ok) return;
     setBusy(true);
@@ -3994,17 +4030,17 @@ function TipsTab({
       );
       const data = await res.json();
       if (res.ok) {
-        setMsg({ text: `Sent ${amt} credits!`, type: "success" });
+        setMsg({ text: t("group.sentCredits", { amount: amt.toLocaleString() }), type: "success" });
         setAmount("");
         setNote("");
         if (reloadUser) await reloadUser();
         onSent();
         load();
       } else {
-        setMsg({ text: data.error || "Failed", type: "error" });
+        setMsg({ text: data.error || t("group.failed"), type: "error" });
       }
     } catch {
-      setMsg({ text: "Network error", type: "error" });
+      setMsg({ text: t("group.networkError"), type: "error" });
     }
     setBusy(false);
   }
@@ -4015,8 +4051,8 @@ function TipsTab({
       {balanceVisible && (
         <AccountSection
           icon={<Coins size={18} />}
-          title="Group Balance"
-          subtitle="Total tips received by this group"
+          title={t("group.groupBalance")}
+          subtitle={t("group.groupBalanceSub")}
           actions={
             <div class={s.bigBalance}>
               <Coins size={18} />
@@ -4029,8 +4065,8 @@ function TipsTab({
       {canTip && (
         <AccountSection
           icon={<Send size={18} />}
-          title="Send a Tip"
-          subtitle="Support the group with credits"
+          title={t("group.sendTipTitle")}
+          subtitle={t("group.sendTipSub")}
         >
           <div class={s.actionRow}>
             <input
@@ -4038,8 +4074,8 @@ function TipsTab({
               class={s.formInput}
               min={0}
               step="0.01"
-              placeholder="Amount in credits"
-              aria-label="Tip amount in credits"
+              placeholder={t("group.amountInCredits")}
+              aria-label={t("group.tipAmountAria")}
               value={amount}
               onInput={(e) => setAmount((e.target as HTMLInputElement).value)}
             />
@@ -4048,25 +4084,28 @@ function TipsTab({
               onClick={send}
               disabled={busy || !amount}
             >
-              <Send size={13} /> {busy ? "Sending…" : "Send Tip"}
+              <Send size={13} /> {busy ? t("group.sending") : t("group.sendTip")}
             </button>
           </div>
           <div class={s.formGroup} style={{ marginTop: "0.75rem" }}>
-            <label>Note</label>
+            <label>{t("group.note")}</label>
             <input
               type="text"
               class={s.formInput}
               maxlength={200}
-              placeholder="Optional message with your tip"
+              placeholder={t("group.notePlaceholder")}
               value={note}
               onInput={(e) => setNote((e.target as HTMLInputElement).value)}
             />
-            <small class={s.formHint}>{note.length} / 200 characters.</small>
+            <small class={s.formHint}>
+              {t("group.noteCharCount", { count: note.length })}
+            </small>
           </div>
           {user && (
             <small class={s.formHint}>
-              Your balance: {(user["sys.currency"] ?? 0).toLocaleString()}{" "}
-              credits
+              {t("group.yourBalance", {
+                balance: (user["sys.currency"] ?? 0).toLocaleString(),
+              })}
             </small>
           )}
           {msg && (
@@ -4082,20 +4121,18 @@ function TipsTab({
 
       <AccountSection
         icon={<Coins size={18} />}
-        title="Recent Tips"
-        subtitle={`${tips.length} ${plural(tips.length, "tip")}`}
+        title={t("group.recentTips")}
+        subtitle={`${tips.length} ${plural(tips.length, t("group.tip"))}`}
       >
-        {loading && <div class={s.loading}>Loading…</div>}
+        {loading && <div class={s.loading}>{t("group.loadingShort")}</div>}
         {!loading && tips.length === 0 && (
           <div class={s.empty}>
             <div class={s.emptyIcon}>
               <Coins size={24} />
             </div>
-            <div class={s.emptyTitle}>No tips yet</div>
+            <div class={s.emptyTitle}>{t("group.noTips")}</div>
             <div class={s.emptyText}>
-              {canTip
-                ? "Be the first to support the group!"
-                : "Join the group to send a tip."}
+              {canTip ? t("group.beFirstTip") : t("group.joinToTip")}
             </div>
           </div>
         )}

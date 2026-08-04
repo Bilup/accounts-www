@@ -177,7 +177,7 @@ export function PermissionsView({
                     {requiredPerms.map((p) => (
                       <div key={p} class={`${s.permItem} ${s.permRequired}`}>
                         <i class={`fas ${permIcon(p)}`} />
-                        <span>{describePerm(p) || p}</span>
+                        <span>{describePerm(p, t) || p}</span>
                         <span class={s.permRequiredBadge}>{t("perms.requiredPerms")}</span>
                       </div>
                     ))}
@@ -210,7 +210,7 @@ export function PermissionsView({
                               onChange={() => togglePerm(p)}
                             />
                             <i class={`fas ${permIcon(p)}`} />
-                            <span>{describePerm(p) || p}</span>
+                            <span>{describePerm(p, t) || p}</span>
                           </label>
                         ))}
                     </div>

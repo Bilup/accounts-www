@@ -239,10 +239,10 @@ export function Groups() {
         setBrowseResults(Array.isArray(data) ? data : []);
       } else {
         // A failed search must not read as "there are no groups".
-        setBrowseError(data?.error || "Something went wrong searching groups.");
+        setBrowseError(data?.error || t("groups.searchError"));
       }
     } catch {
-      setBrowseError("Network error — check your connection and try again.");
+      setBrowseError(t("groups.networkError"));
     }
     setBrowseLoading(false);
   }
@@ -291,7 +291,7 @@ export function Groups() {
     const fee = parseFloat(entryFee);
     if (entryFee.trim() && (isNaN(fee) || fee < 0)) {
       setWizardMessage({
-        text: "Entry fee must be a non-negative number.",
+        text: t("groups.entryFeeNonNegative"),
         type: "error",
       });
       return;
@@ -311,41 +311,43 @@ export function Groups() {
       if (res.ok) {
         setEntryFeeSet(true);
         setWizardMessage({
-          text: "Join policy and entry fee saved.",
+          text: t("groups.policySaved"),
           type: "success",
         });
       } else {
         setWizardMessage({
-          text: data.error || "Failed to save",
+          text: data.error || t("groups.failedSave"),
           type: "error",
         });
       }
     } catch {
-      setWizardMessage({ text: "Network error", type: "error" });
+      setWizardMessage({ text: t("groups.networkErrorShort"), type: "error" });
     }
     setEntryFeeBusy(false);
   }
 
   async function createGroup() {
     if (!createTag.trim()) {
-      setCreateMessage("Tag is required");
+      setCreateMessage(t("groups.tagRequired"));
       setCreateMessageType("error");
       return;
     }
     if (!/^[a-zA-Z0-9]+$/.test(createTag.trim())) {
-      setCreateMessage("Tag must be alphanumeric only");
+      setCreateMessage(t("groups.tagAlphanumeric"));
       setCreateMessageType("error");
       return;
     }
     if (!createName.trim()) {
-      setCreateMessage("Name is required");
+      setCreateMessage(t("groups.nameRequired"));
       setCreateMessageType("error");
       return;
     }
     const balance = (user?.["sys.currency"] ?? 0) as number;
     if (balance < 50) {
       setCreateMessage(
-        `Insufficient credits. Creating a group costs 50 credits (you have ${balance.toLocaleString()}).`,
+        t("groups.insufficientCredits", {
+          balance: balance.toLocaleString(),
+        }),
       );
       setCreateMessageType("error");
       return;
@@ -366,7 +368,7 @@ export function Groups() {
       );
       const data = await res.json();
       if (res.ok) {
-        setCreateMessage("Group created!");
+        setCreateMessage(t("groups.groupCreated"));
         setCreateMessageType("success");
         setCreatedTag(data.tag || createTag.trim());
         setCreatedName(data.name || createName.trim());
@@ -376,11 +378,11 @@ export function Groups() {
         loadMyGroups();
         if (reloadUser) await reloadUser();
       } else {
-        setCreateMessage(data.error || "Failed to create group");
+        setCreateMessage(data.error || t("groups.createFailed"));
         setCreateMessageType("error");
       }
     } catch {
-      setCreateMessage("Network error occurred");
+      setCreateMessage(t("groups.networkError"));
       setCreateMessageType("error");
     }
     setCreateBusy(false);
@@ -389,7 +391,7 @@ export function Groups() {
   async function uploadOnboardingIcon(file: File) {
     if (!createdTag) return;
     if (file.size > 5 * 1024 * 1024) {
-      setWizardMessage({ text: "Image must be under 5MB", type: "error" });
+      setWizardMessage({ text: t("groups.imageTooLarge"), type: "error" });
       return;
     }
     setIconUploading(true);
@@ -405,15 +407,15 @@ export function Groups() {
       if (res.ok) {
         setIconUploaded(true);
         setIconUrl(data.icon_url || iconUrl);
-        setWizardMessage({ text: "Icon uploaded.", type: "success" });
+        setWizardMessage({ text: t("groups.iconUploaded"), type: "success" });
       } else {
         setWizardMessage({
-          text: data.error || "Icon upload failed",
+          text: data.error || t("groups.iconUploadFailed"),
           type: "error",
         });
       }
     } catch {
-      setWizardMessage({ text: "Network error", type: "error" });
+      setWizardMessage({ text: t("groups.networkErrorShort"), type: "error" });
     }
     setIconUploading(false);
   }
@@ -421,7 +423,7 @@ export function Groups() {
   async function uploadOnboardingBanner(file: File) {
     if (!createdTag) return;
     if (file.size > 5 * 1024 * 1024) {
-      setWizardMessage({ text: "Image must be under 5MB", type: "error" });
+      setWizardMessage({ text: t("groups.imageTooLarge"), type: "error" });
       return;
     }
     setBannerSetting(true);
@@ -437,16 +439,16 @@ export function Groups() {
       if (res.ok) {
         setBannerSet(true);
         setBannerUrl(data.banner_url || bannerUrl);
-        setWizardMessage({ text: "Banner uploaded.", type: "success" });
+        setWizardMessage({ text: t("groups.bannerUploaded"), type: "success" });
         if (reloadUser) await reloadUser();
       } else {
         setWizardMessage({
-          text: data.error || "Banner upload failed",
+          text: data.error || t("groups.bannerUploadFailed"),
           type: "error",
         });
       }
     } catch {
-      setWizardMessage({ text: "Network error", type: "error" });
+      setWizardMessage({ text: t("groups.networkErrorShort"), type: "error" });
     }
     setBannerSetting(false);
   }
@@ -858,7 +860,7 @@ function OnboardingWizard({
 
           <div class={s.wizardCard}>
             <div class={s.formGroup}>
-              <label for="group-tag">Group tag</label>
+              <label for="group-tag">{gt("groups.tagLabel")}</label>
               <div class={s.tagField}>
                 <input
                   id="group-tag"
@@ -870,7 +872,7 @@ function OnboardingWizard({
                         ? s.tagInputBad
                         : ""
                   }`}
-                  placeholder="mygroup"
+                  placeholder={gt("groups.tagPlaceholder")}
                   maxlength={20}
                   value={createTag}
                   onInput={(e) =>
@@ -880,14 +882,14 @@ function OnboardingWizard({
                   }
                 />
                 {tagStatus === "checking" && (
-                  <span class={s.tagStatus} title="Checking…">
+                  <span class={s.tagStatus} title={gt("groups.tagChecking")}>
                     <span class={s.tagSpinner} />
                   </span>
                 )}
                 {tagStatus === "available" && (
                   <span
                     class={`${s.tagStatus} ${s.tagStatusOk}`}
-                    title="Tag is available"
+                    title={gt("groups.tagAvailable")}
                   >
                     <Check size={13} />
                   </span>
@@ -897,8 +899,8 @@ function OnboardingWizard({
                     class={`${s.tagStatus} ${s.tagStatusBad}`}
                     title={
                       tagStatus === "taken"
-                        ? "Tag already in use"
-                        : "Invalid characters"
+                        ? gt("groups.tagInUse")
+                        : gt("groups.tagInvalid")
                     }
                   >
                     <XCircle size={13} />
@@ -914,20 +916,21 @@ function OnboardingWizard({
                       : ""
                 }`}
               >
-                {tagStatus === "available" && "Tag not used · "}
-                {tagStatus === "taken" && "Tag is already taken · "}
-                {tagStatus === "invalid" && "Letters and numbers only · "}
-                URL: <code>accounts.bilup.org/groups/{createTag || "tag"}</code>
+                {tagStatus === "available" && gt("groups.tagAvailableHint")}
+                {tagStatus === "taken" && gt("groups.tagTakenHint")}
+                {tagStatus === "invalid" && gt("groups.tagInvalidHint")}
+                {gt("groups.urlLabelPrefix")}{" "}
+                <code>accounts.bilup.org/groups/{createTag || "tag"}</code>
               </small>
             </div>
 
             <div class={s.formGroup}>
-              <label for="group-name">Display name</label>
+              <label for="group-name">{gt("groups.displayNameLabel")}</label>
               <input
                 id="group-name"
                 type="text"
                 class={s.formInput}
-                placeholder="My Awesome Group"
+                placeholder={gt("groups.displayNamePlaceholder")}
                 maxlength={50}
                 value={createName}
                 onInput={(e) =>
@@ -937,11 +940,13 @@ function OnboardingWizard({
             </div>
 
             <div class={s.formGroup}>
-              <label for="group-description">Description (optional)</label>
+              <label for="group-description">
+                {gt("groups.descriptionOptionalLabel")}
+              </label>
               <textarea
                 id="group-description"
                 class={s.formInput}
-                placeholder="What is this group about?"
+                placeholder={gt("groups.descriptionPlaceholder")}
                 maxlength={500}
                 rows={3}
                 value={createDescription}
@@ -950,17 +955,18 @@ function OnboardingWizard({
                 }
               />
               <small class={s.formHint}>
-                {createDescription.length} / 500 characters
+                {gt("groups.charactersCount", {
+                  count: createDescription.length,
+                })}
               </small>
             </div>
 
             <div class={s.formGroup}>
               <div class={s.toggleRow}>
                 <div>
-                  <div class={s.toggleLabel}>Public group</div>
+                  <div class={s.toggleLabel}>{gt("groups.publicGroupLabel")}</div>
                   <div class={s.toggleDesc}>
-                    Public groups appear in search. You can still choose how
-                    members join in the next steps.
+                    {gt("groups.publicGroupDesc")}
                   </div>
                 </div>
                 <label class={s.toggleSwitch}>
@@ -997,21 +1003,21 @@ function OnboardingWizard({
                     !/^[a-zA-Z0-9]+$/.test(createTag.trim())
                   ) {
                     setWizardMessage({
-                      text: "Tag is required and must be alphanumeric.",
+                      text: gt("groups.tagRequiredAlphanumeric"),
                       type: "error",
                     });
                     return;
                   }
                   if (tagStatus === "taken") {
                     setWizardMessage({
-                      text: "That tag is already in use.",
+                      text: gt("groups.tagTakenError"),
                       type: "error",
                     });
                     return;
                   }
                   if (!createName.trim()) {
                     setWizardMessage({
-                      text: "Name is required.",
+                      text: gt("groups.nameRequired"),
                       type: "error",
                     });
                     return;
@@ -1021,7 +1027,7 @@ function OnboardingWizard({
                 }}
                 disabled={tagStatus === "taken" || tagStatus === "checking"}
               >
-                Continue <ArrowRight size={14} />
+                {gt("groups.continueBtn")} <ArrowRight size={14} />
               </button>
             </div>
           </div>
@@ -1031,11 +1037,8 @@ function OnboardingWizard({
       {step === 2 && (
         <div class={s.wizardStep}>
           <div class={s.wizardHeader}>
-            <h3 class={s.wizardTitle}>Review and create</h3>
-            <p class={s.wizardLead}>
-              Creating the group will charge <strong>50 credits</strong> from
-              your balance.
-            </p>
+            <h3 class={s.wizardTitle}>{gt("groups.reviewCreateTitle")}</h3>
+            <p class={s.wizardLead}>{gt("groups.reviewChargeLead")}</p>
           </div>
 
           <div class={s.reviewCard}>
@@ -1054,7 +1057,9 @@ function OnboardingWizard({
             <div class={s.reviewMeta}>
               <span class={s.metaChip}>
                 {createPublic ? <Globe size={11} /> : <Lock size={11} />}{" "}
-                {createPublic ? "Public" : "Private"}
+                {createPublic
+                  ? gt("groups.publicLabel")
+                  : gt("groups.privateLabel")}
               </span>
             </div>
           </div>
@@ -1062,12 +1067,12 @@ function OnboardingWizard({
           <div class={s.costBanner}>
             <Coins size={16} />
             <div>
-              <div>
-                <strong>50 credits</strong> will be deducted from your balance
-              </div>
+              <div>{gt("groups.costBannerText")}</div>
               <small>
-                Current balance: <strong>{balance.toLocaleString()}</strong> ·
-                After: <strong>{(balance - 50).toLocaleString()}</strong>
+                {gt("groups.currentBalanceLabel", {
+                  balance: balance.toLocaleString(),
+                  after: (balance - 50).toLocaleString(),
+                })}
               </small>
             </div>
           </div>
@@ -1087,7 +1092,7 @@ function OnboardingWizard({
                 onClick={() => setStep(1)}
                 disabled={createBusy}
               >
-                <ArrowLeft size={14} /> Back
+                <ArrowLeft size={14} /> {gt("groups.backBtn")}
               </button>
               <button
                 class={s.btnPrimary}
@@ -1096,7 +1101,7 @@ function OnboardingWizard({
                 disabled={createBusy || balance < 50}
               >
                 <Coins size={14} />
-                {createBusy ? "Creating…" : "Create group"}
+                {createBusy ? gt("groups.creatingBtn") : gt("groups.createGroupBtn")}
               </button>
             </div>
           </div>
@@ -1106,22 +1111,19 @@ function OnboardingWizard({
       {step === 3 && createdTag && (
         <div class={s.wizardStep}>
           <div class={s.wizardHeader}>
-            <h3 class={s.wizardTitle}>Add some personality</h3>
-            <p class={s.wizardLead}>
-              Both are optional. You can always update them from the group page
-              later.
-            </p>
+            <h3 class={s.wizardTitle}>{gt("groups.brandingTitle")}</h3>
+            <p class={s.wizardLead}>{gt("groups.brandingLead")}</p>
           </div>
 
           <div class={s.brandingGrid}>
             <div class={s.brandCard}>
               <div class={s.brandCardHeader}>
                 <div class={s.brandCardTitle}>
-                  <ImagePlus size={15} /> Icon
+                  <ImagePlus size={15} /> {gt("groups.iconLabel")}
                 </div>
                 {iconUploaded && (
                   <span class={s.brandCardDone}>
-                    <Check size={10} /> Done
+                    <Check size={10} /> {gt("groups.doneBadge")}
                   </span>
                 )}
               </div>
@@ -1143,10 +1145,10 @@ function OnboardingWizard({
                   <ImagePlus size={14} />
                   <span>
                     {iconUploading
-                      ? "Uploading…"
+                      ? gt("groups.uploadingBtn")
                       : iconUploaded
-                        ? "Replace"
-                        : "Upload image"}
+                        ? gt("groups.replaceBtn")
+                        : gt("groups.uploadImageBtn")}
                   </span>
                   <input
                     type="file"
@@ -1158,19 +1160,17 @@ function OnboardingWizard({
                     }}
                   />
                 </label>
-                <small class={s.formHint}>
-                  Resized to 256×256 JPEG · max 5MB
-                </small>
+                <small class={s.formHint}>{gt("groups.iconSizeHint")}</small>
               </div>
             </div>
             <div class={s.brandCard}>
               <div class={s.brandCardHeader}>
                 <div class={s.brandCardTitle}>
-                  <ImageIcon size={15} /> Banner
+                  <ImageIcon size={15} /> {gt("groups.bannerLabel")}
                 </div>
                 {bannerSet && (
                   <span class={s.brandCardDone}>
-                    <Check size={10} /> Done
+                    <Check size={10} /> {gt("groups.doneBadge")}
                   </span>
                 )}
               </div>
@@ -1193,10 +1193,10 @@ function OnboardingWizard({
                   <ImagePlus size={14} />
                   <span>
                     {bannerSetting
-                      ? "Uploading…"
+                      ? gt("groups.uploadingBtn")
                       : bannerSet
-                        ? "Replace banner"
-                        : "Upload banner"}
+                        ? gt("groups.replaceBannerBtn")
+                        : gt("groups.uploadBannerBtn")}
                   </span>
                   <input
                     type="file"
@@ -1208,8 +1208,7 @@ function OnboardingWizard({
                     }}
                   />
                 </label>
-                <small class={s.formHint}>
-                  Auto-resized to banner dimensions. Max 5MB.
+                <small class={s.formHint}>{gt("groups.bannerSizeHint")}</small>
                 </small>
               </div>
             </div>
@@ -1228,14 +1227,14 @@ function OnboardingWizard({
                 type="button"
                 onClick={() => setStep(2)}
               >
-                <ArrowLeft size={14} /> Back
+                <ArrowLeft size={14} /> {gt("groups.backBtn")}
               </button>
               <button
                 class={s.btnPrimary}
                 type="button"
                 onClick={() => setStep(4)}
               >
-                Continue <ArrowRight size={14} />
+                {gt("groups.continueBtn")} <ArrowRight size={14} />
               </button>
             </div>
           </div>
@@ -1245,15 +1244,13 @@ function OnboardingWizard({
       {step === 4 && createdTag && (
         <div class={s.wizardStep}>
           <div class={s.wizardHeader}>
-            <h3 class={s.wizardTitle}>How can people join?</h3>
-            <p class={s.wizardLead}>
-              Choose a join policy and an optional entry fee.
-            </p>
+            <h3 class={s.wizardTitle}>{gt("groups.howJoinTitle")}</h3>
+            <p class={s.wizardLead}>{gt("groups.howJoinDesc")}</p>
           </div>
 
           <div class={s.wizardCard}>
             <div class={s.formGroup}>
-              <label>Join policy</label>
+              <label>{gt("groups.joinPolicyLabel")}</label>
               <div class={s.policyGrid}>
                   {JOIN_POLICY_OPTIONS.map((opt) => (
                   <button
@@ -1272,12 +1269,12 @@ function OnboardingWizard({
             </div>
 
             <div class={s.formGroup}>
-              <label for="group-onboard-fee">Entry fee (credits)</label>
+              <label for="group-onboard-fee">{gt("groups.entryFeeLabel")}</label>
               <input
                 id="group-onboard-fee"
                 type="number"
                 class={s.formInput}
-                placeholder="0"
+                placeholder={gt("groups.entryFeePlaceholder")}
                 min={0}
                 step="0.01"
                 value={entryFee}
@@ -1285,10 +1282,7 @@ function OnboardingWizard({
                   setEntryFee((e.target as HTMLInputElement).value)
                 }
               />
-              <small class={s.formHint}>
-                0 = free entry. The fee is deducted from the member's balance
-                and added to the group's balance.
-              </small>
+              <small class={s.formHint}>{gt("groups.entryFeeHint")}</small>
             </div>
 
             {wizardMessage && (
@@ -1307,7 +1301,7 @@ function OnboardingWizard({
                 type="button"
                 onClick={() => setStep(3)}
               >
-                <ArrowLeft size={14} /> Back
+                <ArrowLeft size={14} /> {gt("groups.backBtn")}
               </button>
               <button
                 class={s.btnSecondary}
@@ -1316,14 +1310,14 @@ function OnboardingWizard({
                 disabled={entryFeeBusy}
               >
                 <Save size={14} />
-                {entryFeeBusy ? "Saving…" : "Save"}
+                {entryFeeBusy ? gt("groups.savingBtn") : gt("groups.saveBtn")}
               </button>
               <button
                 class={s.btnPrimary}
                 type="button"
                 onClick={() => setStep(5)}
               >
-                Finish <ArrowRight size={14} />
+                {gt("groups.finishBtn")} <ArrowRight size={14} />
               </button>
             </div>
           </div>
@@ -1336,25 +1330,23 @@ function OnboardingWizard({
             <div class={s.doneIcon}>
               <PartyPopper size={36} />
             </div>
-            <h3 class={s.doneTitle}>@{createdTag} is live</h3>
-            <p class={s.doneText}>
-              Your group has been created. You can add a readme, rules, roles,
-              and members from the group page.
-            </p>
+            <h3 class={s.doneTitle}>{gt("groups.doneTitle", { tag: createdTag })}</h3>
+            <p class={s.doneText}>{gt("groups.doneDesc")}</p>
             <div class={s.doneSummary}>
               {iconUploaded && (
                 <span class={s.metaChip}>
-                  <Check size={10} /> Icon
+                  <Check size={10} /> {gt("groups.iconLabel")}
                 </span>
               )}
               {bannerSet && (
                 <span class={s.metaChip}>
-                  <Check size={10} /> Banner
+                  <Check size={10} /> {gt("groups.bannerLabel")}
                 </span>
               )}
               {entryFeeSet && parseFloat(entryFee) > 0 && (
                 <span class={s.metaChip}>
-                  <Coins size={10} /> {entryFee} cr fee
+                  <Coins size={10} />{" "}
+                  {gt("groups.feeChip", { fee: entryFee })}
                 </span>
               )}
               {createPolicy && (
@@ -1368,10 +1360,10 @@ function OnboardingWizard({
                 class={s.btnPrimary}
                 href={`/groups/${encodeURIComponent(createdTag)}`}
               >
-                Open your group <ArrowRight size={14} />
+                {gt("groups.openYourGroup")} <ArrowRight size={14} />
               </a>
               <button class={s.btnSecondary} type="button" onClick={onReset}>
-                Create another
+                {gt("groups.createAnotherBtn")}
               </button>
             </div>
           </div>
@@ -1388,6 +1380,7 @@ function GroupCard({
   group: GroupNet | GroupPublic;
   isMember?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <a class={s.groupCard} href={`/groups/${encodeURIComponent(group.tag)}`}>
       {group.banner_url ? (
@@ -1427,7 +1420,7 @@ function GroupCard({
           </span>
           <span class={s.metaChip}>
             {group.public ? <Globe size={11} /> : <Lock size={11} />}{" "}
-            {group.public ? "Public" : "Private"}
+            {group.public ? t("groups.publicLabel") : t("groups.privateLabel")}
           </span>
           <span class={s.metaChip}>
             <Crown size={11} /> {group.owner_user_id}
@@ -1438,7 +1431,7 @@ function GroupCard({
         </div>
         {isMember && (
           <div class={s.memberBadge}>
-            <Eye size={11} /> View
+            <Eye size={11} /> {t("groups.view")}
           </div>
         )}
       </div>

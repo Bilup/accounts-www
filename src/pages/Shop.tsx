@@ -201,7 +201,7 @@ export function Shop() {
       setAllItems(data.items);
       setTotal(data.total);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load cosmetics");
+      setError(err instanceof Error ? err.message : t("shop.failedLoad"));
     } finally {
       setLoading(false);
     }
@@ -337,16 +337,16 @@ export function Shop() {
       if (res.ok) {
         setOwnedCosmetics((prev) => new Set(prev).add(item.id));
         await Promise.all([fetchMyCosmetics(), reloadUser()]);
-        showInfo(`Successfully obtained ${item.name}!`, {
+        showInfo(t("shop.obtainedSuccess", { name: item.name }), {
           autoDismissMs: 3000,
         });
         setSelectedItem(null);
       } else {
-        showError(data.error || "Failed to purchase cosmetic");
+        showError(data.error || t("shop.failedPurchase"));
       }
     } catch (err) {
       showError(
-        err instanceof Error ? err.message : "Failed to purchase cosmetic",
+        err instanceof Error ? err.message : t("shop.failedPurchase"),
       );
     } finally {
       setPurchasing(false);
@@ -367,13 +367,15 @@ export function Shop() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         await Promise.all([fetchMyCosmetics(), reloadUser()]);
-        showInfo(`Equipped ${item.name}!`, { autoDismissMs: 2500 });
+        showInfo(t("shop.equippedMsg", { name: item.name }), {
+          autoDismissMs: 2500,
+        });
       } else {
-        showError(data.error || "Failed to equip cosmetic");
+        showError(data.error || t("shop.failedEquip"));
       }
     } catch (err) {
       showError(
-        err instanceof Error ? err.message : "Failed to equip cosmetic",
+        err instanceof Error ? err.message : t("shop.failedEquip"),
       );
     } finally {
       setEquipping(null);
@@ -394,13 +396,15 @@ export function Shop() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         await Promise.all([fetchMyCosmetics(), reloadUser()]);
-        showInfo(`Unequipped ${item.name}`, { autoDismissMs: 2500 });
+        showInfo(t("shop.unequippedMsg", { name: item.name }), {
+          autoDismissMs: 2500,
+        });
       } else {
-        showError(data.error || "Failed to unequip cosmetic");
+        showError(data.error || t("shop.failedUnequip"));
       }
     } catch (err) {
       showError(
-        err instanceof Error ? err.message : "Failed to unequip cosmetic",
+        err instanceof Error ? err.message : t("shop.failedUnequip"),
       );
     } finally {
       setEquipping(null);
@@ -660,7 +664,7 @@ function ShopTab({
               Type: {getLabel(COSMETIC_TYPES.find((t) => t.value === typeFilter)?.labelKey || "")}
               <button
                 onClick={() => onTypeFilterChange("")}
-                aria-label="Remove type filter"
+                aria-label={t("shop.removeTypeFilterAria")}
               >
                 <X size={12} />
               </button>
@@ -671,7 +675,7 @@ function ShopTab({
               Search: "{searchQuery}"
               <button
                 onClick={() => onSearchQueryChange("")}
-                aria-label="Remove search filter"
+                aria-label={t("shop.removeSearchFilterAria")}
               >
                 <X size={12} />
               </button>
@@ -682,7 +686,7 @@ function ShopTab({
               {t("shop.featuredOnly")}
               <button
                 onClick={onShowFeaturedToggle}
-                aria-label="Remove featured filter"
+                aria-label={t("shop.removeFeaturedFilterAria")}
               >
                 <X size={12} />
               </button>

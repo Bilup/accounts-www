@@ -140,7 +140,12 @@ export const sidebarForView: Record<View, { title: string; sub: string }> = {
   confirm: { title: "auth.sidebarChooseAccount", sub: "auth.sidebarContinueToBilup" },
 };
 
-export function describePerm(p: string): string {
+export function describePerm(p: string, t?: (key: string) => string): string {
+  if (t) {
+    const key = `perms.desc.${p}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+  }
   if (PERMISSION_DESCRIPTIONS[p]) return PERMISSION_DESCRIPTIONS[p];
   const [ns, action = ""] = p.split(":");
   const verb = action.split(".")[0].replace(/_/g, " ");
