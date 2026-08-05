@@ -1209,7 +1209,6 @@ function OnboardingWizard({
                   />
                 </label>
                 <small class={s.formHint}>{gt("groups.bannerSizeHint")}</small>
-                </small>
               </div>
             </div>
           </div>

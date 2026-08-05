@@ -2870,7 +2870,7 @@ function RolesTab({
                   <div class={s.roleName}>{product.name}</div>
                   <div class={s.roleDescription}>
                     {t("group.grantsRole", {
-                      role: product.role_name || product.role_granted_id,
+                      role: product.role_name || product.role_granted_id || "",
                     })}
                     {product.subscription &&
                       ` · ${t("group.every")} ${product.frequency || 1} ${t(`group.${product.period || "month"}`)}`}
@@ -3495,6 +3495,7 @@ function AdminTab({
   canViewMembers: boolean;
   onGroupChanged: () => void;
 }) {
+  const { t } = useI18n();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [invites, setInvites] = useState<GroupInvite[]>([]);
   const [requests, setRequests] = useState<GroupJoinRequest[]>([]);
