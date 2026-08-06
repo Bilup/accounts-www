@@ -999,23 +999,6 @@ export function ProfileCard({
           </div>
         )}
 
-        {showActions && !isSelf && !benefits?.profile_notes && (
-          <div class={s.noteUpsell}>
-            <StickyNote size={14} />
-            <span class={s.noteUpsellText}>
-              {t("profile.noteUpsellText")}
-            </span>
-            <a
-              href="https://ko-fi.com/mistium"
-              target="_blank"
-              rel="noopener noreferrer"
-              class={s.noteUpsellLink}
-            >
-              {t("profile.upgradeLabel")} <ExternalLink size={12} />
-            </a>
-          </div>
-        )}
-
         <div class={s.statsRow}>
           <Stat icon={Coins} value={credits.toLocaleString()} label={t("profile.creditsLabel")} />
           <Stat

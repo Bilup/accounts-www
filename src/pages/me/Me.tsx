@@ -1484,7 +1484,7 @@ function CosmeticsSection({
             <div class={s.upsellText}>{t("me.upsellText")}</div>
           </div>
           <a
-            href="https://ko-fi.com/mistium"
+            href="https://ifdian.net/a/RyaninCn11"
             target="_blank"
             rel="noopener noreferrer"
             class={s.upsellBtn}
@@ -1576,7 +1576,7 @@ function NotesSection({ notes, hasNotes, onNoteUpdate }: NotesSectionProps) {
           text={t("me.profileNotesDesc")}
         >
           <a
-            href="https://ko-fi.com/mistium"
+            href="https://ifdian.net/a/RyaninCn11"
             target="_blank"
             rel="noopener noreferrer"
             class={s.btnPrimary}
