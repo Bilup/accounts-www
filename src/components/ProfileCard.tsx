@@ -15,7 +15,6 @@ import {
   Send,
   StickyNote,
   Trash2,
-  ExternalLink,
   Ban,
   ShieldOff,
   type LucideIcon,
@@ -367,7 +366,7 @@ export function ProfileCard({
       const debited = Number(data?.debited ?? num);
       setCurrentBalance((b) => (b === null ? b : Math.max(0, b - debited)));
       setSendSuccess(
-        t("profile.sentCredits", { amount: debited.toLocaleString(), word: plural(debited, "credit"), user: user.username }),
+        t("profile.sentCredits", { amount: debited.toLocaleString(), word: plural(debited, t("profile.credit")), user: user.username }),
       );
       setSendAmount("");
       setSendNote("");

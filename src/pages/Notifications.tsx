@@ -312,8 +312,8 @@ export function Notifications() {
                   </div>
                   <p class={s.welcomeSub}>
                     {endpoints.length} {plural(endpoints.length, t("notifications.device"))} ·{" "}
-                    {totalSenders} {t("notifications.allowedSender")}{(totalSenders !== 1 ? "s" : "")} ·{" "}
-                    {log.length} {log.length === 1 ? t("notifications.logEntry") : t("notifications.logEntry") + "s"}
+                    {totalSenders} {plural(totalSenders, t("notifications.allowedSender"))} ·{" "}
+                    {log.length} {plural(log.length, t("notifications.logEntry"), t("notifications.logEntryPlural"))}
                   </p>
                 </div>
               </div>
@@ -524,7 +524,7 @@ export function Notifications() {
                             <div class={s.senderInfo}>
                               <div class={s.senderName}>{snd.username}</div>
                               <div class={s.senderCount}>
-                                {snd.count} {snd.count === 1 ? t("notifications.senderCount") : `${t("notifications.senderCount")}s`}{" "}
+                                {snd.count} {plural(snd.count, t("notifications.senderCount"))}{" "}
                                 {t("notifications.sent")}
                               </div>
                             </div>
