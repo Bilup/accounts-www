@@ -51,6 +51,7 @@ import { UserAvatar } from "../../components/UserAvatar";
 import {
   useAuth,
   useBenefits,
+  usePublicProfile,
   type Benefits,
   type Transaction,
   captureTokenFromUrl,
@@ -117,6 +118,7 @@ export function Me() {
   const { user, isLoggedIn, token, reload, logout } = useAuth();
   const [confirm, confirmDialog] = useConfirm();
   const { benefits } = useBenefits();
+  const { profile: myPublicProfile } = usePublicProfile(user?.username ?? null);
   const [activeTab, setActiveTab] = useState<MainTab>("profile");
   const [friendsTab, setFriendsTab] = useState<"all" | "requests">("all");
   const [friendInput, setFriendInput] = useState("");
@@ -458,6 +460,7 @@ export function Me() {
               showActions={false}
               isSelf
               benefits={benefits?.benefits ?? null}
+              index={myPublicProfile?.index}
               onEdit={async () => {
                 await reload();
               }}
@@ -1067,7 +1070,7 @@ function TransactionsSection({
         <div class={s.txList}>
           {recent.map((tx, i) => {
             const isPos = isTransactionIncome(tx);
-            const title = describeTransaction(tx);
+            const title = describeTransaction(tx, t);
             return (
               <div key={i} class={s.txItem}>
                 <div class={`${s.txIcon} ${isPos ? s.income : s.expense}`}>

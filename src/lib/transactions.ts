@@ -9,6 +9,7 @@ export type TransactionCategory =
   | "group";
 
 export type TransactionMeta = {
+  /** i18n key (namespace "transactions.type.*") of the type label. */
   label: string;
   isIncome: boolean;
   category: TransactionCategory;
@@ -18,128 +19,128 @@ export type TransactionMeta = {
 
 export const TRANSACTION_META: Record<string, TransactionMeta> = {
   tax: {
-    label: "Daily Credits",
+    label: "transactions.type.tax",
     isIncome: true,
     category: "tax",
     color: "#a78bfa",
   },
   in: {
-    label: "Transfer Received",
+    label: "transactions.type.in",
     isIncome: true,
     category: "transfer",
     color: "#4ade80",
     showCounterparty: true,
   },
   out: {
-    label: "Transfer Sent",
+    label: "transactions.type.out",
     isIncome: false,
     category: "transfer",
     color: "#f87171",
     showCounterparty: true,
   },
   cosmetic_platform: {
-    label: "Cosmetic Platform Cut",
+    label: "transactions.type.cosmetic_platform",
     isIncome: true,
     category: "cosmetic",
     color: "#f472b6",
   },
   cosmetic_sale: {
-    label: "Cosmetic Sale",
+    label: "transactions.type.cosmetic_sale",
     isIncome: true,
     category: "cosmetic",
     color: "#fb923c",
     showCounterparty: true,
   },
   cosmetic_purchase: {
-    label: "Cosmetic Purchase",
+    label: "transactions.type.cosmetic_purchase",
     isIncome: false,
     category: "cosmetic",
     color: "#fb923c",
   },
   key_sale: {
-    label: "Key Sale",
+    label: "transactions.type.key_sale",
     isIncome: true,
     category: "key",
     color: "#38bdf8",
     showCounterparty: true,
   },
   key_buy: {
-    label: "Key Purchase",
+    label: "transactions.type.key_buy",
     isIncome: false,
     category: "key",
     color: "#38bdf8",
   },
   gift_create: {
-    label: "Gift Created",
+    label: "transactions.type.gift_create",
     isIncome: false,
     category: "gift",
     color: "#facc15",
   },
   gift_claim: {
-    label: "Gift Claimed",
+    label: "transactions.type.gift_claim",
     isIncome: true,
     category: "gift",
     color: "#facc15",
   },
   gift_claimed: {
-    label: "Gift Claimed",
+    label: "transactions.type.gift_claimed",
     isIncome: true,
     category: "gift",
     color: "#facc15",
     showCounterparty: true,
   },
   gift_refund: {
-    label: "Gift Refunded",
+    label: "transactions.type.gift_refund",
     isIncome: true,
     category: "gift",
     color: "#facc15",
   },
   escrow_in: {
-    label: "Escrow Received",
+    label: "transactions.type.escrow_in",
     isIncome: true,
     category: "transfer",
     color: "#4ade80",
     showCounterparty: true,
   },
   escrow_out: {
-    label: "Escrow Sent",
+    label: "transactions.type.escrow_out",
     isIncome: false,
     category: "transfer",
     color: "#f87171",
     showCounterparty: true,
   },
   group_create: {
-    label: "Group Created",
+    label: "transactions.type.group_create",
     isIncome: false,
     category: "group",
     color: "#57cdac",
   },
   group_entry_fee: {
-    label: "Group Entry Fee",
+    label: "transactions.type.group_entry_fee",
     isIncome: false,
     category: "group",
     color: "#57cdac",
   },
   group_tip: {
-    label: "Group Tip",
+    label: "transactions.type.group_tip",
     isIncome: false,
     category: "group",
     color: "#57cdac",
   },
   group_tip_withdrawal: {
-    label: "Group Tip Withdrawal",
+    label: "transactions.type.group_tip_withdrawal",
     isIncome: true,
     category: "group",
     color: "#57cdac",
   },
   group_role_purchase: {
-    label: "Group Role Purchase",
+    label: "transactions.type.group_role_purchase",
     isIncome: false,
     category: "group",
     color: "#57cdac",
   },
   group_role_subscription: {
-    label: "Group Role Subscription",
+    label: "transactions.type.group_role_subscription",
     isIncome: false,
     category: "group",
     color: "#57cdac",
@@ -163,6 +164,14 @@ export function getTransactionMeta(
   );
 }
 
+/**
+ * i18n key for a transaction type's label.
+ * Unknown types fall back to the raw type string itself.
+ */
+export function transactionLabelKey(type: string): string {
+  return TRANSACTION_META[type]?.label || type;
+}
+
 export function isTransactionIncome(tx: Transaction): boolean {
   return getTransactionMeta(tx).isIncome;
 }
@@ -180,9 +189,18 @@ export function transactionCounterparty(tx: Transaction): string {
   return user;
 }
 
-export function describeTransaction(tx: Transaction): string {
+/**
+ * Human-readable description of a transaction.
+ * Pass the i18n `t` function to translate the type label; without it the
+ * raw label (which may be an i18n key) is returned.
+ */
+export function describeTransaction(
+  tx: Transaction,
+  translate?: (key: string) => string,
+): string {
   if (tx.note) return tx.note;
-  return getTransactionMeta(tx).label;
+  const label = transactionLabelKey(tx.type);
+  return translate ? translate(label) : label;
 }
 
 export function computeTransactionStats(transactions: Transaction[]) {

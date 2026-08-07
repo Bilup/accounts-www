@@ -32,6 +32,7 @@ import {
   describeTransaction,
   isTransactionIncome,
   transactionCounterparty,
+  transactionLabelKey,
 } from "../../lib/transactions";
 import s from "./Transactions.module.css";
 
@@ -240,7 +241,7 @@ export function Transactions() {
           transactionCounterparty(tx),
           tx.note,
           tx.type,
-          TRANSACTION_META[tx.type]?.label || "",
+          t(transactionLabelKey(tx.type)),
         ]
           .filter(Boolean)
           .join(" ")
@@ -249,7 +250,7 @@ export function Transactions() {
       }
       return true;
     });
-  }, [transactions, range, typeFilter, query]);
+  }, [transactions, range, typeFilter, query, t]);
 
   const sorted = useMemo(
     () => [...filtered].sort((a, b) => b.time - a.time),
@@ -627,7 +628,7 @@ export function Transactions() {
                     </div>
                     <div class={s.breakdownInfo}>
                       <div class={s.breakdownName}>
-                        {b.meta?.label || b.type}
+                        {t(transactionLabelKey(b.type))}
                       </div>
                       <div class={s.breakdownMeta}>
                         {t("transactions.txCount", { count: b.count })}
@@ -740,7 +741,6 @@ export function Transactions() {
           <div class={s.txList}>
             {pageItems.map((row, i) => {
               const tx = row.txs[0];
-              const meta = TRANSACTION_META[tx.type];
               const isIncome = isTransactionIncome(tx);
               const Icon = TYPE_ICONS[tx.type]?.icon || Receipt;
               const counterparty = transactionCounterparty(tx);
@@ -751,7 +751,7 @@ export function Transactions() {
               const isOpen = expanded.has(tx.time);
               const title = grouped
                 ? t("transactions.dailyCreditsGroup", { n: row.txs.length })
-                : describeTransaction(tx);
+                : describeTransaction(tx, t);
               const dateLabel = grouped
                 ? sameDay
                   ? formatDateTime(tx.time)
@@ -796,7 +796,7 @@ export function Transactions() {
                     <div class={s.txInfo}>
                       <div class={s.txTitle}>{title}</div>
                       <div class={s.txMeta}>
-                        {meta?.label || tx.type}
+                        {t(transactionLabelKey(tx.type))}
                         {counterparty && (
                           <>
                             {" · "}
@@ -842,7 +842,7 @@ export function Transactions() {
                               <div class={s.txSubDot} />
                               <div class={s.txSubInfo}>
                                 <div class={s.txSubTitle}>
-                                  {describeTransaction(sub)}
+                                  {describeTransaction(sub, t)}
                                 </div>
                                 <div class={s.txSubMeta}>
                                   {counterparty ? (

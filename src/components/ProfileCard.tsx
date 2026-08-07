@@ -50,6 +50,8 @@ interface ProfileCardProps {
   viewerBalance?: number | null;
   benefits?: Benefits | null;
   viewerNotes?: Record<string, string>;
+  /** Discriminator (the "#x" suffix) when the logged-in user has no public index. */
+  index?: number | null;
   actionError?: string | null;
   onFollowToggle?: () => void;
   onFriendAction?: (action: "add" | "remove" | "accept" | "reject") => void;
@@ -84,6 +86,7 @@ export function ProfileCard({
   viewerBalance = null,
   benefits = null,
   viewerNotes,
+  index: indexProp = null,
   actionError = null,
   onFollowToggle,
   onFriendAction,
@@ -387,7 +390,7 @@ export function ProfileCard({
     ? false
     : (user as AuthUser).display_name !== (user as AuthUser).username &&
       !!(user as AuthUser).display_name;
-  const index = publicProfile?.index;
+  const index = publicProfile?.index ?? indexProp;
   const joined = formatJoinDate(user.created);
   const credits = publicProfile
     ? publicProfile.currency
