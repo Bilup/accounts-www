@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "preact/hooks";
+import { useState, useEffect, useMemo, useCallback } from "preact/hooks";
 import {
   Receipt,
   ArrowLeft,
@@ -17,6 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  Wallet,
+  CalendarCheck,
 } from "lucide-preact";
 import {
   AccountPage,
@@ -25,7 +27,11 @@ import {
   EmptyState,
 } from "../../components/AccountPage";
 import { UserAvatar } from "../../components/UserAvatar";
-import { useAuth, type Transaction, captureTokenFromUrl } from "../../lib/auth";
+import {
+  useAuth,
+  type Transaction,
+  captureTokenFromUrl,
+} from "../../lib/auth";
 import { useI18n } from "../../i18n/i18n";
 import {
   TRANSACTION_META,
@@ -35,6 +41,26 @@ import {
   transactionLabelKey,
 } from "../../lib/transactions";
 import s from "./Transactions.module.css";
+
+const API = "https://api.accounts.bilup.org";
+
+type DailyRewardBreakdown = {
+  base: number;
+  special_solar: number;
+  special_lunar: number;
+  special_week: number;
+  qingming: number;
+  total: number;
+  special_reason?: string;
+};
+
+type DailyClaimStatus = {
+  can_claim: boolean;
+  wait_time: number;
+  reward?: DailyRewardBreakdown;
+  error?: string;
+  wait_hours?: string;
+};
 
 type RangeKey = "7d" | "30d" | "90d" | "1y" | "all";
 type TypeFilter =
@@ -187,6 +213,10 @@ export function Transactions() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [dailyClaim, setDailyClaim] = useState<DailyClaimStatus | null>(null);
+  const [dailyClaimBusy, setDailyClaimBusy] = useState(false);
+  const [dailyClaimError, setDailyClaimError] = useState<string | null>(null);
+  const [dailyClaimFlash, setDailyClaimFlash] = useState<number | null>(null);
 
   useEffect(() => {
     captureTokenFromUrl();
@@ -195,6 +225,63 @@ export function Transactions() {
   useEffect(() => {
     if (!user && token) reload();
   }, [user, token, reload]);
+
+  const refreshDailyClaim = useCallback(async () => {
+    if (!token) {
+      setDailyClaim(null);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${API}/claim_time?auth=${encodeURIComponent(token)}`,
+      );
+      const data = (await res.json().catch(() => ({}))) as DailyClaimStatus;
+      if (res.ok) {
+        setDailyClaim(data);
+      }
+    } catch {
+      /* ignore - leave previous state intact */
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) refreshDailyClaim();
+  }, [token, refreshDailyClaim]);
+
+  const claimDailyPoints = useCallback(async () => {
+    if (!token || dailyClaimBusy) return;
+    setDailyClaimBusy(true);
+    setDailyClaimError(null);
+    try {
+      const res = await fetch(
+        `${API}/claim_daily?auth=${encodeURIComponent(token)}`,
+        { method: "GET" },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const waitHours =
+          data?.wait_hours ?? (data?.wait_time ? Math.ceil(data.wait_time / 3600) : undefined);
+        setDailyClaimError(data?.error || t("transactions.claimDailyFailed"));
+        if (typeof data?.wait_time === "number") {
+          setDailyClaim({
+            can_claim: false,
+            wait_time: data.wait_time,
+            wait_hours: waitHours !== undefined ? String(waitHours) : undefined,
+          });
+        }
+        return;
+      }
+      const claimed = typeof data?.amount === "number" ? data.amount : data?.reward?.total ?? 0;
+      setDailyClaimFlash(claimed);
+      await reload();
+      await refreshDailyClaim();
+      window.setTimeout(() => setDailyClaimFlash(null), 3500);
+    } catch {
+      setDailyClaimError(t("transactions.claimDailyFailed"));
+    } finally {
+      setDailyClaimBusy(false);
+    }
+  }, [token, dailyClaimBusy, reload, refreshDailyClaim, t]);
 
   useEffect(() => {
     setPage(0);
@@ -452,6 +539,16 @@ export function Transactions() {
       <a href="/me" class={s.backLink}>
         <ArrowLeft size={14} /> {t("transactions.backToAccount")}
       </a>
+
+      <WalletCard
+        balance={balance}
+        status={dailyClaim}
+        busy={dailyClaimBusy}
+        flash={dailyClaimFlash}
+        error={dailyClaimError}
+        onClaim={claimDailyPoints}
+        onDismissError={() => setDailyClaimError(null)}
+      />
 
       <div class={s.controls}>
         <div class={s.controlsRow}>
@@ -882,5 +979,130 @@ export function Transactions() {
         )}
       </AccountSection>
     </AccountPage>
+  );
+}
+
+interface WalletCardProps {
+  balance: number;
+  status: DailyClaimStatus | null;
+  busy: boolean;
+  flash: number | null;
+  error: string | null;
+  onClaim: () => void;
+  onDismissError: () => void;
+}
+
+function WalletCard({
+  balance,
+  status,
+  busy,
+  flash,
+  error,
+  onClaim,
+  onDismissError,
+}: WalletCardProps) {
+  const { t } = useI18n();
+  const reward = status?.reward;
+
+  // Wait time formatting: prefer hours when > 60 minutes.
+  const waitSeconds = status && !status.can_claim ? status.wait_time : 0;
+  const totalMinutes = Math.max(0, Math.ceil(waitSeconds / 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const waitText =
+    waitSeconds > 0
+      ? hours > 0
+        ? t("transactions.claimDailyWaitHours", { hours, minutes })
+        : t("transactions.claimDailyWaitMinutes", { minutes })
+      : "";
+
+  const claimable =
+    status != null && status.can_claim === true && reward != null;
+
+  return (
+    <AccountSection
+      icon={<Wallet size={18} />}
+      title={t("transactions.walletTitle")}
+      subtitle={
+        reward
+          ? reward.special_reason || undefined
+          : undefined
+      }
+    >
+      <div class={s.walletCard}>
+        <div class={s.walletCardLeft}>
+          <div class={s.walletIcon}>
+            <Wallet size={20} />
+          </div>
+          <div class={s.walletMeta}>
+            <div class={s.walletLabel}>{t("transactions.yourBalance")}</div>
+            <div class={s.walletValue}>
+              {balance.toLocaleString(undefined, {
+                maximumFractionDigits: 0,
+              })}{" "}
+              <span class={s.walletUnit}>{t("transactions.pointsUnit")}</span>
+            </div>
+          </div>
+        </div>
+        <div class={s.walletAction}>
+          {flash != null && flash > 0 ? (
+            <div class={s.walletFlash} role="status">
+              {t("transactions.claimDailySuccess", { amount: flash })}
+            </div>
+          ) : null}
+          {reward && (
+            <div class={s.walletRewardBreakdown}>
+              <span class={s.walletBreakdownChip}>
+                {t("transactions.rewardBase")} +{reward.base}
+              </span>
+              {(reward.special_solar > 0 ||
+                reward.special_lunar > 0 ||
+                reward.special_week > 0 ||
+                reward.qingming > 0) && (
+                <span class={s.walletBreakdownChipAccent}>
+                  {t("transactions.rewardSpecial")} +
+                  {reward.special_solar +
+                    reward.special_lunar +
+                    reward.special_week +
+                    reward.qingming}
+                </span>
+              )}
+              <span class={s.walletBreakdownTotal}>
+                {t("transactions.rewardTotal")} +{reward.total}
+              </span>
+            </div>
+          )}
+          <button
+            class={s.walletClaimBtn}
+            disabled={!claimable || busy}
+            onClick={onClaim}
+          >
+            <CalendarCheck size={14} />
+            <span>
+              {busy
+                ? t("transactions.claimDailyClaiming")
+                : waitSeconds > 0
+                  ? t("transactions.claimDailyAlreadyDone")
+                  : t("transactions.claimDailyBtn")}
+            </span>
+          </button>
+          {waitSeconds > 0 && (
+            <div class={s.walletWait}>{waitText}</div>
+          )}
+        </div>
+      </div>
+      {error && (
+        <div class={s.walletError} role="alert">
+          <span>{error}</span>
+          <button
+            class={s.walletErrorClose}
+            onClick={onDismissError}
+            aria-label="Dismiss"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
+    </AccountSection>
   );
 }
