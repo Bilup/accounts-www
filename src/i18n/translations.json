@@ -1645,7 +1645,15 @@
       "rewardBase": "Base",
       "rewardSpecial": "Special",
       "rewardTotal": "Total",
-      "rewardMultiplier": "× {n} tier bonus"
+      "rewardMultiplier": "× {n} tier bonus",
+      "checkinSummary": "{count} days · +{points} points this month",
+      "weekdayMon": "Mon",
+      "weekdayTue": "Tue",
+      "weekdayWed": "Wed",
+      "weekdayThu": "Thu",
+      "weekdayFri": "Fri",
+      "weekdaySat": "Sat",
+      "weekdaySun": "Sun"
     },
     "accountPage": {
       "signInRequired": "Sign in required",
@@ -3688,7 +3696,15 @@
       "rewardBase": "基础",
       "rewardSpecial": "加成",
       "rewardTotal": "总计",
-      "rewardMultiplier": "× {n} 订阅加成"
+      "rewardMultiplier": "× {n} 订阅加成",
+      "checkinSummary": "本月签到 {count} 天 · 累计 +{points} 积分",
+      "weekdayMon": "一",
+      "weekdayTue": "二",
+      "weekdayWed": "三",
+      "weekdayThu": "四",
+      "weekdayFri": "五",
+      "weekdaySat": "六",
+      "weekdaySun": "日"
     },
     "accountPage": {
       "signInRequired": "需要登录",

@@ -189,6 +189,120 @@ function startOfDay(ts: number): number {
   return d.getTime();
 }
 
+// ---- Monthly check-in calendar helpers --------------------------------
+
+const WEEKDAY_KEYS = [
+  "transactions.weekdayMon",
+  "transactions.weekdayTue",
+  "transactions.weekdayWed",
+  "transactions.weekdayThu",
+  "transactions.weekdayFri",
+  "transactions.weekdaySat",
+  "transactions.weekdaySun",
+];
+
+type MonthCell = {
+  day: number;
+  inMonth: boolean;
+  isToday: boolean;
+  checked: boolean;
+  points: number;
+  /** Points this day grants — actual amount when checked, otherwise the daily baseline. */
+  expected: number;
+};
+
+/**
+ * Build the grid of cells for the current month (Monday-first layout),
+ * aggregating daily check-in points from `tax` transactions.
+ *
+ * @param transactions All transactions for the user.
+ * @param dailyReward Total points the backend grants for a daily check-in;
+ *   used as the expected amount shown on un-checked days.
+ */
+function buildMonthCalendar(
+  transactions: Transaction[],
+  dailyReward: number,
+): {
+  cells: MonthCell[];
+  monthLabel: string;
+  checkedCount: number;
+  monthTotal: number;
+} {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  const firstOfMonth = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = now.getDate();
+
+  // Sum check-in (tax) points per day-of-month for the current month.
+  const pointsByDay = new Map<number, number>();
+  for (const tx of transactions) {
+    if (tx.type !== "tax") continue;
+    const d = new Date(tx.time);
+    if (d.getFullYear() !== year || d.getMonth() !== month) continue;
+    const day = d.getDate();
+    pointsByDay.set(day, (pointsByDay.get(day) ?? 0) + Math.abs(tx.amount));
+  }
+
+  // Baseline "points per day": prefer the backend reward; if it is not yet
+  // available (e.g. claim_time hasn't resolved), fall back to the most
+  // recent check-in amount.
+  let dailyBase = dailyReward > 0 ? dailyReward : 0;
+  if (dailyBase <= 0) {
+    for (let i = transactions.length - 1; i >= 0; i--) {
+      const tx = transactions[i];
+      if (tx.type === "tax") {
+        dailyBase = Math.abs(tx.amount);
+        break;
+      }
+    }
+  }
+
+  const emptyCell: MonthCell = {
+    day: 0,
+    inMonth: false,
+    isToday: false,
+    checked: false,
+    points: 0,
+    expected: 0,
+  };
+
+  // Monday-first offset: JS getDay() is 0=Sunday..6=Saturday.
+  const lead = (firstOfMonth.getDay() + 6) % 7;
+
+  const cells: MonthCell[] = [];
+  for (let i = 0; i < lead; i++) cells.push({ ...emptyCell });
+  for (let day = 1; day <= daysInMonth; day++) {
+    const points = pointsByDay.get(day) ?? 0;
+    cells.push({
+      day,
+      inMonth: true,
+      isToday: day === today,
+      checked: points > 0,
+      points,
+      expected: points > 0 ? points : dailyBase,
+    });
+  }
+  // Pad the last row to full weeks for a clean grid.
+  while (cells.length % 7 !== 0) cells.push({ ...emptyCell });
+
+  let checkedCount = 0;
+  let monthTotal = 0;
+  for (const c of cells) {
+    if (c.inMonth && c.checked) checkedCount++;
+    monthTotal += c.points;
+  }
+
+  const monthLabel = firstOfMonth.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+  });
+
+  return { cells, monthLabel, checkedCount, monthTotal };
+}
+
 function formatDateShort(ts: number): string {
   return new Date(ts).toLocaleDateString(undefined, {
     month: "short",
@@ -522,6 +636,11 @@ export function Transactions() {
   );
 
   const balance = user?.["sys.currency"] ?? 0;
+  const dailyReward = dailyClaim?.reward?.total ?? 0;
+  const calendar = useMemo(
+    () => buildMonthCalendar(transactions, dailyReward),
+    [transactions, dailyReward],
+  );
 
   if (!user) {
     return (
@@ -546,6 +665,7 @@ export function Transactions() {
         busy={dailyClaimBusy}
         flash={dailyClaimFlash}
         error={dailyClaimError}
+        calendar={calendar}
         onClaim={claimDailyPoints}
         onDismissError={() => setDailyClaimError(null)}
       />
@@ -988,6 +1108,12 @@ interface WalletCardProps {
   busy: boolean;
   flash: number | null;
   error: string | null;
+  calendar: {
+    cells: MonthCell[];
+    monthLabel: string;
+    checkedCount: number;
+    monthTotal: number;
+  };
   onClaim: () => void;
   onDismissError: () => void;
 }
@@ -998,6 +1124,7 @@ function WalletCard({
   busy,
   flash,
   error,
+  calendar,
   onClaim,
   onDismissError,
 }: WalletCardProps) {
@@ -1103,6 +1230,51 @@ function WalletCard({
           </button>
         </div>
       )}
+
+      <div class={s.checkinCalendar}>
+        <div class={s.checkinCalendarHeader}>
+          <span class={s.checkinCalendarTitle}>{calendar.monthLabel}</span>
+          <span class={s.checkinCalendarSummary}>
+            {t("transactions.checkinSummary", {
+              count: calendar.checkedCount,
+              points: calendar.monthTotal,
+            })}
+          </span>
+        </div>
+        <div class={s.checkinWeekRow}>
+          {WEEKDAY_KEYS.map((k) => (
+            <span key={k} class={s.checkinWeekday}>
+              {t(k)}
+            </span>
+          ))}
+        </div>
+        <div class={s.checkinGrid}>
+          {calendar.cells.map((cell, i) => (
+            <div
+              key={i}
+              class={[
+                s.checkinCell,
+                !cell.inMonth ? s.checkinCellEmpty : "",
+                cell.isToday ? s.checkinCellToday : "",
+                cell.checked ? s.checkinCellChecked : "",
+              ].join(" ")}
+            >
+              {cell.inMonth ? (
+                <>
+                  <span class={s.checkinDay}>{cell.day}</span>
+                  {cell.expected > 0 && (
+                    <span
+                      class={cell.checked ? s.checkinPoints : s.checkinExpected}
+                    >
+                      +{cell.expected}
+                    </span>
+                  )}
+                </>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
     </AccountSection>
   );
 }

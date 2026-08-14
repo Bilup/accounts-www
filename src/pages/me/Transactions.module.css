@@ -940,3 +940,116 @@
     text-align: left;
   }
 }
+
+/* Monthly check-in calendar */
+.checkinCalendar {
+  margin-top: 1.25rem;
+  padding: 1rem 1.125rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+}
+
+.checkinCalendarHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.875rem;
+}
+
+.checkinCalendarTitle {
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.checkinCalendarSummary {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.checkinWeekRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
+.checkinWeekday {
+  font-family: var(--font-heading);
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-subtle);
+  text-align: center;
+}
+
+.checkinGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.375rem;
+}
+
+.checkinCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface);
+  color: var(--text-muted);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.checkinCellEmpty {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.checkinCellToday {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.checkinCellChecked {
+  background-color: var(--accent-10);
+  border-color: var(--accent-30);
+}
+
+.checkinDay {
+  font-family: var(--font-heading);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.checkinCellChecked .checkinDay {
+  color: var(--accent);
+}
+
+.checkinPoints {
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+
+/* Points shown on un-checked days (the daily baseline). */
+.checkinExpected {
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1;
+}
