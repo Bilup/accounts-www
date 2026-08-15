@@ -29,6 +29,7 @@ import {
 import { UserAvatar } from "../../components/UserAvatar";
 import {
   useAuth,
+  useBenefits,
   type Transaction,
   captureTokenFromUrl,
 } from "../../lib/auth";
@@ -215,18 +216,34 @@ type MonthCell = {
  * Build the grid of cells for the current month (Monday-first layout),
  * aggregating daily check-in points from `tax` transactions.
  *
+ * The backend's `claim_time.reward.total` is the base reward (weekday base +
+ * special-date bonuses) BEFORE the subscription multiplier. The actual payout
+ * is `reward.total × Daily_Credit_Multipler` (Free=1, Plus=2, Pro=3, Max=4).
+ * We apply the multiplier ourselves so un-checked days always show the real
+ * amount the user would receive.
+ *
  * @param transactions All transactions for the user.
- * @param dailyReward Total points the backend grants for a daily check-in;
- *   used as the expected amount shown on un-checked days.
+ * @param dailyReward `claim_time.reward.total` (pre-multiplier) when known,
+ *   otherwise 0.
+ * @param multiplier Subscription daily-credit multiplier (Free=1, Plus=2,
+ *   Pro=3, Max=4), from `me/benefits`.
  */
 function buildMonthCalendar(
   transactions: Transaction[],
   dailyReward: number,
+  multiplier: number,
 ): {
   cells: MonthCell[];
   monthLabel: string;
   checkedCount: number;
   monthTotal: number;
+  /** Effective points a daily check-in grants (multiplier applied if needed). */
+  dailyExpected: number;
+  /** True when the displayed daily amount includes a subscription bonus. */
+  hasBonus: boolean;
+  bonusPerDay: number;
+  /** Subscription daily-credit multiplier (>1 when the user has a bonus). */
+  multiplier: number;
 } {
   const now = new Date();
   const year = now.getFullYear();
@@ -246,19 +263,24 @@ function buildMonthCalendar(
     pointsByDay.set(day, (pointsByDay.get(day) ?? 0) + Math.abs(tx.amount));
   }
 
-  // Baseline "points per day": prefer the backend reward; if it is not yet
-  // available (e.g. claim_time hasn't resolved), fall back to the most
-  // recent check-in amount.
-  let dailyBase = dailyReward > 0 ? dailyReward : 0;
-  if (dailyBase <= 0) {
-    for (let i = transactions.length - 1; i >= 0; i--) {
-      const tx = transactions[i];
-      if (tx.type === "tax") {
-        dailyBase = Math.abs(tx.amount);
-        break;
-      }
+  // Fallback "points per day": if claim_time hasn't resolved yet, use the most
+  // recent check-in payout (which already includes the multiplier).
+  let lastPayout = 0;
+  for (let i = transactions.length - 1; i >= 0; i--) {
+    const tx = transactions[i];
+    if (tx.type === "tax") {
+      lastPayout = Math.abs(tx.amount);
+      break;
     }
   }
+
+  const hasBonus = multiplier > 1;
+  // When the backend reward is known, apply the multiplier (it is the base
+  // before the tier multiplier). Otherwise fall back to the last real payout,
+  // which already includes the bonus.
+  const dailyExpected =
+    dailyReward > 0 ? dailyReward * multiplier : lastPayout;
+  const bonusPerDay = hasBonus && dailyReward > 0 ? dailyExpected - dailyReward : 0;
 
   const emptyCell: MonthCell = {
     day: 0,
@@ -282,7 +304,7 @@ function buildMonthCalendar(
       isToday: day === today,
       checked: points > 0,
       points,
-      expected: points > 0 ? points : dailyBase,
+      expected: points > 0 ? points : dailyExpected,
     });
   }
   // Pad the last row to full weeks for a clean grid.
@@ -300,7 +322,16 @@ function buildMonthCalendar(
     month: "long",
   });
 
-  return { cells, monthLabel, checkedCount, monthTotal };
+  return {
+    cells,
+    monthLabel,
+    checkedCount,
+    monthTotal,
+    dailyExpected,
+    hasBonus,
+    bonusPerDay,
+    multiplier: hasBonus ? multiplier : 1,
+  };
 }
 
 function formatDateShort(ts: number): string {
@@ -322,6 +353,7 @@ function userFilterMatches(typeFilter: TypeFilter, txType: string): boolean {
 export function Transactions() {
   const { user, token, reload } = useAuth();
   const { t } = useI18n();
+  const { benefits } = useBenefits();
   const [range, setRange] = useState<RangeKey>("30d");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [query, setQuery] = useState("");
@@ -637,9 +669,13 @@ export function Transactions() {
 
   const balance = user?.["sys.currency"] ?? 0;
   const dailyReward = dailyClaim?.reward?.total ?? 0;
+  const multiplier = Math.max(
+    1,
+    benefits?.benefits?.daily_credit_multiplier ?? 1,
+  );
   const calendar = useMemo(
-    () => buildMonthCalendar(transactions, dailyReward),
-    [transactions, dailyReward],
+    () => buildMonthCalendar(transactions, dailyReward, multiplier),
+    [transactions, dailyReward, multiplier],
   );
 
   if (!user) {
@@ -1113,6 +1149,10 @@ interface WalletCardProps {
     monthLabel: string;
     checkedCount: number;
     monthTotal: number;
+    dailyExpected: number;
+    hasBonus: boolean;
+    bonusPerDay: number;
+    multiplier: number;
   };
   onClaim: () => void;
   onDismissError: () => void;
@@ -1235,10 +1275,17 @@ function WalletCard({
         <div class={s.checkinCalendarHeader}>
           <span class={s.checkinCalendarTitle}>{calendar.monthLabel}</span>
           <span class={s.checkinCalendarSummary}>
-            {t("transactions.checkinSummary", {
-              count: calendar.checkedCount,
-              points: calendar.monthTotal,
-            })}
+            {calendar.hasBonus
+              ? t("transactions.checkinSummaryBonus", {
+                  count: calendar.checkedCount,
+                  points: calendar.monthTotal,
+                  bonus: calendar.bonusPerDay,
+                  expected: calendar.dailyExpected,
+                })
+              : t("transactions.checkinSummary", {
+                  count: calendar.checkedCount,
+                  points: calendar.monthTotal,
+                })}
           </span>
         </div>
         <div class={s.checkinWeekRow}>
@@ -1264,9 +1311,22 @@ function WalletCard({
                   <span class={s.checkinDay}>{cell.day}</span>
                   {cell.expected > 0 && (
                     <span
-                      class={cell.checked ? s.checkinPoints : s.checkinExpected}
+                      class={
+                        cell.checked
+                          ? s.checkinPoints
+                          : calendar.hasBonus
+                            ? s.checkinExpectedBonus
+                            : s.checkinExpected
+                      }
                     >
                       +{cell.expected}
+                    </span>
+                  )}
+                  {!cell.checked && calendar.hasBonus && (
+                    <span class={s.checkinMultiplierBadge}>
+                      {t("transactions.rewardMultiplier", {
+                        n: calendar.multiplier,
+                      })}
                     </span>
                   )}
                 </>

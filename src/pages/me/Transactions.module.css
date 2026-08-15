@@ -1053,3 +1053,22 @@
   color: var(--text-muted);
   line-height: 1;
 }
+
+/* Un-checked day points that already include the subscription bonus. */
+.checkinExpectedBonus {
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+
+/* Subscription bonus badge shown under un-checked days. */
+.checkinMultiplierBadge {
+  font-family: var(--font-body);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: #f59e0b;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
